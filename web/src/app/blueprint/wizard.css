@@ -1257,6 +1257,38 @@
 .wizard-root .mt-16 { margin-top: 16px; }
 svg { display: block; }
 
+/* Section import button */
+.wizard-root .btn-section-import {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px;
+  background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 999px;
+  font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--accent);
+  cursor: pointer; letter-spacing: 0.02em; transition: all 120ms ease; line-height: 1; white-space: nowrap;
+}
+.wizard-root .btn-section-import:hover { background: var(--accent); color: #fff; }
+.wizard-root .btn-section-import-icon { font-size: 12px; }
+
+/* Welcome helper cards */
+.wizard-root .welcome-helpers { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 1100px) { .wizard-root .welcome-helpers { grid-template-columns: 1fr; } }
+.wizard-root .helper-card {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius-lg);
+  padding: 22px; display: flex; gap: 16px; align-items: flex-start;
+}
+.wizard-root .helper-card-action { background: var(--accent-soft); border-color: var(--accent); }
+.wizard-root .helper-icon-wrap {
+  flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%;
+  background: var(--bg-2); display: flex; align-items: center; justify-content: center;
+}
+.wizard-root .helper-card-action .helper-icon-wrap { background: var(--surface); }
+.wizard-root .helper-body { flex: 1; min-width: 0; }
+.wizard-root .helper-title {
+  font-family: var(--display); font-size: 22px; letter-spacing: -0.015em;
+  line-height: 1.2; margin-bottom: 8px; font-weight: 400;
+}
+.wizard-root .helper-text { font-size: 13.5px; line-height: 1.55; color: var(--ink-2); }
+.wizard-root .helper-btn { margin-top: 14px; }
+
 /* Import modal animations */
 @keyframes spin {
   to { transform: rotate(360deg); }

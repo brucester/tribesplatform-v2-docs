@@ -786,16 +786,25 @@ function GateView({ step, phase, values, onPrev, onNext }: {
   )
 }
 
-function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onPrev }: {
+function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onPrev, onImport }: {
   step: StepDef; phase: PhaseDef; values: Values;
   onField: (id: string, val: unknown) => void;
   onSlider: (id: string, val: number) => void;
   onCheck: (id: string, val: unknown) => void;
   onNext: () => void; onPrev: () => void;
+  onImport: (step: StepDef, section: string) => void;
 }) {
   if (step.kind === 'gate') {
     return <GateView step={step} phase={phase} values={values} onPrev={onPrev} onNext={onNext} />
   }
+
+  const ImportButton = ({ section }: { section: string }) => (
+    <button className="btn-section-import" onClick={() => onImport(step, section)}
+      title="Use AI to fill this section from a document">
+      <span className="btn-section-import-icon">✨</span>
+      Import doc
+    </button>
+  )
 
   return (
     <div>
@@ -808,7 +817,10 @@ function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onP
         <div className="section">
           <div className="section-head">
             <div className="section-title">Reflect &amp; record</div>
-            <div className="section-meta">Saved automatically</div>
+            <div className="section-meta-row">
+              <ImportButton section="fields" />
+              <span className="section-meta">Saved automatically</span>
+            </div>
           </div>
           {step.fields.map(f => (
             <TextField key={f.id} field={f} value={values[f.id]}
@@ -821,8 +833,9 @@ function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onP
         <div className="section">
           <div className="section-head">
             <div className="section-title">Checklist</div>
-            <div className="section-meta">
-              {step.checklist.filter(c => values[c.id]).length} / {step.checklist.length}
+            <div className="section-meta-row">
+              <ImportButton section="checklist" />
+              <span className="section-meta">{step.checklist.filter(c => values[c.id]).length} / {step.checklist.length}</span>
             </div>
           </div>
           <Checklist items={step.checklist} values={values} onChange={onCheck} onField={onField} />
@@ -833,7 +846,10 @@ function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onP
         <div className="section">
           <div className="section-head">
             <div className="section-title">Self-assessment</div>
-            <div className="section-meta">Drag to score 0–10</div>
+            <div className="section-meta-row">
+              <ImportButton section="sliders" />
+              <span className="section-meta">Drag to score 0–10</span>
+            </div>
           </div>
           {step.sliders.map(s => (
             <ScoreSlider key={s.id} id={s.id} label={s.label} frame={s.frame}
@@ -851,8 +867,8 @@ function StepView({ step, phase, values, onField, onSlider, onCheck, onNext, onP
   )
 }
 
-function WelcomeView({ onStart, hasProgress, onJumpToDashboard }: {
-  onStart: () => void; hasProgress: boolean; onJumpToDashboard: () => void
+function WelcomeView({ onStart, hasProgress, onJumpToDashboard, onImport }: {
+  onStart: () => void; hasProgress: boolean; onJumpToDashboard: () => void; onImport: () => void
 }) {
   const fws = FW_DATA.frameworks
   return (
@@ -892,30 +908,33 @@ function WelcomeView({ onStart, hasProgress, onJumpToDashboard }: {
 
       <div className="section">
         <div className="section-head">
-          <div className="section-title">Guide buttons explain every question</div>
-          <div className="section-meta">Click ? on any field</div>
+          <div className="section-title">Two ways to move faster</div>
+          <div className="section-meta">Helpers built into the wizard</div>
         </div>
         <div className="welcome-helpers">
           <div className="helper-card">
             <div className="helper-icon-wrap">
-              <span className="guide-icon" style={{ width: 22, height: 22, fontSize: 13 }}>?</span>
+              <span className="guide-icon" style={{ width: 22, height: 22, fontSize: 13, background: 'var(--accent)', color: '#fff' }}>?</span>
             </div>
             <div className="helper-body">
-              <div className="helper-title">Sourced guidance on every question</div>
+              <div className="helper-title">Guide buttons explain every question</div>
               <div className="helper-text">
-                Whenever you see a <span className="inline-pill">? Guide</span> button next to a question, click it. A plain-language explainer pops up — what the question is really asking, why it matters, and examples to think with.
+                Whenever you see a small <span className="inline-pill">? Guide</span> button next to a question, click it. A short, plain-language explainer pops up — what the question is really asking, why it matters, and examples to think with.
               </div>
             </div>
           </div>
-          <div className="helper-card">
+          <div className="helper-card helper-card-action">
             <div className="helper-icon-wrap">
-              <span style={{ fontSize: 22 }}>◉</span>
+              <span style={{ fontSize: 22 }}>✨</span>
             </div>
             <div className="helper-body">
-              <div className="helper-title">Mark your progress on every answer</div>
+              <div className="helper-title">Already have documents? Let AI fill it in.</div>
               <div className="helper-text">
-                Below every field you&rsquo;ll see three status buttons. Use them to track what&rsquo;s done, what&rsquo;s unclear, and where to ask for support.
+                Upload a charter, vision deck, business plan, or meeting notes. The wizard reads your document and proposes answers across every section — text fields, scores, and checklist notes. You review and confirm each one before it&rsquo;s saved.
               </div>
+              <button className="btn btn-primary helper-btn" onClick={onImport}>
+                ✨ Upload a document to start
+              </button>
             </div>
           </div>
         </div>
@@ -944,6 +963,7 @@ function WelcomeView({ onStart, hasProgress, onJumpToDashboard }: {
       <div className="nav-row">
         <div className="row gap-8">
           {hasProgress && <button className="btn btn-ghost" onClick={onJumpToDashboard}>View dashboard</button>}
+          <button className="btn" onClick={onImport}>✨ Import from document</button>
         </div>
         <button className="btn btn-primary" onClick={onStart}>
           {hasProgress ? 'Resume →' : 'Begin Phase 1 →'}
@@ -1122,6 +1142,12 @@ export default function BlueprintClient({ blueprintId, initialAnswers }: Props) 
   const completedSpirals = D.phases.filter(p => p.spiral < currentSpiral).map(p => p.spiral)
 
   const [showImport, setShowImport] = useState(false)
+  const [importScope, setImportScope] = useState<ImportScope | undefined>(undefined)
+
+  const openImport = (step?: StepDef, section?: string) => {
+    setImportScope(step ? { step, section } : undefined)
+    setShowImport(true)
+  }
 
   const [mobileTab, setMobileTab] = useState<'nav' | 'content' | 'stats'>('content')
   const TABS = ['nav', 'content', 'stats'] as const
@@ -1242,7 +1268,8 @@ export default function BlueprintClient({ blueprintId, initialAnswers }: Props) 
         <main className={`main${mobileTab !== 'content' ? ' mobile-hidden' : ''}`}>
           {current.kind === 'welcome' && (
             <WelcomeView onStart={() => jumpTo(D.phases[0].steps[0].id)}
-              hasProgress={hasProgress} onJumpToDashboard={() => jumpTo('dashboard')} />
+              hasProgress={hasProgress} onJumpToDashboard={() => jumpTo('dashboard')}
+              onImport={() => openImport()} />
           )}
           {current.kind === 'dashboard' && (
             <DashboardView values={values} onJump={jumpTo} onPrint={() => window.print()} />
@@ -1257,6 +1284,7 @@ export default function BlueprintClient({ blueprintId, initialAnswers }: Props) 
               onCheck={handleCheck}
               onNext={goNext}
               onPrev={goPrev}
+              onImport={openImport}
             />
           )}
         </main>
@@ -1299,8 +1327,9 @@ export default function BlueprintClient({ blueprintId, initialAnswers }: Props) 
 
       {showImport && (
         <ImportModal
-          onClose={() => setShowImport(false)}
+          onClose={() => { setShowImport(false); setImportScope(undefined) }}
           currentValues={values}
+          scope={importScope}
           onApply={extracted => setValues(v => ({ ...v, ...extracted }))}
         />
       )}
