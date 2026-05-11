@@ -213,7 +213,7 @@ Rules:
 
 DOCUMENT:
 """
-${docText.slice(0, 12000)}
+${docText.slice(0, scope?.step ? 10000 : 6000)}
 """
 
 WIZARD FIELDS:

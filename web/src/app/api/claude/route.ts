@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const maxDuration = 60
+export const runtime = 'edge'
+export const maxDuration = 30
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.MINIMAX_API_KEY
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'MiniMax-M2.7',
         messages: [{ role: 'user', content: prompt }],
-        max_completion_tokens: 4096,
+        max_completion_tokens: 2048,
         temperature: 0.3,
       }),
     })
