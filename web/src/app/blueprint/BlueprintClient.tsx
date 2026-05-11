@@ -89,6 +89,266 @@ function debounce<T extends (...args: Parameters<T>) => void>(fn: T, ms: number)
   }
 }
 
+// ── Field catalog (for AI import) ────────────────────────────────────────────
+
+interface FieldCatalogEntry {
+  id: string; kind: 'text' | 'slider' | 'check'; phase: string; step: string; label: string; help: string
+}
+interface ImportScope { step?: StepDef; section?: string }
+
+function buildFieldCatalog(scope?: ImportScope): FieldCatalogEntry[] {
+  const catalog: FieldCatalogEntry[] = []
+  const scopedStepId = scope?.step?.id ?? null
+  const scopedSection = scope?.section ?? null
+  FW_DATA.phases.forEach(phase => {
+    phase.steps.forEach(step => {
+      if (step.kind === 'gate') return
+      if (scopedStepId && step.id !== scopedStepId) return
+      if (!scopedSection || scopedSection === 'fields') {
+        (step.fields ?? []).forEach(f => catalog.push({ id: f.id, kind: 'text', phase: phase.name, step: step.title ?? '', label: f.label, help: f.help ?? '' }))
+      }
+      if (!scopedSection || scopedSection === 'sliders') {
+        (step.sliders ?? []).forEach(s => catalog.push({ id: s.id, kind: 'slider', phase: phase.name, step: step.title ?? '', label: s.label, help: 'Score 0-10' }))
+      }
+      if (!scopedSection || scopedSection === 'checklist') {
+        (step.checklist ?? []).forEach(c => {
+          catalog.push({ id: c.id, kind: 'check', phase: phase.name, step: step.title ?? '', label: c.text, help: 'Yes/No' })
+          catalog.push({ id: c.id + '_note', kind: 'text', phase: phase.name, step: step.title ?? '', label: 'Notes for: ' + c.text, help: 'Short note describing how this is handled.' })
+        })
+      }
+    })
+  })
+  return catalog
+}
+
+// ── FileDropzone ──────────────────────────────────────────────────────────────
+
+function FileDropzone({ onFile, fileName }: { onFile: (f: File) => void; fileName: string }) {
+  const [dragOver, setDragOver] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  return (
+    <div
+      className="dropzone"
+      style={{ border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--rule)'}`, borderRadius: 4, padding: '28px 20px', textAlign: 'center', background: dragOver ? 'var(--accent-soft)' : 'var(--bg-2)', cursor: 'pointer', transition: 'all 120ms' }}
+      onClick={() => inputRef.current?.click()}
+      onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f) }}
+    >
+      <input ref={inputRef} type="file" accept=".txt,.md,.markdown,.json,text/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) onFile(e.target.files[0]) }} />
+      <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
+      <div style={{ fontFamily: 'var(--display)', fontSize: 18 }}>
+        {fileName ? <span>Loaded: <strong>{fileName}</strong></span> : 'Drop a document, or click to browse'}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6, fontFamily: 'var(--mono)', letterSpacing: '0.1em' }}>.TXT · .MD · .JSON · plain text</div>
+    </div>
+  )
+}
+
+// ── ImportModal ───────────────────────────────────────────────────────────────
+
+function ImportModal({ onClose, onApply, currentValues, scope }: {
+  onClose: () => void; onApply: (vals: Values) => void; currentValues: Values; scope?: ImportScope
+}) {
+  const [stage, setStage] = useState<'upload' | 'scanning' | 'review' | 'error'>('upload')
+  const [docText, setDocText] = useState('')
+  const [fileName, setFileName] = useState('')
+  const [extracted, setExtracted] = useState<Record<string, unknown> | null>(null)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [acceptedKeys, setAcceptedKeys] = useState<Record<string, boolean>>({})
+
+  const handleFile = async (file: File) => {
+    setFileName(file.name)
+    if (file.type === 'application/pdf') {
+      setDocText(`[PDF: ${file.name}] — PDF parsing not available in browser. Please paste text content instead.`)
+      return
+    }
+    const text = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader(); r.onload = () => resolve(r.result as string); r.onerror = reject; r.readAsText(file)
+    })
+    setDocText(text)
+  }
+
+  const handleScan = async () => {
+    if (!docText.trim()) { setErrorMsg('Paste some text or upload a file first.'); return }
+    setStage('scanning'); setErrorMsg('')
+    const catalog = buildFieldCatalog(scope)
+    const fieldsByStep: Record<string, FieldCatalogEntry[]> = {}
+    catalog.forEach(f => { const k = `${f.phase} — ${f.step}`; if (!fieldsByStep[k]) fieldsByStep[k] = []; fieldsByStep[k].push(f) })
+    const fieldList = Object.entries(fieldsByStep).map(([s, fields]) =>
+      `### ${s}\n` + fields.map(f => `- ${f.id} (${f.kind}): "${f.label}"${f.help ? ' — ' + f.help : ''}`).join('\n')
+    ).join('\n\n')
+    const scopeHint = scope?.step ? `\n\nIMPORTANT: Focus only on the "${scope.step.title}" step${scope.section ? ' (' + scope.section + ' section)' : ''}. Only return fields listed below.` : ''
+    const prompt = `You are helping pre-fill a Regenerative Neighborhood Framework wizard from an existing project document.
+
+Below is the user's document, followed by the catalog of wizard fields. Extract any information from the document that maps to these fields. Return a JSON object with field IDs as keys.
+
+Rules:
+- For text fields: return a string with extracted/synthesized content (1-3 sentences). If nothing relevant, omit the key.
+- For slider fields: return an integer 0-10 reflecting confidence/maturity in that area based on document evidence. If unclear, omit.
+- For check fields (id without "_note" suffix): return true only if the document clearly indicates this is in place. Otherwise omit.
+- For checklist note fields (id ending in "_note"): if the corresponding checklist item is true OR the doc has relevant info, write a 1-2 sentence note. Be concrete.
+- Only include fields where you have actual evidence from the document. Omit anything you'd be guessing.
+- Also include "_summary" with a 2-sentence summary of the document.
+- Also include "_extracted_count" with the number of fields you populated.${scopeHint}
+
+DOCUMENT:
+"""
+${docText.slice(0, 12000)}
+"""
+
+WIZARD FIELDS:
+${fieldList}
+
+Return ONLY valid JSON, no markdown fences, no commentary.`
+
+    try {
+      const resp = await fetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})) as { error?: string }; throw new Error(err.error ?? `Request failed (${resp.status})`) }
+      const { result } = await resp.json() as { result: string }
+      let cleaned = result.trim()
+      if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '')
+      const start = cleaned.indexOf('{'); const end = cleaned.lastIndexOf('}')
+      if (start >= 0 && end > start) cleaned = cleaned.slice(start, end + 1)
+      const parsed = JSON.parse(cleaned) as Record<string, unknown>
+      setExtracted(parsed)
+      const accepted: Record<string, boolean> = {}
+      Object.keys(parsed).forEach(k => { if (!k.startsWith('_')) accepted[k] = true })
+      setAcceptedKeys(accepted)
+      setStage('review')
+    } catch (e) {
+      setErrorMsg((e as Error).message ?? 'Scan failed.')
+      setStage('error')
+    }
+  }
+
+  const handleApply = () => {
+    if (!extracted) return
+    const toApply: Values = {}
+    Object.entries(extracted).forEach(([k, v]) => { if (!k.startsWith('_') && acceptedKeys[k]) toApply[k] = v })
+    onApply(toApply); onClose()
+  }
+
+  const catalog = buildFieldCatalog(scope)
+  const fieldMeta = (id: string) => catalog.find(f => f.id === id) ?? { label: id, kind: 'text' as const, step: '', phase: '', help: '' }
+
+  return (
+    <div className="modal-bg" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div className="modal" style={{ position: 'relative', maxWidth: 760, width: '100%', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: 32, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink-3)' }}>×</button>
+
+        <div style={{ marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid var(--rule)' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-3)', marginBottom: 6 }}>AI-ASSISTED IMPORT{scope?.step ? ' · SCOPED' : ''}</div>
+          <div style={{ fontFamily: 'var(--display)', fontSize: 28, marginTop: 6 }}>
+            {scope?.step ? `Fill "${scope.step.title}" ${scope.section ?? 'step'}` : 'Scan an existing document'}
+          </div>
+          <div style={{ fontSize: 13.5, color: 'var(--ink-2)', marginTop: 8, fontStyle: 'italic' }}>
+            {scope?.step ? "Upload a document and we'll pre-fill just this section." : "Have a vision deck, charter, or feasibility study? Drop it in and we'll pre-fill what we can."}
+          </div>
+        </div>
+
+        {stage === 'upload' && (
+          <div>
+            <FileDropzone onFile={handleFile} fileName={fileName} />
+            <div style={{ marginTop: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--ink-2)' }}>Or paste document text</div>
+              <textarea className="textarea" rows={8} placeholder="Paste your project charter, vision document, business plan, meeting notes…" value={docText} onChange={e => setDocText(e.target.value)} style={{ width: '100%', resize: 'vertical' }} />
+              {docText && <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 4, letterSpacing: '0.08em' }}>{docText.length.toLocaleString()} CHARS{docText.length > 12000 ? ' · will truncate first 12k' : ''}</div>}
+            </div>
+            <div className="card" style={{ marginTop: 18, fontSize: 12.5, lineHeight: 1.5, background: 'var(--bg-2)', padding: 16, borderRadius: 'var(--radius)' }}>
+              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M2.7 reads your document and proposes answers for fields it finds evidence for. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Best for plain-text (.txt, .md). PDFs need text pasted manually.
+            </div>
+            <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
+              <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleScan} disabled={!docText.trim()}>Scan with AI →</button>
+            </div>
+          </div>
+        )}
+
+        {stage === 'scanning' && (
+          <div style={{ padding: '40px 0', textAlign: 'center' }}>
+            <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
+            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>Reading your document…</div>
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8, fontStyle: 'italic' }}>Mapping content to RNF · Alchemy · RCOS · CLIPS fields</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24 }}>
+              {(['rnf', 'alchemy', 'rcos', 'clips'] as const).map((k, i) => (
+                <div key={k} style={{ width: 10, height: 10, borderRadius: '50%', background: `var(--${k})`, animation: `pulse 1s ${i * 150}ms infinite` }} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {stage === 'review' && extracted && (
+          <div>
+            <div className="card" style={{ background: 'var(--bg-2)', marginBottom: 20, padding: 16, borderRadius: 'var(--radius)' }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--ink-3)', marginBottom: 6 }}>DOCUMENT SUMMARY</div>
+              <div style={{ fontFamily: 'var(--display)', fontSize: 16, fontStyle: 'italic', color: 'var(--ink-2)' }}>{(extracted._summary as string) || 'No summary available.'}</div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 12, letterSpacing: '0.1em' }}>
+                {Object.keys(extracted).filter(k => !k.startsWith('_')).length} FIELDS POPULATED · REVIEW BELOW
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+              <div style={{ fontFamily: 'var(--display)', fontSize: 18 }}>Proposed answers</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{Object.values(acceptedKeys).filter(Boolean).length} accepted</div>
+            </div>
+
+            <div style={{ maxHeight: 360, overflowY: 'auto', marginBottom: 20, paddingRight: 4 }}>
+              {Object.entries(extracted).filter(([k]) => !k.startsWith('_') && k !== 'project_name').map(([key, val]) => {
+                const meta = fieldMeta(key)
+                const accepted = acceptedKeys[key]
+                const conflict = currentValues[key] != null && currentValues[key] !== ''
+                return (
+                  <div key={key} style={{ padding: 12, marginBottom: 8, background: accepted ? 'var(--accent-soft)' : 'var(--bg-2)', border: `1px solid ${accepted ? 'var(--accent)' : 'var(--rule-soft)'}`, borderRadius: 4, cursor: 'pointer', opacity: accepted ? 1 : 0.6 }}
+                    onClick={() => setAcceptedKeys(a => ({ ...a, [key]: !a[key] }))}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ width: 16, height: 16, marginTop: 2, background: accepted ? 'var(--accent)' : 'var(--surface)', border: `1.5px solid ${accepted ? 'var(--accent)' : 'var(--rule)'}`, borderRadius: 3, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {accepted && <span style={{ color: '#fff', fontSize: 10, lineHeight: 1 }}>✓</span>}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-3)', letterSpacing: '0.1em', marginBottom: 3 }}>
+                          {meta.step.toUpperCase()}{conflict && <span style={{ color: 'var(--warn)', marginLeft: 8 }}>· OVERWRITES EXISTING</span>}
+                        </div>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 4 }}>{meta.label}</div>
+                        <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>
+                          {meta.kind === 'slider' ? <span><strong>{val as number}/10</strong></span>
+                            : meta.kind === 'check' ? <span>{val ? '☑ Yes' : '☐ No'}</span>
+                            : <span>{String(val)}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+              <button className="btn btn-ghost" onClick={() => setStage('upload')}>← Back</button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn" onClick={() => { const all: Record<string, boolean> = {}; Object.keys(extracted).forEach(k => { if (!k.startsWith('_')) all[k] = !Object.values(acceptedKeys).every(Boolean) }); setAcceptedKeys(all) }}>Toggle all</button>
+                <button className="btn btn-primary" onClick={handleApply}>Apply {Object.values(acceptedKeys).filter(Boolean).length} answers →</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {stage === 'error' && (
+          <div>
+            <div className="card" style={{ padding: 24, background: 'var(--warn-soft)', borderRadius: 'var(--radius)' }}>
+              <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginBottom: 8 }}>Something went wrong</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>{errorMsg}</div>
+            </div>
+            <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+              <button className="btn btn-ghost" onClick={onClose}>Close</button>
+              <button className="btn btn-primary" onClick={() => setStage('upload')}>Try again</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function GuideButton({ guide }: { guide?: GuideContent }) {
@@ -842,6 +1102,8 @@ export default function BlueprintClient({ blueprintId, initialAnswers }: Props) 
   const currentSpiral = currentPhase.spiral
   const completedSpirals = D.phases.filter(p => p.spiral < currentSpiral).map(p => p.spiral)
 
+  const [showImport, setShowImport] = useState(false)
+
   const [mobileTab, setMobileTab] = useState<'nav' | 'content' | 'stats'>('content')
   const TABS = ['nav', 'content', 'stats'] as const
   const swipeRef = useRef({ x: 0, y: 0, t: 0, active: false })
@@ -999,6 +1261,10 @@ export default function BlueprintClient({ blueprintId, initialAnswers }: Props) 
           </div>
           <div className="rail-section">
             <button className="btn" style={{ width: '100%', justifyContent: 'center' }}
+              onClick={() => setShowImport(true)}>
+              ✨ Import from document
+            </button>
+            <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', marginTop: 8, fontSize: 11 }}
               onClick={() => {
                 if (confirm('Reset all wizard data? This cannot be undone.')) {
                   setValues({})
@@ -1011,6 +1277,14 @@ export default function BlueprintClient({ blueprintId, initialAnswers }: Props) 
           </div>
         </aside>
       </div>
+
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          currentValues={values}
+          onApply={extracted => setValues(v => ({ ...v, ...extracted }))}
+        />
+      )}
     </div>
   )
 }
