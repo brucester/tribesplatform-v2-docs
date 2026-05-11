@@ -1,0 +1,267 @@
+MyCoNet Module 0 — Full Project Handoff Document
+Where this document is
+This file is in the project root:
+
+project_overview_and_export.md
+If you want it somewhere else, you can rename or move it later.
+
+Purpose of this document
+This is a handoff document for another AI or developer. It explains what the app does, how it is built, what the important files do, and what features are worth carrying into a Vercel + Supabase version.
+
+One-sentence summary
+MyCoNet Module 0 is a full-stack regenerative networking app that helps people build deep profiles, discover matches, offer services, request help, and connect with regenerative neighborhoods.
+
+Product intent
+The app is designed as a funnel-catcher for the regenerative neighborhoods movement. It collects rich identity and bio data so people can be matched by values, skills, personality, needs, and community interests.
+
+What the app currently includes
+1. Authentication
+Username/password sign up and login
+Session-based auth
+Protected routes for signed-in users
+Public user profiles available without login
+2. User profile system
+First name, last name, username, email
+Country, city, headline
+User type checkboxes
+Avatar upload
+Public profile pages
+Edit profile page
+3. Bio Wizard
+A multi-step form that collects deep profile data such as:
+
+values and principles
+personality details
+archetypes
+goals
+fears and traumas
+current creative focus
+skills
+interests
+travel data
+This is one of the most important parts of the app because it drives matching.
+
+4. Offers system
+Users can list things they offer, such as services or goods. Fields include:
+
+title
+description
+category
+compensation model
+price
+active/inactive state
+5. Requests system
+Users can list what they need help with. Fields include:
+
+request text
+category
+urgency
+active/inactive state
+6. Search and discovery
+Users can search for others by text and role. The app also supports recent users and public profile views.
+
+7. Match recommendations
+The matching logic compares users using:
+
+shared skills
+shared interests
+personality compatibility
+OCEAN trait similarity
+other profile signals
+The match output includes reasons so users understand why someone was recommended.
+
+8. Regenerative neighborhoods
+The app includes a full neighborhood model for community profiles. Users can:
+
+create neighborhoods
+view neighborhood profiles
+update neighborhoods
+follow/unfollow neighborhoods
+9. Profile views
+The app tracks profile views and can show view counts.
+
+10. App shell and UI
+React frontend
+wouter routing
+TanStack Query for server state
+Shadcn/ui components
+Sidebar navigation
+Theme toggle
+Light/dark mode
+The important business idea behind the app
+This app is not just a directory. It is a relationship-building platform. The core value is in collecting enough meaningful profile data to support better networking, better community matching, and better neighborhood participation.
+
+Data model overview
+users
+Stores the account and public identity:
+
+name
+email
+username
+password
+user types
+avatar
+headline
+location
+user_bio
+Stores the deep bio/matching data:
+
+values
+personality details
+archetypes
+goals
+fears
+traumas
+skills
+interests
+travel info
+user_offers
+Stores what a user can provide.
+
+user_requests
+Stores what a user needs.
+
+neighborhoods
+Stores regenerative neighborhood data across many categories:
+
+basic info
+contact
+vision
+community
+housing
+amenities
+sustainability
+lifestyle
+governance
+rn_user_agreements
+Links users to neighborhoods and stores relationship status.
+
+profile_views
+Tracks which profiles were viewed.
+
+Backend architecture
+server/auth.ts
+Handles sign up, login, logout, and session behavior.
+
+server/routes.ts
+Defines API endpoints for:
+
+profile access and update
+public user profiles
+search and matches
+offers CRUD
+requests CRUD
+neighborhood CRUD
+neighborhood follow actions
+profile view counts
+server/storage.ts
+Contains the storage interface and the database implementation. It also includes the match scoring logic.
+
+shared/schema.ts
+Defines:
+
+Drizzle tables
+relationships
+insert schemas
+TypeScript types
+This is the most important file for understanding the app structure.
+
+Frontend architecture
+client/src/App.tsx
+Main router and app shell. It handles:
+
+auth gating
+protected routes
+public user profile routes
+sidebar layout
+Main pages
+auth page
+home/dashboard
+profile page
+edit profile page
+bio wizard
+search page
+matches page
+offers page
+requests page
+neighborhoods page
+neighborhood wizard
+neighborhood profile page
+public user profile page
+Shared frontend pieces
+sidebar
+theme provider
+theme toggle
+query client
+reusable ui components
+What has already been fixed in the current version
+Register endpoint now returns JSON errors
+Email input is properly wired to the form
+Default user types now include Community Member
+Avatar upload works and saves to avatarUrl
+avatarUrl is optional in the insert schema
+Profile update endpoint accepts avatar data
+What another AI should probably rebuild or keep
+If you are recreating this in Vercel + Supabase, the most valuable features to keep are:
+
+deep bio wizard
+offers and requests
+public profiles
+search
+match scoring with reasons
+neighborhood follow system
+profile views
+user type filtering
+avatar/profile editing
+Suggested rebuild strategy for Vercel + Supabase
+Use Vercel for frontend
+Keep the app frontend-heavy
+Put pages on Vercel
+Preserve routing and page structure
+Use Supabase for backend
+Use Supabase Auth or your own auth flow
+Move database tables to Supabase Postgres
+Store avatars in Supabase Storage instead of base64
+Keep matching logic in a server function or API route
+Data model to carry over
+At minimum, recreate:
+
+users
+user_bio
+user_offers
+user_requests
+neighborhoods
+rn_user_agreements
+profile_views
+Local setup instructions
+If you want to run this on your own machine:
+
+Download or clone the project.
+Install Node.js.
+Install dependencies.
+Create a local .env file.
+Add DATABASE_URL.
+Add SESSION_SECRET.
+Run the dev server.
+Export instructions
+To move it out of Replit:
+
+use the Replit download/export option if available
+or push the project to GitHub and clone it locally
+then copy over env vars and any assets you need
+Why this document exists
+This is meant to be read by another AI or developer so they can understand the app well enough to implement similar features in a new stack.
+
+Best files to read next
+shared/schema.ts
+server/storage.ts
+server/routes.ts
+server/auth.ts
+client/src/App.tsx
+client/src/pages/auth-page.tsx
+client/src/pages/edit-profile-page.tsx
+client/src/pages/bio-wizard.tsx
+client/src/pages/search-page.tsx
+client/src/pages/matches-page.tsx
+client/src/pages/neighborhoods-page.tsx
+client/src/pages/neighborhood-wizard.tsx

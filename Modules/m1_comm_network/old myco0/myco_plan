@@ -1,0 +1,397 @@
+# TribesPlatform v2 — Executive Summary
+
+> Version: 1.0 | Date: 2026-04-13 | Status: ITERATING
+
+---
+
+## What Is TribesPlatform v2?
+
+**TribesPlatform v2** is a modular ecosystem for building, growing, and sustaining regenerative communities.
+
+It's the all-in-one operating system for regenerative neighborhoods — from finding your people, to forming your plan, building your home, and governing your culture for generations.
+
+---
+
+## The 11 Modules 
+
+
+| #   | Module                 | Description                                                                                                                                                                                                                                                                                      | Status                                   |
+| --- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| 01  | Community Network      | Profile-based discovery and AI powered matching for the key archetypes of the Regenerative Neighborhood movement : community members & curious, vision holders, service providers, resource holders of land and/or funding. Meet your tribe to find or create your home.                         | Building V2.<br><br>Prototype Tribes v1. |
+| 02  | Neighborhood Directory | Explore regenerative neighborhoods on a live map. See posts, milestones, updates from people and communities, Check-ins, guest book, community events, get matched with aligned communities based on your profile from module 1 <br>Neighborhood profiles onboard through module 04 - blueprint  | Building V2.<br>Prototype Tribes v1.     |
+| 03  | Resources & Tools      | Curated, community-powered archive of regenerative resources, tools, guides, and case studies                                                                                                                                                                                                    | Building V2.<br>Prototype Tribes v1.     |
+| 04  | Blueprint              | The Regenerative Neighborhood Wizard — guided design framework and journey to create a thorough  plan and project management schedule for your Regenerative Neighborhood.                                                                                                                        | Building                                 |
+| 05  | Join                   | Applications and full onboarding flow — from initial inquiry to welcome                                                                                                                                                                                                                          | V1 Building<br>                          |
+| 06  | Agreements             | Digital agreements and Stripe payment rails for community participation                                                                                                                                                                                                                          | Planned                                  |
+| 07  | Operations             | Project boards, task assignment, budget tracking, and reporting for community teams                                                                                                                                                                                                              | Planned                                  |
+| 08  | Contribution Tracking  | Points, badges, and reputation tracking that make regenerative action visible and rewarding                                                                                                                                                                                                      | Planned                                  |
+| 09  | Governance             | AI-facilitated governance — mediates conflicts, surfaces proposals, guides decisions, voting                                                                                                                                                                                                     | V2 Planned<br>EcoHubs V1                 |
+| 10  | AI Personal Assistant  | Personal AI guide for residents, facilitates alignment with Regenerative Neighborhood  happenings                                                                                                                                                                                                | Planned                                  |
+| 11  | Hive                   | Inter-community layer — connecting neighborhoods into a living network for shared resources                                                                                                                                                                                                      | Planned                                  |
+
+---
+
+## Module Feature Breakdown
+
+---
+
+### Module 1: Connect 🌐
+
+**Purpose:** First touchpoint for new members. Meeting people in the regenerative space.
+++ Intentional human connection — matching, directory, events, requests/offers.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **User Profiles** | Bio, avatar, location, interests, skills, looking_for |
+| **Discovery Feed** | Algorithmic feed of people you might connect with |
+| **Interest Tags** | Search/filter by: permaculture, governance, art, tech, etc. |
+| **Skill Tags and mathcing** | Search/filter by: carpentry, facilitation, cooking, etc. |
+| **Geographic Search** | "Near me" filter for local connections |
+| **Direct Messaging** | Private 1:1 conversations |
+| **Activity Status** | Online/offline indicators |
+| **Social Proof** | Community affiliations, mutual connections |
+| **Resident Directory** | Searchable profile directory for subgroups (neighborhoods, other group types - location, hobbies etc) |
+| **Filter Directory** | By role, skills, interests |
+| **Request System** | Post what you need (help, items, time) |
+| **Offer System** | Post what you can give |
+| **Icebreakers** | AI-generated conversation starters |
+| **Weekly Digests** | Notification of new potential connections |
+| **Community Calendar** | Events with time, location, virtual link |
+| **Event RSVP** | Track attendance, send reminders |
+| **Event Categories** | Social, governance, learning, work |
+
+**Data:** `users`, `connections`, `events`, `event_rsvps`, `requests_offers`
+
+---
+
+### Module 2: Network 🏘️
+
+**Purpose:** See other regenerative communities for inspiration. Share updates, posts, and milestones.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Community Profiles** | Cover image, logo, description, vision statement |
+| **Phase Status** | SPARK / PROVE / BUILD / LIVE indicator |
+| **Member Directory** | Who's in the community, roles, join date |
+| **Guest Check-ins** | Visitors sign the guest book |
+| **Activity Feed** | Community posts, milestones, updates |
+| **Project Showcase** | Current projects, progress, needs |
+| **Network Feed** | All community posts across the platform |
+| **Share Resources** | Post articles, updates for network visibility |
+| **Milestone Tracking** | Land purchased, first house built, etc. |
+| **Posts, Likes, share** | 
+
+**Data:** `communities`, `community_members`, `posts`, `comments`, `check_ins`
+
+---
+
+### Module 3: Hub 📚
+
+**Purpose:** Centralized library of resources for building regenerative communities.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Resource Feed** | Articles, videos, tools, templates, courses |
+| **Topic Filtering** | Permaculture, governance, finance, construction, etc. |
+| **Difficulty Levels** | Beginner, Intermediate, Advanced |
+| **Resource Types** | Filter by: article, video, tool, template, course |
+| **Search** | Full-text search across all resources |
+| **Upvoting** | Community curation — trending resources rise |
+| **Save for Later** | Personal reading list |
+| **Contribute** | Members submit resources for network |
+| **Collections** | Curated lists by topic or community |
+
+**Data:** `resources`, `users`, `communities`
+
+---
+
+### Module 4: Blueprint 📐
+
+**Purpose:** Turn your idea into a structured plan using proven frameworks.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Guided Wizard** | Step-by-step planning interface |
+| **Framework Integration** | RNF, Community Alchemy, RCOS, CLIPS |
+| **4 Phases** | SPARK → PROVE → BUILD → LIVE |
+| **5 Pillars** | Ecology, Social, Economy, Hardware, Governance |
+| **5 Gates** | Milestone checkpoints with requirements |
+| **Auto-Save** | Progress saved to browser, persists across sessions |
+| **PDF Export** | Download plan as formatted document |
+| **Template Library** | Pre-filled examples from real communities |
+| **Progress Tracking** | Visual timeline of planning stages |
+
+**Data:** `communities.blueprints` (JSONB), `resources` (linked)
+
+---
+
+
+
+### Module 5: Join 🎯
+
+**Purpose:** Application and onboarding workflow for new community members.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Application Forms** | Configurable questions per community |
+| **Question Types** | Text, multiple choice, file upload |
+| **Status Tracking** | Pending, under review, accepted, rejected |
+| **Member Preview** | Community sees applicant profile + answers |
+| **Internal Notes** | Private notes between core members |
+| **Onboarding Checklist** | Task list for new member setup |
+| **Orientation Content** | Videos, docs, community handbook |
+| **Probation Tracking** | Trial period status & milestones |
+| **Welcome Sequence** | Automated emails/messages on acceptance |
+
+**Data:** `applications`, `community_members`, `users`
+
+---
+
+### Module 6: Pacts 📝
+
+**Purpose:** Digital agreements and payment processing.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Agreement Templates** | Membership, land lease, collaboration, work |
+| **Custom Agreements** | Build your own contract clauses |
+| **Digital Signatures** | Sign with legal validity |
+| **Version History** | Track all changes to agreements |
+| **Stripe Integration** | Process payments, subscriptions, one-time |
+| **Recurring Billing** | Monthly dues, quarterly payments |
+| **Escrow** | Hold funds for large transactions |
+| **Payment History** | Full ledger of all transactions |
+| **Automated Reminders** | Payment due, renewal, expiration |
+
+**Data:** `agreements`, `agreement_signatures`, `transactions`
+
+---
+
+### Module 7: Ops ⚙️
+
+**Purpose:** Day-to-day operations, project management, and financial tracking.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Project Boards** | Kanban view for community projects |
+| **Gantt Charts** | Timeline view for long-term projects |
+| **Task Management** | Assign, prioritize, due dates, comments |
+| **Task Comments** | Discussion on specific tasks |
+| **Finance Dashboard** | Income, expenses, balances |
+| **Budget Categories** | Custom categories per community |
+| **Monthly Reports** | P&L summaries, charts |
+| **Member Contributions** | Track who paid what |
+| **Distribution Voting** | Vote on how surplus is distributed |
+| **Shared Calendar** | Events, meetings, deadlines |
+| **Document Storage** | Files, SOPs, shared docs |
+
+**Data:** `projects`, `tasks`, `transactions`, `users`, `communities`
+
+---
+
+### Module 8: Earn 🏆
+
+**Purpose:** Gamification and rewards for engagement and contribution.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Points System** | Earn for contributions, milestones |
+| **Badge Types** | Founder, Builder, Helper, Learner, etc. |
+| **Levels/Ranks** | Progressive levels based on activity |
+| **Leaderboards** | Global and per-community rankings |
+| **Contribution Rewards** | Points for: attending events, finishing tasks, onboarding members |
+| **Milestone Rewards** | Points for: first project, first year, etc. |
+| **Redeemable Rewards** | (Future) Physical goods, experiences |
+| **Reputation Score** | Aggregate score across all activities |
+| **Badges Display** | Show off on profile |
+
+**Data:** `rewards`, `users`, `community_members`
+
+---
+
+### Module 9: Council ⚖️
+
+**Purpose:** AI-powered governance advisor for decisions and conflict resolution.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Situation Submission** | Form to describe conflict or decision needed |
+| **Context Gathering** | Link relevant docs, past decisions, agreements |
+| **AI Decision Engine** | Reason based on community values & frameworks |
+| **Decision with Reasoning** | Plain-English explanation of recommendation |
+| **RNF Framework** | Built-in principles of regenerative development |
+| **Community Alchemy** | Values-based conflict resolution |
+| **Past Decisions** | Searchable history of all decisions |
+| **Appeal Process** | Request human review of AI decision |
+| **Decision Tracking** | Monitor implementation of decisions |
+| **Anonymous Option** | Submit situations anonymously |
+
+**Data:** `governance_decisions`, `agreements`, `community_members`
+
+---
+
+### Module 10: Quinn 🤖
+
+**Purpose:** Personal AI assistant for each community member.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Personal Memory** | Learns your preferences, goals, history |
+| **Daily Check-ins** | Nudge with relevant suggestions |
+| **Goal Tracking** | Help you achieve personal objectives |
+| **Community Recommendations** | Which communities to join |
+| **People Recommendations** | Who to connect with |
+| **Resource Recommendations** | What to read or watch |
+| **Skill Suggestions** | What to learn next |
+| **Calendar Management** | Help schedule and prepare |
+| **Reflection Prompts** | Journaling, self-assessment |
+| **Privacy Controls** | You control what Quinn remembers |
+
+**Data:** `personal_ai_memories`, `users`, all modules (read access)
+
+---
+
+### Module 11: Hive 🐝
+
+**Purpose:** Cross-community network for collaboration and mutual support.
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| **Network Feed** | All communities' public posts in one feed |
+| **Project Collaboration** | Share projects across communities |
+| **Resource Sharing** | Libraries accessible to all network members |
+| **Inter-Community Events** | Network-wide gatherings |
+| **Opportunity Board** | Jobs, land, resources shared network-wide |
+| **Need Requests** | Post a need, network responds |
+| **Mutual Aid** | Emergency support requests |
+| **Network Votes** | Vote on network-wide decisions |
+| **Community Spotlight** | Featured communities, projects |
+| **Partnership Tools** | Formalize collaborations between communities |
+
+**Data:** `hive_nodes`, `posts`, `resources`, `communities`
+
+---
+
+## Database Architecture
+
+**One PostgreSQL database. All modules share data.**
+
+```
+USERS & AUTH
+├── users
+├── community_members
+└── personal_ai_memories
+
+COMMUNITIES
+├── communities
+├── applications
+└── check_ins
+
+CONTENT & SOCIAL
+├── posts
+├── comments
+├── resources
+└── events
+
+OPERATIONS
+├── projects
+├── tasks
+├── transactions
+└── agreements
+
+CONNECTIONS
+├── connections
+├── event_rsvps
+├── requests_offers
+└── governance_decisions
+
+REWARDS
+└── rewards
+```
+
+---
+
+## Development Phases
+
+### Phase 1: Foundation (Weeks 1-4)
+- Database setup
+- Authentication
+- User profiles (Module 1)
+- Community profiles (Module 2)
+- Blueprint integration (Module 3)
+
+### Phase 2: Community Building (Weeks 5-8)
+- Join module (Module 5)
+- Network/Feed combined (Module 2)
+- Hub module (Module 4)
+- Basic Ops (Module 7)
+
+### Phase 3: Governance & Payments (Weeks 9-12)
+- Pacts module (Module 6)
+- Council module (Module 9)
+- Stripe integration
+
+### Phase 4: Intelligence (Weeks 13-16)
+- Community Connection (Module 8)
+- Earn module (Module 10)
+- Quinn module (Module 11)
+- Hive module (Module 12)
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js (Web) + React Native (Mobile) |
+| Backend | Node.js + NestJS or Go + Fiber |
+| Database | PostgreSQL |
+| Search | Meilisearch |
+| Cache | Redis |
+| Storage | S3 / Cloudflare R2 |
+| Auth | Clerk or Auth0 |
+| Payments | Stripe |
+| AI | OpenAI / Claude API |
+
+---
+
+## Why This Platform Exists
+
+Building a regenerative community is **hard**. You need:
+
+- A way to **find** like-minded people
+- A way to **plan** your community with proven frameworks
+- A way to **govern** decisions fairly
+- A way to **track** finances and projects
+- A way to **connect** people intentionally
+- A way to **learn** from other communities
+
+**TribesPlatform v2 does all of this.**
+
+---
+
+*Document version: 1.0*
+*Iterating: Yes — feedback welcome*
+*Last updated: 2026-04-13*

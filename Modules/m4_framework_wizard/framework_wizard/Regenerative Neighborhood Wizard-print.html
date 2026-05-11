@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Regenerative Neighborhood — Project Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  @page { size: letter; margin: 0.6in; }
+  html, body {
+    background: white !important;
+    color: #0a0a0a !important;
+  }
+  [data-theme] {
+    --bg: white; --bg-2: white; --bg-3: #f4f4f5;
+    --surface: white; --surface-2: #fafafa;
+    --ink: #0a0a0a; --ink-2: #303030; --ink-3: #666; --ink-4: #999;
+    --rule: #e0e0e0; --rule-soft: #ededed;
+  }
+  .print-doc {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 0;
+  }
+  .print-doc h1, .print-doc h2, .print-doc h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .print-doc .doc-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 28px;
+  }
+  .print-doc .page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print { display: none !important; }
+  }
+  .print-doc .qa {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ededed;
+  }
+  .print-doc .qa-q {
+    font-size: 12px;
+    color: #666;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .print-doc .qa-a {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: #0a0a0a;
+    white-space: pre-wrap;
+  }
+  .print-doc .qa-a.empty {
+    color: #999;
+    font-style: italic;
+  }
+  .print-doc .pillar-bar { margin-bottom: 10px; }
+  .print-doc .pillar-bar-track {
+    height: 6px; background: #ededed; border-radius: 99px; overflow: hidden;
+  }
+  .print-doc .pillar-bar-fill { height: 100%; border-radius: 99px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="data.js"></script>
+<script type="text/babel">
+const STORAGE_KEY = 'rnf_wizard_v1';
+const D = window.FW_DATA;
+
+let values = {};
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  values = raw ? JSON.parse(raw) : {};
+} catch {}
+
+function computePillarScores(values) {
+  const map = {
+    ecology: ['site_water','site_climate','eco_assessment','c_water','c_waste','c_energy','metrics'],
+    social: ['team_trust','team_diversity','culture_strength','rituals','onboarding','culture_carriers'],
+    economy: ['biz_resilience','biz_clarity','fund_realism','fund_alignment','cap_close','revenue_streams'],
+    hardware: ['site_access','c_buildings','c_roads','c_connectivity','mp_integration','practice_ready'],
+    governance: ['intention_clarity','vision_alignment','structure_explicit','self_clarity','ops_smooth','gov_health','evo_capacity']
+  };
+  const result = {};
+  Object.entries(map).forEach(([pillar, ids]) => {
+    let sum = 0, count = 0;
+    ids.forEach(id => {
+      const v = values[id];
+      if (typeof v === 'number') { sum += v; count++; }
+      else if (typeof v === 'boolean' && v) { sum += 8; count++; }
+    });
+    result[pillar] = count > 0 ? sum / count : 0;
+  });
+  return result;
+}
+
+const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+const projectName = values.project_name || 'Untitled Regenerative Neighborhood';
+const scores = computePillarScores(values);
+const overall = Object.values(scores).reduce((a,b) => a+b, 0) / 5;
+
+const STATUS_LABELS = {
+  pending: 'No answer yet',
+  help: 'Almost there',
+  ready: 'Ready to go'
+};
+
+function PrintDoc() {
+  return (
+    <div className="print-doc">
+      {/* Cover */}
+      <div className="doc-section" style={{borderBottom: '2px solid #0a0a0a', paddingBottom: 28, marginBottom: 36}}>
+        <div style={{fontFamily:'JetBrains Mono', fontSize: 11, letterSpacing:'0.08em', textTransform:'uppercase', color:'#666', marginBottom: 16}}>
+          Regenerative Neighborhood · Project Document
+        </div>
+        <div style={{fontFamily:'Instrument Serif', fontSize: 52, lineHeight: 1.05, letterSpacing:'-0.02em', marginBottom: 16}}>
+          {projectName}
+        </div>
+        {values.vision_statement && (
+          <div style={{fontFamily:'Instrument Serif', fontSize: 18, fontStyle:'italic', color:'#303030', marginBottom: 20, maxWidth: 560}}>
+            {values.vision_statement}
+          </div>
+        )}
+        <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap: 16, marginTop: 24, fontSize: 12}}>
+          <div>
+            <div style={{fontFamily:'JetBrains Mono', fontSize: 10, color:'#666', textTransform:'uppercase', letterSpacing:'0.04em', marginBottom: 4}}>Date</div>
+            <div>{today}</div>
+          </div>
+          <div>
+            <div style={{fontFamily:'JetBrains Mono', fontSize: 10, color:'#666', textTransform:'uppercase', letterSpacing:'0.04em', marginBottom: 4}}>Overall</div>
+            <div>{overall.toFixed(1)} / 10</div>
+          </div>
+          <div>
+            <div style={{fontFamily:'JetBrains Mono', fontSize: 10, color:'#666', textTransform:'uppercase', letterSpacing:'0.04em', marginBottom: 4}}>Frameworks</div>
+            <div>RNF · Alchemy · RCOS · CLIPS</div>
+          </div>
+          <div>
+            <div style={{fontFamily:'JetBrains Mono', fontSize: 10, color:'#666', textTransform:'uppercase', letterSpacing:'0.04em', marginBottom: 4}}>Version</div>
+            <div>v2.0</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pillar scores */}
+      <div className="doc-section">
+        <h2 style={{fontFamily:'Instrument Serif', fontSize: 28, fontWeight: 400, letterSpacing:'-0.015em', margin: '0 0 18px'}}>
+          Pillar readiness
+        </h2>
+        {D.pillars.map(p => {
+          const v = scores[p.id] || 0;
+          return (
+            <div key={p.id} className="pillar-bar">
+              <div style={{display:'flex', justifyContent:'space-between', fontSize: 12, marginBottom: 4}}>
+                <span style={{fontWeight: 500}}>{p.name}</span>
+                <span style={{fontFamily:'JetBrains Mono', color: '#666'}}>{v.toFixed(1)} / 10</span>
+              </div>
+              <div className="pillar-bar-track">
+                <div className="pillar-bar-fill" style={{width: `${v*10}%`, background: p.color}}/>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Phases */}
+      {D.phases.map((phase, pIdx) => (
+        <div key={phase.id} className={pIdx > 0 ? 'page-break' : ''}>
+          <div className="doc-section" style={{marginTop: 32, marginBottom: 24}}>
+            <div style={{fontFamily:'JetBrains Mono', fontSize: 11, letterSpacing:'0.08em', textTransform:'uppercase', color:'#666', marginBottom: 8}}>
+              Phase {phase.num} · Spiral {phase.spiral}
+            </div>
+            <h2 style={{fontFamily:'Instrument Serif', fontSize: 38, fontWeight: 400, letterSpacing:'-0.02em', margin: 0, lineHeight: 1.1}}>
+              {phase.name}
+            </h2>
+            <div style={{fontFamily:'Instrument Serif', fontSize: 16, fontStyle:'italic', color:'#666', marginTop: 6}}>
+              {phase.subtitle}
+            </div>
+          </div>
+
+          {phase.steps.filter(s => s.kind !== 'gate').map(step => (
+            <div key={step.id} className="doc-section">
+              <h3 style={{fontFamily:'Instrument Serif', fontSize: 22, fontWeight: 400, letterSpacing:'-0.015em', margin: '0 0 12px'}}>
+                {step.num} · {step.title}
+              </h3>
+
+              {(step.fields || []).map(f => {
+                const v = values[f.id];
+                const status = values[f.id + '_status'];
+                return (
+                  <div key={f.id} className="qa">
+                    <div className="qa-q">{f.label}</div>
+                    {v ? (
+                      <div className="qa-a">{v}</div>
+                    ) : (
+                      <div className="qa-a empty">— No response —</div>
+                    )}
+                    {status && (
+                      <div style={{fontFamily:'JetBrains Mono', fontSize: 10, color:'#666', marginTop: 4, letterSpacing:'0.04em', textTransform:'uppercase'}}>
+                        Status: {STATUS_LABELS[status] || status}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {(step.sliders || []).length > 0 && (
+                <div style={{marginTop: 12}}>
+                  {step.sliders.map(s => {
+                    const v = values[s.id];
+                    return (
+                      <div key={s.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid #ededed', fontSize: 13}}>
+                        <span>{s.label}</span>
+                        <span style={{fontFamily:'JetBrains Mono', color: v != null ? '#0a0a0a' : '#999'}}>
+                          {v != null ? `${v} / 10` : '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {(step.checklist || []).length > 0 && (
+                <div style={{marginTop: 12}}>
+                  {step.checklist.map(c => {
+                    const checked = !!values[c.id];
+                    const note = values[c.id + '_note'];
+                    return (
+                      <div key={c.id} style={{padding:'6px 0', borderBottom:'1px solid #ededed', fontSize: 13}}>
+                        <div style={{display:'flex', gap: 10, alignItems:'flex-start'}}>
+                          <span style={{
+                            display:'inline-block', width: 14, height: 14, borderRadius: 3,
+                            border:'1.5px solid #999',
+                            background: checked ? '#10b981' : 'white',
+                            borderColor: checked ? '#10b981' : '#999',
+                            color:'white', fontSize: 10, lineHeight: '11px', textAlign:'center', flexShrink: 0, marginTop: 2
+                          }}>{checked ? '✓' : ''}</span>
+                          <span style={{flex: 1}}>{c.text}</span>
+                        </div>
+                        {note && (
+                          <div style={{marginLeft: 24, marginTop: 4, fontSize: 12, color:'#303030', fontStyle:'italic'}}>
+                            {note}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
+
+      <div style={{marginTop: 48, paddingTop: 16, borderTop: '1px solid #e0e0e0', fontFamily:'JetBrains Mono', fontSize: 10, color:'#999', textAlign:'center', letterSpacing:'0.06em', textTransform:'uppercase'}}>
+        Regenerative Neighborhood Framework · v2.0 · Generated {today}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<PrintDoc/>);
+
+// Auto-print after fonts + JSX loaded
+window.addEventListener('load', async () => {
+  try { await document.fonts.ready; } catch {}
+  setTimeout(() => { window.print(); }, 700);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1654 @@
+// Framework + step data for the wizard
+// Each field has a `guide` property with sourced guidance from the
+// Community Alchemy Playbook + Regenerative Neighborhood Agent Workbook.
+window.FW_DATA = {
+  frameworks: {
+    rnf: { name: 'RNF', full: 'Regenerative Neighborhood Framework', tag: 'Architecture', color: '#3d5a3d',
+      blurb: '5 pillars (Ecology, Social, Economy, Hardware, Governance) and a 5-spiral timeline with gate checkpoints. Tells you WHAT to include and WHEN.' },
+    alchemy: { name: 'Alchemy', full: 'Community Alchemy', tag: 'Journey Map', color: '#c47a3d',
+      blurb: '11 sequential areas covering the full arc of community creation. Tells you the STEPS to take and in what ORDER.' },
+    rcos: { name: 'RCOS', full: 'Regenerative Community Operating System', tag: 'Governance OS', color: '#6b4f8a',
+      blurb: '7 layers that make implicit social structures explicit. Tells you HOW the community governs itself at every stage.' },
+    clips: { name: 'CLIPS', full: 'Community Learning Incubator Programme', tag: 'Health Check', color: '#8a6f3d',
+      blurb: 'Concentric model monitoring coherence between Individual, Community, Intention, Structure, and Practice.' }
+  },
+
+  pillars: [
+    { id: 'ecology', name: 'Ecology', color: '#4a6b3a', desc: 'Land, water, food, biodiversity, climate' },
+    { id: 'social', name: 'Social', color: '#b8753b', desc: 'Belonging, culture, rituals, relationships' },
+    { id: 'economy', name: 'Economy', color: '#8a6f3d', desc: 'Value flows, contributions, livelihood' },
+    { id: 'hardware', name: 'Hardware', color: '#5b5d4a', desc: 'Buildings, energy, water, mobility' },
+    { id: 'governance', name: 'Governance', color: '#6b4f8a', desc: 'Decisions, accountability, membership' }
+  ],
+
+  phases: [
+    // ────────────────────────────────────────────────────────────────────
+    // PHASE 1 — SPARK
+    // ────────────────────────────────────────────────────────────────────
+    {
+      id: 'p1', num: '01', name: 'Spark', subtitle: 'From Idea to Core Team',
+      time: 'Months 0–6', spiral: 1, spiralName: 'Proof of Concept',
+      lede: 'This is where everything begins. You have an idea. Now you find out if it\'s real.',
+      steps: [
+        // ── 1.1 Where you are now + Dream origin
+        { id: 's1.1', num: '1.1', title: 'Finding Your Why',
+          frameworks: ['clips', 'alchemy', 'rcos'],
+          tagLines: ['CLIPS: Individual', 'Alchemy: Area 1', 'RCOS: Layer 0 begins'],
+          kind: 'reflection',
+          fields: [
+            { id: 'where_now', label: 'Where are you on your community journey?', kind: 'textarea',
+              help: 'Examine where you are right now to ground the vision.',
+              guide: {
+                title: 'Where you are now',
+                source: 'Alchemy §1.1',
+                body: [
+                  'Examine where you are now to understand your community vision. What\'s your current life, work, and relationships like? What do you have access to (skills, capital, land, network)? What\'s missing?',
+                  'How did you get here? Walking back through your path often reveals what you actually want next.'
+                ]
+              }
+            },
+            { id: 'dream_origin', label: 'Dream origin — what brought you to this idea?', kind: 'textarea',
+              help: 'The "aha" moment, the trip, the book, the breakdown. Be specific.',
+              guide: {
+                title: 'Your dream origin',
+                source: 'Alchemy §1.2',
+                body: [
+                  'What brought you to the idea of making this community? How did you find this path?',
+                  'What was your "aha" moment? Many regenerative neighborhoods trace back to a single experience — a visit, a conversation, a pattern recognized — that the founder kept returning to. Naming it makes the why durable.'
+                ]
+              }
+            },
+            { id: 'why_personal', label: 'Why does this matter to YOU personally?', kind: 'textarea',
+              help: 'Inner work. The clearer your why, the more durable your community.',
+              guide: {
+                title: 'Personal why',
+                source: 'CLIPS · Individual',
+                body: [
+                  'A regenerative neighborhood will test your personal stamina, finances, relationships, and health. CLIPS calls the Individual the innermost ring — neglecting it cracks the whole structure later.',
+                  'Write the personal answer, not the public-facing one. What hole in your own life is this filling? What do you need community to make possible for you?'
+                ]
+              }
+            },
+            { id: 'why_world', label: 'What problem in the world does this address?', kind: 'textarea',
+              help: 'Not the abstract one. The specific, lived one.',
+              guide: {
+                title: 'The problem you\'re solving',
+                source: 'Alchemy §1.2 + Regenaissance',
+                body: [
+                  'Diana Leafe Christian writes that "a community\'s ideals usually arise from something that its members see as lacking or missing from the wider culture." Name what is missing.',
+                  'Ask what role a place can have in bringing its ecosystem more vitality (greater aliveness), more viability (capacity to transact effectively with its environment), and more capacity for evolution.'
+                ]
+              }
+            },
+            { id: 'why_now', label: 'Why now? Why this place?', kind: 'textarea',
+              help: 'Timing and place are part of the answer.',
+              guide: {
+                title: 'Why now, why here',
+                source: 'Alchemy §1',
+                body: [
+                  'Communities that succeed usually have a specific window: a piece of land coming available, a generation of founders ready, a regulatory opening, a cultural moment. Name yours.',
+                  'If you can\'t name a why-now, the project may need to wait — or you may need to manufacture momentum (a pilot event, a residency) before committing capital.'
+                ]
+              }
+            },
+            { id: 'values', label: 'Your ethos: 3–5 core values', kind: 'textarea',
+              help: 'Not aspirations. Behaviors you will hold each other to.',
+              guide: {
+                title: 'Values vs. aspirations',
+                source: 'Alchemy §1.3',
+                body: [
+                  'List values you want to uphold. Diana Leafe Christian: a community\'s ideals usually arise from something members see as lacking in the wider culture.',
+                  'Test: would you offboard a member who repeatedly violated this value? If not, it\'s an aspiration, not a value. Both are useful — label them honestly.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'self_clarity', label: 'How clear is your personal "why"?', frame: 'CLIPS · Individual',
+              guide: { title: 'Self-clarity', source: 'CLIPS', body: ['Anything below 6 is a flag to pause and journal — your team will feel the wobble before you do.'] } },
+            { id: 'self_readiness', label: 'How ready are YOU to commit 2–5 years to this?', frame: 'CLIPS · Individual',
+              guide: { title: 'Personal readiness', source: 'CLIPS · Individual', body: ['Founding a regen neighborhood typically takes 2–7 years to first move-ins. Score honestly against your finances, relationships, and other obligations.'] } }
+          ]
+        },
+
+        // ── 1.2 Founding group + ideal members
+        { id: 's1.2', num: '1.2', title: 'Assembling the Founding Group',
+          frameworks: ['clips', 'alchemy', 'rcos'],
+          tagLines: ['CLIPS: Individual + Community', 'Alchemy: Area 2', 'RCOS: Layer 1'],
+          kind: 'roster',
+          fields: [
+            { id: 'team_members', label: 'Founding members (name · role · commitment)', kind: 'textarea', rows: 6,
+              help: 'A founding group is typically 7–12 people. List who has actually said yes.',
+              guide: {
+                title: 'Sizing the founding group',
+                source: 'Alchemy §2 · Together Resilient · Creating a Life Together',
+                body: [
+                  'The recommended founding group is 7–12 people: small enough for agility, large enough for diverse skills and perspectives. A single family is the start of an idea, not yet a community.',
+                  'For each founder, capture: name, short bio, the role they\'re committing to, and their level of commitment (time, money, residency).',
+                  'Co-founder vs. member vs. participant: a co-founder shares your high-level goals AND has skill + capacity to take on flexible roles. A member is aligned and contributing but not driving. A participant comes for events or short stays.'
+                ]
+              }
+            },
+            { id: 'ideal_archetypes', label: 'Ideal community member archetypes', kind: 'textarea',
+              help: 'Who are the people who would make this neighborhood operate at its best?',
+              guide: {
+                title: 'Ideal members',
+                source: 'Alchemy §2 — Ideal Community Members',
+                body: [
+                  'Define the archetypes of the people you most want to share community life with. Think roles, life stage, skills, dispositions — not demographic checkboxes.',
+                  'Categories typically include: Co-founder, Resident Member, Short-term Participant/Renter, Investor, Team mate, Volunteer. Sketch what each archetype gives and gets.'
+                ]
+              }
+            },
+            { id: 'skills_have', label: 'Skills you have on the team', kind: 'textarea',
+              help: 'Be honest about coverage.',
+              guide: {
+                title: 'Skill inventory',
+                source: 'Alchemy §2.4 — Essential Roles',
+                body: [
+                  'Common roles: Planning & Design Visionary, Accountant/Legal, Marketing Storyteller, Business Planner, Masterplanner/Architect, Recruitment, Permaculturalist/Food System Designer, Water Filtration, Electrician/Network.',
+                  'In the early days you wear many hats. Mark which roles you cover internally vs. which you\'ll need to hire or contract.'
+                ]
+              }
+            },
+            { id: 'skills_gap', label: 'Critical skills you\'re missing', kind: 'textarea',
+              help: 'Naming gaps is the first step to filling them.',
+              guide: {
+                title: 'Naming the gap',
+                source: 'Alchemy §2.4',
+                body: [
+                  'List the roles where you have no internal coverage. For each, decide: recruit a co-founder, hire a contractor, or accept the gap until later.',
+                  'A gap you can\'t name is a gap you can\'t fill. Specificity converts unease into a recruitment plan.'
+                ]
+              }
+            },
+            { id: 'value_exchange', label: 'Value exchange: what each member type gives & gets', kind: 'textarea', rows: 5,
+              help: 'The Harmony Principle: every member adds value AND feels valued.',
+              guide: {
+                title: 'The harmony principle',
+                source: 'Alchemy §2.5 — Value Exchange',
+                body: [
+                  'For each archetype, name what they give (capital, time, skills, presence) and what they get (ownership, equity, profit, special benefits, access, experience, ROI, education).',
+                  'Note: not many people will buy land hoping that in 7 years they will (maybe) have a few neighbors. Members are investors too — early returns must feel real.'
+                ]
+              }
+            },
+            { id: 'stakeholders_external', label: 'External stakeholders (non-member)', kind: 'textarea',
+              help: 'Local wildlife, neighbors, government, suppliers, future visitors.',
+              guide: {
+                title: 'Wider stakeholder lens',
+                source: 'Alchemy §2.2 — Stakeholders',
+                body: [
+                  'Internal stakeholders are founders, members, investors. External stakeholders include: ecosystem & geological features, local communities, government bodies, outside visitors, downstream consumers of what you create.',
+                  'Widen the lens early — a project that ignores its neighbors or its watershed will pay for that omission later.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'team_trust', label: 'How well do team members know each other?', frame: 'CLIPS · Community',
+              guide: { title: 'Team trust', source: 'CLIPS', body: ['Trust depth predicts conflict survivability more than any other variable. If <5, prioritize bonding before structure.'] } },
+            { id: 'team_diversity', label: 'How diverse is your team (background, skills, perspective)?', frame: 'RNF · Social Pillar',
+              guide: { title: 'Diversity', source: 'RNF Social', body: ['Functional diversity (skills, perspectives) and demographic diversity (age, background, gender) both matter. A team that all looks and thinks alike makes faster decisions and worse ones.'] } },
+            { id: 'team_commitment', label: 'How committed is each member?', frame: 'RCOS · Layer 1',
+              guide: { title: 'Commitment depth', source: 'RCOS Layer 1', body: ['RCOS Layer 1 (Members) requires explicit membership criteria. Commitment without writing is a wish; write it down.'] } }
+          ]
+        },
+
+        // ── 1.3 Purpose / Mission / Vision / Type / Size
+        { id: 's1.3', num: '1.3', title: 'Clarifying Purpose',
+          frameworks: ['clips', 'alchemy', 'rcos'],
+          tagLines: ['CLIPS: Intention', 'Alchemy: Area 1 complete', 'RCOS: Layer 0 solidifies'],
+          kind: 'vision',
+          fields: [
+            { id: 'project_name', label: 'Working name for your neighborhood', kind: 'input',
+              help: 'You\'ll revisit it. A working name is enough.',
+              guide: {
+                title: 'Naming',
+                source: 'Alchemy §1 — Name',
+                body: [
+                  'Choose a name that reflects your values, ideals, and overall vibe. You\'ll revisit it during marketing/branding — but having an initial name is crucial for talking about the project clearly.',
+                  'Mood-board the name: what does it sound like, evoke, look like in print?'
+                ]
+              }
+            },
+            { id: 'purpose', label: 'PURPOSE — your BIG why (2–3 sentences)', kind: 'textarea',
+              help: 'The problem statement you seek to solve.',
+              guide: {
+                title: 'Purpose / Big Why',
+                source: 'Workbook §1 · Alchemy §1.2',
+                body: [
+                  'Look at your dream origin. From that story, examine why you want to create a regenerative neighborhood. This can be considered the problem statement you seek to solve.',
+                  'Common purposes in regenerative neighborhoods: co-work for digital nomads · entrepreneurship · wellness & holistic lifestyle · permaculture · art · human connection · spiritual development · technology · education · environment-wildlife · longevity.'
+                ]
+              }
+            },
+            { id: 'mission_statement', label: 'MISSION — how you will accomplish the why (1–4 sentences)', kind: 'textarea',
+              help: 'A compass for decision-making.',
+              guide: {
+                title: 'Mission statement',
+                source: 'Alchemy §1.2 — Mission',
+                body: [
+                  'A 1–4 sentence statement that summarizes what will happen when your community is working together and accomplishing its goals. It guides core team decisions, preserving essence over time.',
+                  'Examples to study (not copy):',
+                  '· Cosmic Sol — "growing food using regenerative and self-sufficient methods... a sanctuary for healing and self-expression."',
+                  '· Meadowdance — "an egalitarian, child-centered community that welcomes human diversity, ecological sensibility, mutual learning, and joy."',
+                  '· Traditional Dream Factory — "pioneering a model for regenerative co-living while creating positive loops in all interactions between stakeholders including nature, all life, and future generations."'
+                ]
+              }
+            },
+            { id: 'vision_statement', label: 'VISION — what exists when everything works (1, 3, 5, 10, 20, 50 yr)', kind: 'textarea', rows: 6,
+              help: 'Walk through the place mentally and describe what you see.',
+              guide: {
+                title: 'Vision — the mental walk-through',
+                source: 'Alchemy §1.3 — Vision',
+                body: [
+                  'Picture your project at peak success. Mentally walk through the community and describe specifically what you see.',
+                  'Examples: "I walk through a food forest and see people picking fresh food and veggies. I enter the shared space — it\'s a think tank of entrepreneurs at white boards mapping social enterprises. Kids, seniors, teens, and adults working together: building, decorating, organizing, having fun."',
+                  'Tip: be vivid and concrete. Time-anchor it across 1, 3, 5, 10, 20, 50 years.'
+                ]
+              }
+            },
+            { id: 'goals_3yr', label: 'Initial goals (1–3 years)', kind: 'textarea',
+              help: 'Tangible and intangible goals + why each matters.',
+              guide: {
+                title: '1–3 year goals',
+                source: 'Alchemy §1.4',
+                body: [
+                  'Focus on the achievements most important to your community values. For each goal, state the goal and why it matters. Quantity is less important than fidelity to values.'
+                ]
+              }
+            },
+            { id: 'goals_5_10yr', label: 'Mid- and long-term goals (5 / 10 years)', kind: 'textarea',
+              help: 'Overall community goals and intended impact.',
+              guide: {
+                title: '5–10 year goals',
+                source: 'Alchemy §1.5–1.6',
+                body: [
+                  'Shift attention to the goals you would like the community to achieve over 5 and 10 years. Think of overall community goals and the main impact you wish to have on residents, surrounding ecosystem, and the wider movement.'
+                ]
+              }
+            },
+            { id: 'community_type', label: 'Community type(s)', kind: 'textarea',
+              help: 'Pick one or more — what your community essentially is.',
+              guide: {
+                title: 'Community type',
+                source: 'Alchemy §1 — Community Type',
+                body: [
+                  'Common types: Residential or Family-Focused · Digital Nomad · Farm/Permaculture Center · Wellness/Retreat · Spiritual · Artist/Maker\'s Collective · Innovation & Alternative Education · Homesteading/Traditional Living · Plant Medicine · Indigenous/Ethnicity-Based · Lifestyle (diet, waste reduction) · Conservation Project · Caravan/Temporary Community.',
+                  'You may be more than one. Be explicit — it shapes who you recruit, how you build, and how you fund.'
+                ]
+              }
+            },
+            { id: 'community_size', label: 'Community size range', kind: 'input',
+              help: 'How many people living on site at any given time?',
+              guide: {
+                title: 'Sizing the community',
+                source: 'Alchemy §2.1 — Size',
+                body: [
+                  'Lower limit: 3 households / 7–12 people. A single family is the start of an idea, not yet a community.',
+                  'Upper limit: 80–250 people for individual communities. Dunbar\'s number (~150) is widely cited as the cognitive limit for meaningful relationships.',
+                  'Scale options: Village (20–200) · Micro-City (200–1,500) · City (1,500+) · Network State / Cloud Country.',
+                  'Communities starting with 30 adults or fewer often have the best chances of success — they can be more agile, then grow.'
+                ]
+              }
+            },
+            { id: 'counterpart_analysis', label: 'Existing counterpart analysis (similar projects you admire)', kind: 'textarea', rows: 5,
+              help: 'For each: what you like, what you\'d do differently.',
+              guide: {
+                title: 'Studying counterparts',
+                source: 'Alchemy §1 — Existing Counterpart Analysis',
+                body: [
+                  'List existing projects similar to what you want to create. For each, write: what you like about it, what you want to do differently.',
+                  'This grounds your vision and saves you from reinventing wheels. Many founders find their "model" is actually a remix of two or three existing communities they admire.'
+                ]
+              }
+            },
+            { id: 'scope', label: 'Scope: what does this neighborhood govern?', kind: 'textarea',
+              help: 'RCOS Layer 0. Be specific about boundaries.',
+              guide: {
+                title: 'Scope (RCOS Layer 0)',
+                source: 'RCOS Layer 0',
+                body: [
+                  'Layer 0 of RCOS asks: what is this community actually FOR, and what is OUTSIDE its remit? Is it a residential community? Also a business? Also an education center?',
+                  'Vague scope creates conflict later. Name what is in and what is out.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'intention_clarity', label: 'How clear is your shared intention?', frame: 'CLIPS · Intention',
+              guide: { title: 'Intention clarity', source: 'CLIPS', body: ['CLIPS: Intention is one of the three coherence rings. If unclear, every later structure question will drift.'] } },
+            { id: 'vision_alignment', label: 'How aligned is the team on the vision?', frame: 'RCOS · Layer 0',
+              guide: { title: 'Vision alignment', source: 'RCOS Layer 0', body: ['Alignment ≠ agreement. People can verbally agree on something abstract ("we value sustainability") and move in conflicting directions. Run an alignment exercise.'] } }
+          ]
+        },
+
+        // ── 1.4 First agreements / governance / legal
+        { id: 's1.4', num: '1.4', title: 'First Agreements',
+          frameworks: ['clips', 'alchemy', 'rcos'],
+          tagLines: ['CLIPS: Structure', 'Alchemy: Area 3', 'RCOS: Layer 2 + 4'],
+          kind: 'agreements',
+          checklist: [
+            { id: 'a_decision', text: 'Decision-making method documented (consensus, sociocracy, etc.)',
+              guide: { title: 'Decision-making method', source: 'Alchemy §3 + RCOS Layer 2',
+                body: ['Tick when you can name HOW your group reaches a binding decision: who proposes, who consents, who can block, what the fallback is. Common methods: consensus (everyone agrees), consent-based / sociocracy (no one objects), majority vote, role-based authority, a designated decider per domain.',
+                  'Different decision types may use different processes — operational decisions move fast, mission-level decisions move slow. Document both.'] } },
+            { id: 'a_meeting', text: 'Regular meeting cadence established',
+              guide: { title: 'Meeting cadence', source: 'Alchemy §2 — Mobilizing',
+                body: ['Decide on a time, place, and frequency to meet. Could be weekly, biweekly, monthly. Virtual, in-person, or hybrid. Some groups meet half in-person and call in others.',
+                  'Document: location(s) · frequency · virtual or in-person · meeting format (dreaming + doing). Format matters as much as cadence: alternate "being meetings" with "doing meetings."'] } },
+            { id: 'a_membership', text: 'How members join and leave is written down',
+              guide: { title: 'Membership lifecycle', source: 'Alchemy §2.6–2.10',
+                body: ['Tick when you have written: how someone enters (informational session → application → trial → vote) AND how someone exits (warning system → review → community vote → exit interview).',
+                  'Drafting offboarding BEFORE you accept anyone is the move that experienced founders most wish they had made earlier.'] } },
+            { id: 'a_money', text: 'How money is handled in this phase is agreed',
+              guide: { title: 'Money handling', source: 'RCOS Layer 3',
+                body: ['In Phase 1 your money question is small but consequential: who has signing authority, where do funds sit, who can approve expenses, how transparent are accounts?',
+                  'A simple agreement now saves a painful renegotiation when capital scales up. Even $200/mo for shared software needs a process.'] } },
+            { id: 'a_conflict', text: 'A first-pass conflict process exists',
+              guide: { title: 'Conflict process', source: 'RCOS Layer 4 + Alchemy §3',
+                body: ['Conflict is not a sign of failure — it\'s a sign of stakes. Communities without explicit conflict process default to avoidance, then explosion.',
+                  'A first-pass process: 1) direct conversation 2) facilitated conversation with a neutral third party 3) circle process with affected parties 4) restorative council. Write yours down before you need it.'] } },
+            { id: 'a_communication', text: 'Communication channels and norms defined',
+              guide: { title: 'Communication norms', source: 'Workbook §11',
+                body: ['Pick a primary internal channel (WhatsApp, Telegram, Discord, Slack, Tribes) and stick to it. Define what each channel is FOR — announcements vs. logistics vs. social vs. emergency.',
+                  'Norms to clarify: response-time expectations, when to escalate to a call, what stays in writing vs. spoken, quiet hours.'] } },
+            { id: 'a_offboarding', text: 'Offboarding process drafted (how members leave)',
+              guide: { title: 'Offboarding', source: 'Alchemy §2.10 — Offboarding',
+                body: ['Design before you accept anyone. Cover: clear behavioral grounds for dismissal · warning system · review cadence · meeting where the person can express their side · community vote · exit interview.',
+                  'Also handle: phasing out investors · old age / mental health / inability to participate · death, bankruptcy · legacy (children, relatives who don\'t align with values).'] } }
+          ],
+          fields: [
+            { id: 'governance_model', label: 'Governance model', kind: 'input',
+              help: 'Democracy · Sociocracy · Holacracy · Meritocracy · Other.',
+              guide: {
+                title: 'Choosing a governance model',
+                source: 'Alchemy §3 + RCOS Layer 2',
+                body: [
+                  'Common models: Democracy (majority vote) · Sociocracy (consent-based, circles & double-linking) · Holacracy (role-based, formalized) · Meritocracy (decision rights tied to demonstrated capacity) · hybrids.',
+                  'No model is "best" — the best model is one your team understands, will actually use, and matches your size and culture. Sociocracy is widely used in regenerative neighborhoods because it scales from small groups to villages.'
+                ]
+              }
+            },
+            { id: 'decision_method', label: 'Your decision-making method', kind: 'textarea',
+              help: 'Name it. "We\'ll figure it out" is not an answer.',
+              guide: {
+                title: 'Decision-making',
+                source: 'Alchemy §3',
+                body: [
+                  'Document HOW decisions get made: who proposes, who consents, who can block, what the fallback is. Different decision types may use different processes (operational vs. mission-level).'
+                ]
+              }
+            },
+            { id: 'conflict_process', label: 'How will you handle the first conflict?', kind: 'textarea',
+              help: 'RCOS Layer 4. Conflict will arrive. Plan for it now.',
+              guide: {
+                title: 'Conflict process',
+                source: 'RCOS Layer 4 + Alchemy §3',
+                body: [
+                  'Conflict is not a sign of failure — it\'s a sign of stakes. Communities without explicit conflict process default to avoidance, then explosion.',
+                  'A first-pass process: 1) direct conversation 2) facilitated conversation with a neutral third party 3) circle process with affected parties 4) restorative justice / community council. Write yours down before you need it.'
+                ]
+              }
+            },
+            { id: 'community_agreements', label: 'Community agreements (rules · processes · principles)', kind: 'textarea', rows: 5,
+              help: 'Rules, protocols, social dynamics, ecological/economic principles.',
+              guide: {
+                title: 'Community agreements',
+                source: 'Alchemy §3.4',
+                body: [
+                  'Agreements should include: Rules · Processes & Protocols · Social Relationships & Dynamics · Ecological, Economic, and Worldview Principles.',
+                  'Rules: noise, pets, property maintenance, safety, legal compliance. Processes: how regularly-occurring things get done (screening, onboarding, emergencies). Principles: the worldview underneath the rules.'
+                ]
+              }
+            },
+            { id: 'legal_structure', label: 'Legal structure for ownership', kind: 'textarea',
+              help: 'How does the project own the land?',
+              guide: {
+                title: 'Legal structure',
+                source: 'Workbook §3 · Alchemy §3',
+                body: [
+                  'Common structures: each member owns a lot · each member is a shareholder of the top company · condominium association · land trust · cooperative · LLC + bylaws.',
+                  'Different structures favor different power distributions, tax treatments, exit options, and lending options. Get a lawyer in your jurisdiction before you commit.'
+                ]
+              }
+            },
+            { id: 'communication_channels', label: 'Communication channels & norms', kind: 'textarea',
+              help: 'WhatsApp · Telegram · Discord · Slack · Tribes · in-person.',
+              guide: {
+                title: 'Communication infrastructure',
+                source: 'Workbook §11',
+                body: [
+                  'Pick a primary internal messaging system and stick to it. Common picks: WhatsApp, Telegram, Discord, Slack, Tribes/ReVillager.',
+                  'Add task-management: Asana, Trello, Airtable, Kanban boards, shared docs. Less is more — three tools used consistently beat eight tools used inconsistently.'
+                ]
+              }
+            },
+            { id: 'ecological_philosophy', label: 'What overarching philosophy does your community share about coexisting with nature?', kind: 'textarea',
+              help: 'Zero-waste? Vegan? Rewilding? Regenerative ag? Name your ecological stance.',
+              guide: {
+                title: 'Ecological philosophy',
+                source: 'Alchemy §3 · Ecological Outlook',
+                body: [
+                  'Your ecological stance filters who joins and how you design. Are you zero-waste? Plant-based? Focused on rewilding? Regenerative agriculture? Name it explicitly.',
+                  'Communities that are vague about their ecological philosophy attract members with incompatible practices — and pay the price in conflict later.'
+                ]
+              }
+            },
+            { id: 'technology_stance', label: 'How does your community relate to technology in daily life?', kind: 'textarea',
+              help: 'Screen-free zones? Social media limits? Tech-forward or low-tech?',
+              guide: {
+                title: 'Technology integration',
+                source: 'Alchemy §3 · Technology Integration',
+                body: [
+                  'Online anonymity? Social media limits? Phones at the dinner table? Tech shapes culture deeply. Some communities are tech-forward; others are deliberately low-tech.',
+                  'State your relationship to tech as a shared value — it\'s one of the fastest sources of unspoken conflict in modern communities.'
+                ]
+              }
+            },
+            { id: 'land_resale_policy', label: 'What happens when a member wants to sell their share or lot?', kind: 'textarea',
+              help: 'First refusal? Approved buyer list? Price caps?',
+              guide: {
+                title: 'Land share resale',
+                source: 'Alchemy §3 · Land Share Resale',
+                body: [
+                  'Can members sell to anyone? Only to pre-approved members? With price caps? Does the community have first right of refusal? These rules shape membership continuity over decades.',
+                  'Lock the resale policy in writing before the first sale inquiry arrives — renegotiating under pressure is much harder.'
+                ]
+              }
+            },
+            { id: 'founder_exit_protocol', label: 'What happens if founders stop agreeing on the vision?', kind: 'textarea',
+              help: 'Buyout terms, succession planning, mediation.',
+              guide: {
+                title: 'Founder disagreement protocol',
+                source: 'Alchemy §3 · Founder Disagreement',
+                body: [
+                  'The founders who dream together may not want to build together. Plan succession, buyout terms, or mediation protocols before you need them.',
+                  'Disagreement doesn\'t have to tank the project — but only if you\'ve pre-agreed on how to resolve it.'
+                ]
+              }
+            },
+            { id: 'community_closure_plan', label: 'What happens if the community closes?', kind: 'textarea',
+              help: 'Asset distribution, member investment return, common property.',
+              guide: {
+                title: 'Dissolution plan',
+                source: 'Alchemy §3 · Community Closure',
+                body: [
+                  'Plan for dissolution before you launch. Who owns assets? How are member investments returned? What happens to common property and land?',
+                  'A dissolution plan protects everyone and signals serious governance. Communities that refuse to discuss closure are often the ones that close badly.'
+                ]
+              }
+            },
+            { id: 'shared_lifestyle_stance', label: 'What shared lifestyle practices will your community hold? (meals, substances, spirituality, healthcare)', kind: 'textarea',
+              help: 'Be explicit: dietary norms, alcohol policy, spiritual practice openness.',
+              guide: {
+                title: 'Shared life outlook',
+                source: 'Alchemy §3 · Shared Life Outlook + Alchemy §10',
+                body: [
+                  'Name it all: shared meals? dietary norms? alcohol/substances? meditation? conventional vs. alternative medicine? These are deal-breakers for some people.',
+                  'Clarity filters misalignment early. Communities that are vague here often discover incompatibilities only after someone has invested their life savings.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'structure_explicit', label: 'How explicit are your agreements?', frame: 'CLIPS · Structure',
+              guide: { title: 'Explicit beats implicit', source: 'RCOS principle', body: ['Implicit agreements feel friendlier — until they don\'t. Score this honestly: are decisions repeatable by someone NOT in the founder circle?'] } }
+          ]
+        },
+
+        // ── Gate 1
+        { id: 'g1', num: 'G1', title: 'Gate 1', subtitle: 'Are You Ready to Move to Phase 2?',
+          frameworks: ['rnf'], tagLines: ['RNF · Gate Checkpoint'], kind: 'gate',
+          gateNum: 1,
+          criteria: [
+            { id: 'g1c1', text: '3+ committed founding members aligned on vision', metric: 'team_commitment' },
+            { id: 'g1c2', text: 'Written vision and mission statements exist', metric: 'intention_clarity' },
+            { id: 'g1c3', text: 'Decision-making method is documented', metric: 'structure_explicit' },
+            { id: 'g1c4', text: 'First conflict process exists', metric: 'a_conflict' },
+            { id: 'g1c5', text: 'Founders have done individual readiness work', metric: 'self_readiness' }
+          ]
+        }
+      ]
+    },
+
+    // ────────────────────────────────────────────────────────────────────
+    // PHASE 2 — PROVE
+    // ────────────────────────────────────────────────────────────────────
+    {
+      id: 'p2', num: '02', name: 'Prove', subtitle: 'Feasibility Validation',
+      time: 'Months 3–12', spiral: 2, spiralName: 'Feasibility Validation',
+      lede: 'Now you test whether your vision can survive contact with reality.',
+      steps: [
+        // ── 2.1 Business model + revenue + value flows
+        { id: 's2.1', num: '2.1', title: 'Business Model Planning',
+          frameworks: ['alchemy', 'rcos', 'clips'],
+          tagLines: ['Alchemy: Area 4', 'RCOS: Layer 3', 'CLIPS: Structure'],
+          kind: 'business',
+          fields: [
+            { id: 'business_models', label: 'Business model(s) — how is the neighborhood financially sustainable?', kind: 'textarea',
+              help: 'Hospitality · events · restaurant · food production · products · services.',
+              guide: {
+                title: 'Business models',
+                source: 'Workbook §4 + Alchemy §4',
+                body: [
+                  'Common revenue streams in regenerative neighborhoods: Hospitality (rentals, retreats) · Events / activations · Gastronomy / restaurant · Food production sales · Products (jewelry, creams, herbs) · Services (consulting, training, design).',
+                  'Most neighborhoods run 2–4 streams. The mix should match your land, location, member skills, and seasonality.'
+                ]
+              }
+            },
+            { id: 'value_flows', label: 'How will value flow through your community?', kind: 'textarea',
+              help: 'Money, contributions, sharing economy. Be concrete.',
+              guide: {
+                title: 'Value flows (RCOS Layer 3)',
+                source: 'RCOS Layer 3',
+                body: [
+                  'Layer 3 (Resources & Value) asks: what do members give, what do they get, and how is value mediated? Cash · time · skill · access · housing · food · status · ownership.',
+                  'A clear value flow map prevents the most common community failure: ambient resentment from people whose contributions aren\'t legible to the system.'
+                ]
+              }
+            },
+            { id: 'revenue_streams', label: 'Revenue streams (year 1, 3, 5)', kind: 'textarea',
+              help: 'Where does cash come from at each horizon?',
+              guide: {
+                title: 'Revenue evolution',
+                source: 'Alchemy §4',
+                body: [
+                  'Year 1 revenue is usually pre-sales, founder capital, friends-and-family. Year 3 starts to see hospitality + events + early product income. Year 5 is when most community businesses cross into operational sustainability.',
+                  'Map revenue by horizon. Anything dependent on a single source or a single founder is fragile.'
+                ]
+              }
+            },
+            { id: 'cost_structure', label: 'Major cost structure', kind: 'textarea',
+              help: 'Land, infra, legal, design, team, marketing, ongoing ops.',
+              guide: {
+                title: 'Cost structure',
+                source: 'Workbook §6',
+                body: [
+                  'Capital costs: Land · Legal & permitting · Land prep · Design · Infrastructure · Construction · Furniture & decor.',
+                  'Operating costs: Team / staff · Marketing · Maintenance · Utilities · Insurance · Reserves.',
+                  'Most projects underestimate ongoing operating costs by 30–50%. Build a 24-month operating buffer if you can.'
+                ]
+              }
+            },
+            { id: 'resident_finances', label: 'Resident finances (dues, shared expenses, shared income)', kind: 'textarea',
+              help: 'How do residents contribute to and benefit from community finances?',
+              guide: {
+                title: 'Resident financial model',
+                source: 'Workbook §4',
+                body: [
+                  'Common arrangements: monthly dues for shared expenses · pooled household labor · co-op-style shared income from community businesses · hybrid (base dues + opt-in pools).',
+                  'Be transparent about what dues cover, when they change, and how residents can audit them.'
+                ]
+              }
+            },
+            { id: 'commons', label: 'Commons & shared resources', kind: 'textarea',
+              help: 'What is held in common? RCOS Layer 3.',
+              guide: {
+                title: 'Designing the commons',
+                source: 'RCOS Layer 3 + Ostrom',
+                body: [
+                  'Common: shared house · kitchen · co-working · garden · vehicles · tools · childcare · ceremony space · gym · body of water · school · art space · first-aid space · makerspace.',
+                  'For each commons element, decide: who can use it? · who maintains it? · how are conflicts over it resolved?'
+                ]
+              }
+            },
+            { id: 'real_estate_model', label: 'How do people buy in?', kind: 'textarea',
+              help: 'Individual purchase · fractional · collective · membership · other.',
+              guide: {
+                title: 'Buy-in model',
+                source: 'Workbook §4',
+                body: [
+                  'Options: Individual purchase (own a lot) · Fractional ownership · Collective ownership (shares of company) · Membership (no ownership, title for use) · Hybrid.',
+                  'Each option has different legal, tax, financing, and cultural implications. Most regenerative neighborhoods land on a hybrid: members buy a share + pay dues + carry a legal title to use specific space.'
+                ]
+              }
+            },
+            { id: 'economic_philosophy', label: 'What does your community believe in when it comes to economic systems?', kind: 'textarea',
+              help: 'Gift economy? Cooperative? Market-driven? Mixed?',
+              guide: {
+                title: 'Economic belief system',
+                source: 'Alchemy §3 · Economic Belief Systems',
+                body: [
+                  'Your economic philosophy underlies every financial decision. Gift economy? Cooperative? Market-driven? Shared income? Circular? Name it explicitly.',
+                  'Communities that don\'t articulate their economic philosophy discover incompatibilities when real money and real decisions arrive.'
+                ]
+              }
+            },
+            { id: 'market_research', label: 'Have you validated that your business models have viable demand in your region?', kind: 'textarea',
+              help: 'Talk to 20 potential customers before designing infrastructure around a business.',
+              guide: {
+                title: 'Market research',
+                source: 'Alchemy §4 · Market Research',
+                body: [
+                  'Don\'t assume. Retreats work near cities and airports. Agritourism needs highways. Workshops need target markets. Talk to at least 20 potential customers before building infrastructure.',
+                  'Map your location to your business model: urban accessibility, existing competition, customer travel distance, seasonal patterns.'
+                ]
+              }
+            },
+            { id: 'ownership_private_vs_common', label: 'What is owned privately vs. communally? (expenses, food, utilities, tools, vehicles, spaces)', kind: 'textarea',
+              help: 'Map each category: personal, pooled, or hybrid.',
+              guide: {
+                title: 'Private vs. communal ownership',
+                source: 'Alchemy §4 · Ownership Questions',
+                body: [
+                  'Private expenses feel simpler but siloed. Shared expenses require trust and transparency. Map each category: what\'s personal, what\'s pooled, and how you\'ll manage each.',
+                  'Common dividing lines: personal food vs. communal meals, individual tools vs. shared workshop, private vehicles vs. community cars.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'biz_resilience', label: 'How resilient is your business model?', frame: 'RNF · Economy Pillar',
+              guide: { title: 'Business resilience', source: 'RNF Economy', body: ['Resilience = surviving a 30% revenue drop. If a single revenue stream is >50% of total, score below 6.'] } },
+            { id: 'biz_clarity', label: 'How clearly is value flow defined?', frame: 'RCOS · Layer 3',
+              guide: { title: 'Value flow clarity', source: 'RCOS Layer 3', body: ['Can a new member describe how their contribution is recognized within 1 conversation? If not, score lower.'] } }
+          ]
+        },
+
+        // ── 2.2 Site selection
+        { id: 's2.2', num: '2.2', title: 'Site Selection',
+          frameworks: ['alchemy', 'rnf'],
+          tagLines: ['Alchemy: Area 5', 'RNF: Ecology + Hardware'],
+          kind: 'site',
+          fields: [
+            { id: 'location_setting', label: 'Density setting & landscape', kind: 'input',
+              help: 'Urban · suburban · rural × mountain · beach · lake · river · desert · jungle.',
+              guide: {
+                title: 'Setting & landscape',
+                source: 'Workbook §5',
+                body: [
+                  'Density: Urban · Suburban · Rural — drives zoning, neighbor relationships, and infrastructure cost.',
+                  'Landscape: Mountains · Beachside · Lake · River · Desert · Jungle — drives water strategy, food strategy, and energy strategy.'
+                ]
+              }
+            },
+            { id: 'climate', label: 'Climate', kind: 'input',
+              help: 'Temperature range, rainfall, seasonality, extremes.',
+              guide: {
+                title: 'Climate',
+                source: 'Alchemy §5',
+                body: ['Map: average highs/lows · annual rainfall · wet/dry season · extreme weather risk (fire, flood, hurricane). This drives building methods, food systems, water systems, and member health considerations.']
+              }
+            },
+            { id: 'site_criteria', label: 'Site selection criteria', kind: 'textarea',
+              help: 'Climate, water, soil, access, zoning, neighbors, cost.',
+              guide: {
+                title: 'Site criteria checklist',
+                source: 'Alchemy §5',
+                body: [
+                  'Core dimensions to score every candidate site against: water (year-round source) · soil quality · access (roads, airports, hospitals) · climate resilience · zoning compatibility · neighbors / political climate · price · proximity to allies and supply chains.',
+                  'Build a weighted scorecard before you fall in love with any one site.'
+                ]
+              }
+            },
+            { id: 'sites_considered', label: 'Sites under consideration', kind: 'textarea', rows: 5,
+              help: 'List with brief notes per site.',
+              guide: {
+                title: 'Sites under consideration',
+                source: 'Alchemy §5',
+                body: ['For each candidate: location · acreage · price · water source · zoning status · key risks · best feature. Most projects evaluate 5–15 sites before committing.']
+              }
+            },
+            { id: 'eco_assessment', label: 'Ecological assessment notes', kind: 'textarea',
+              help: 'What does the land need? What does it offer?',
+              guide: {
+                title: 'Ecological assessment',
+                source: 'Alchemy §5 + Permaculture site analysis',
+                body: [
+                  'Walk the land in different seasons if possible. Note: water flow patterns · soil tests · existing flora/fauna · degraded zones · natural assets · solar exposure · prevailing winds · slope/aspect.',
+                  'A regenerative site analysis asks not just "what can this land support?" but "what is this land trying to become?"'
+                ]
+              }
+            },
+            { id: 'land_size', label: 'Land size (acres or hectares)', kind: 'input',
+              help: 'Affects density, food capacity, conservation potential.',
+              guide: {
+                title: 'Sizing the land',
+                source: 'Workbook §0',
+                body: ['A useful frame: 1 acre per person for full food/water/shelter self-sufficiency in a temperate climate. Less in highly productive land, more in arid or steep terrain. Most village-scale projects start at 20–200 acres.']
+              }
+            },
+            { id: 'zoning', label: 'Regulatory / zoning status', kind: 'input',
+              help: 'Residential · Commercial mixed · Agricultural · SEZ · Industrial · Other.',
+              guide: {
+                title: 'Zoning & regulation',
+                source: 'Workbook §5',
+                body: ['Zoning categories: Residential · Commercial Mixed Use · Agricultural · Industrial Mixed Use · Special Economic Zone · Medical/Wellness regulation · Conservation overlay. Get clarity early — zoning shapes what you can build, who can live there, and what businesses you can run.']
+              }
+            },
+            { id: 'land_legal', label: 'Land legal status', kind: 'input',
+              help: 'Titled · 99-year lease · rented · usufruct · indigenous title · other.',
+              guide: {
+                title: 'Land tenure',
+                source: 'Workbook §5',
+                body: ['Common forms: titled freehold · long-term lease (e.g., 99-year) · usufruct rights · ejido / communal title · trust-held land. Each has distinct implications for resale, lending, and intergenerational transfer.']
+              }
+            },
+            { id: 'capacity', label: 'Capacity (people that can live on site)', kind: 'input',
+              help: 'Residents + guests = total capacity.',
+              guide: {
+                title: 'Population capacity',
+                source: 'Workbook §2',
+                body: ['Carrying capacity = function of land · water · food · waste · social fabric. Be conservative early — it\'s easier to add capacity than to ask people to leave.']
+              }
+            },
+            { id: 'climate_emergencies', label: 'What climate emergencies is your site susceptible to, and how will you mitigate?', kind: 'textarea',
+              help: 'Wildfires, flooding, drought, hurricanes — each requires different design responses.',
+              guide: {
+                title: 'Climate resilience specific',
+                source: 'Alchemy §3 · Climate Resilience',
+                body: [
+                  'Don\'t just know the risk — bake mitigation into your master plan. Firebreaks, swales, drought-tolerant planting, stormwater management, elevated structures, hurricane ties.',
+                  'Use 30-year climate projections, not historical baseline. Design for the climate your site will have in 2045, not the climate it has had.'
+                ]
+              }
+            },
+            { id: 'conservation_commitments', label: 'What are your specific stewardship and conservation commitments for this land?', kind: 'textarea',
+              help: 'Rewilding? Restore degraded areas? Conservation ratio?',
+              guide: {
+                title: 'Land stewardship intentions',
+                source: 'Alchemy §5 · Land Stewardship Intentions',
+                body: [
+                  'Regenerate degraded areas? Create wildlife corridors? Preserve old-growth? Reforest cleared land? Your commitments shape design, cost, and long-term identity.',
+                  'State your conservation ratio: what percentage of land will remain wild or be actively restored? This guides site sizing and density decisions.'
+                ]
+              }
+            },
+            { id: 'cultural_land_context', label: 'What is the cultural context of where you intend to build? How will you avoid neocolonialism?', kind: 'textarea',
+              help: 'Indigenous land history, local community relations, consultation process.',
+              guide: {
+                title: 'Cultural context & neocolonialism',
+                source: 'Alchemy §3 · Cultural Context',
+                body: [
+                  'If you\'re building on Indigenous or colonized land, acknowledge it. Learn the history. Compensate, consult, and co-create with locals rather than imposing a vision.',
+                  'This isn\'t optional — it\'s a regenerative baseline. Regenerative neighborhoods that ignore local context often face resistance, permit denial, or social conflict that derails the project.'
+                ]
+              }
+            },
+            { id: 'land_tenure_preference', label: 'What land tenure model resonates with you?', kind: 'textarea',
+              help: 'Titled freehold · long-term lease · usufruct · land trust · ejido.',
+              guide: {
+                title: 'Land ownership preference',
+                source: 'Alchemy §5 · Land Ownership Preference',
+                body: [
+                  'Freehold is simplest but can limit community resale controls. Leases are flexible but risky long-term. Land trusts are values-aligned but complex to set up.',
+                  'Match your tenure model to your goals, jurisdiction, and financial structure. Community land trusts can permanently remove land from speculative markets — a powerful regenerative tool.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'site_water', label: 'Water security of preferred site', frame: 'RNF · Ecology',
+              guide: { title: 'Water security', source: 'RNF Ecology', body: ['Year-round water (well, spring, river, harvest) is the single most important ecology variable. Score 8+ only if you have multiple independent sources.'] } },
+            { id: 'site_climate', label: 'Climate resilience of site', frame: 'RNF · Ecology',
+              guide: { title: 'Climate resilience', source: 'RNF Ecology', body: ['Consider 30-year climate projections, not historical baseline. Hurricane corridors, wildfire zones, drought trends.'] } },
+            { id: 'site_access', label: 'Accessibility & infrastructure of site', frame: 'RNF · Hardware',
+              guide: { title: 'Site access', source: 'RNF Hardware', body: ['Road access in wet season · distance to hospital · cellular/internet · grid connection or off-grid feasibility.'] } }
+          ]
+        },
+
+        // ── 2.3 Funding strategy
+        { id: 's2.3', num: '2.3', title: 'Funding Strategy',
+          frameworks: ['alchemy', 'rnf', 'rcos'],
+          tagLines: ['Alchemy: Area 6', 'RNF: Economy', 'RCOS: Layer 3'],
+          kind: 'funding',
+          fields: [
+            { id: 'funding_need_total', label: 'Total capital need (rough estimate)', kind: 'input',
+              help: 'Land + infra + working capital.',
+              guide: {
+                title: 'Sizing the capital ask',
+                source: 'Workbook §6',
+                body: [
+                  'Build the number from: Land + Legal/permitting + Land prep + Design + Infrastructure + Team/staff (24mo) + Marketing + Furniture/decor.',
+                  'Add a 20–30% contingency. Most regenerative neighborhoods underestimate by ~25%. Be honest now to avoid stalling later.'
+                ]
+              }
+            },
+            { id: 'funding_breakdown', label: 'Capital need breakdown', kind: 'textarea', rows: 5,
+              help: 'Land · legal · land prep · design · infra · team · marketing · furniture.',
+              guide: {
+                title: 'Breakdown',
+                source: 'Workbook §6',
+                body: ['Itemize: Land · Legal/permitting · Land prep · Design · Infrastructure · Team/staff · Marketing · Furniture. Each becomes a phase of capital deployment with its own timing.']
+              }
+            },
+            { id: 'funding_sources', label: 'Funding sources you\'re pursuing', kind: 'textarea',
+              help: 'Member equity, mission-aligned investors, grants, debt, land trusts, presales.',
+              guide: {
+                title: 'Funding sources',
+                source: 'Workbook §6 + Alchemy §6',
+                body: [
+                  'Common sources: Self-invested · Bank loans · Friends & family · Business revenue · Resident revenue · Patrons · Mission-aligned investors · Pre-sales of memberships or units · Grants · Land trusts.',
+                  'A healthy capital stack mixes patient capital (land trust, equity) with working capital (revenue, presales). Pure debt is the riskiest profile.'
+                ]
+              }
+            },
+            { id: 'funding_timeline', label: 'Capital formation timeline', kind: 'textarea',
+              help: 'When does each tranche need to close?',
+              guide: {
+                title: 'Capital timeline',
+                source: 'Alchemy §6',
+                body: ['Map: site option (3–6mo) · land close · design (6–12mo) · construction tranches · operations runway. Each tranche has a no-go date — name it.']
+              }
+            },
+            { id: 'pitch_assets', label: 'Pitch assets you have', kind: 'textarea',
+              help: 'Vision document · pitch deck · concept art · master plan sketch.',
+              guide: {
+                title: 'Pitch assets',
+                source: 'Alchemy §1.4 + §7',
+                body: [
+                  'For raising: Vision document · Pitch deck · Concept art / mood board · Site map · Master plan sketch · Investor offer / term sheet · Founder bios.',
+                  'Reference templates: Traditional Dream Factory\'s "Pink Paper" · Cabin.city\'s vision document · Re:build deck template.'
+                ]
+              }
+            },
+            { id: 'land_cost_percentage', label: 'What percentage of total project cost is the land?', kind: 'input',
+              help: 'Rule of thumb: land should be ~10–20% of total project cost.',
+              guide: {
+                title: 'Land cost ratio',
+                source: 'Alchemy §6 · Land Cost',
+                body: [
+                  'If land is 40%+ of total cost, you\'re likely overpaying or underbuilding. If land is under 10%, double-check your infrastructure estimates.',
+                  'Land cost ratio affects financing options, investor returns, and development viability. Get this number right early.'
+                ]
+              }
+            },
+            { id: 'funding_contingency', label: 'What\'s your contingency plan if a major funding source falls through?', kind: 'textarea',
+              help: 'Probability of loss, impact, backup sources.',
+              guide: {
+                title: 'Funding contingency',
+                source: 'Alchemy §6 · Funding Phasing & Contingency',
+                body: [
+                  'Over-reliance on one investor is the #1 capital risk. Name what happens if your primary source falls through: backup sources, timeline extension, scope reduction.',
+                  'Diversify your capital stack — grants, member equity, impact investors, commercial loans, crowdfunding. No single source should exceed 40% of your total need.'
+                ]
+              }
+            },
+            { id: 'values_aligned_capital', label: 'How do you ensure capital sources are aligned with your mission, not just available?', kind: 'textarea',
+              help: 'Screen for alignment, not just terms.',
+              guide: {
+                title: 'Values-aligned capital',
+                source: 'Alchemy §6 · Values-Aligned Capital',
+                body: [
+                  'Money comes with expectations. An investor expecting 30% annual ROI will pressure you toward business over community. Screen for mission alignment, not just financial terms.',
+                  'Ask potential investors: What does success look like to you in 10 years? What would make you pull out? Their answers reveal their real values.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'fund_realism', label: 'How realistic is your funding plan?', frame: 'RNF · Economy',
+              guide: { title: 'Funding realism', source: 'RNF Economy', body: ['Score 8+ only if you have hard commitments (signed term sheets, deposits) for >50% of need. Soft interest doesn\'t count.'] } },
+            { id: 'fund_alignment', label: 'How values-aligned are your capital sources?', frame: 'RCOS · Layer 3',
+              guide: { title: 'Capital alignment', source: 'RCOS Layer 3', body: ['Misaligned capital can quietly bend a project off-mission. Score honestly — what does each investor expect, and how compatible is that with your vision?'] } }
+          ]
+        },
+
+        // ── Gate 2
+        { id: 'g2', num: 'G2', title: 'Gate 2', subtitle: 'Are You Ready to Build?',
+          frameworks: ['rnf'], tagLines: ['RNF · Gate Checkpoint'], kind: 'gate',
+          gateNum: 2,
+          criteria: [
+            { id: 'g2c1', text: 'Validated business model with revenue lines', metric: 'biz_resilience' },
+            { id: 'g2c2', text: 'Site under option or owned', metric: 'site_water' },
+            { id: 'g2c3', text: 'Capital path identified for at least 60% of need', metric: 'fund_realism' },
+            { id: 'g2c4', text: 'Ecological assessment of preferred site complete', metric: 'site_climate' },
+            { id: 'g2c5', text: 'Founding group still aligned & growing', metric: 'team_commitment' }
+          ]
+        }
+      ]
+    },
+
+    // ────────────────────────────────────────────────────────────────────
+    // PHASE 3 — BUILD
+    // ────────────────────────────────────────────────────────────────────
+    {
+      id: 'p3', num: '03', name: 'Build', subtitle: 'Capital & Construction',
+      time: 'Months 9–24', spiral: 3, spiralName: 'Capital Formation + Construction',
+      lede: 'This is where your neighborhood goes from plan to physical reality.',
+      steps: [
+        // ── 3.1 Securing capital
+        { id: 's3.1', num: '3.1', title: 'Securing Capital',
+          frameworks: ['alchemy', 'rcos', 'rnf'],
+          tagLines: ['Alchemy: Area 6', 'RCOS: Layer 3', 'RNF: Economy'],
+          kind: 'capital',
+          fields: [
+            { id: 'capital_committed', label: 'Capital committed so far', kind: 'input',
+              help: 'Hard commitments only. Soft interest does not count.',
+              guide: {
+                title: 'Hard vs. soft capital',
+                source: 'RNF Capital Formation',
+                body: ['Hard: signed term sheets, deposits in escrow, board-approved grants. Soft: warm conversations, "I\'d love to support this." Track only the hard number publicly to your team — soft numbers create false confidence.']
+              }
+            },
+            { id: 'capital_terms', label: 'Key capital terms', kind: 'textarea',
+              help: 'Interest, equity, governance rights of capital sources.',
+              guide: {
+                title: 'Capital terms',
+                source: 'Alchemy §6',
+                body: [
+                  'For each source, document: amount · vehicle (debt/equity/grant) · interest or expected return · timeline · governance rights (board seats, veto, info) · exit terms.',
+                  'Capital that comes with veto rights over operating decisions is governance capital — treat its structure as carefully as you treat membership criteria.'
+                ]
+              }
+            },
+            { id: 'capital_risks', label: 'Capital risks', kind: 'textarea',
+              help: 'What happens if a source falls through?',
+              guide: {
+                title: 'Capital risk planning',
+                source: 'RNF Economy',
+                body: ['For each tranche, name: probability of falling through · impact if it does · contingency. The most common failure mode is over-relying on one anchor investor.']
+              }
+            },
+            { id: 'investor_list', label: 'Investor & patron list', kind: 'textarea',
+              help: 'Who has committed, in talks, declined.',
+              guide: {
+                title: 'Investor pipeline',
+                source: 'Alchemy §2.4',
+                body: ['Track every conversation: name · status (interested · in DD · committed · declined) · amount · last contact · next action. CRMs help; even a spreadsheet works.']
+              }
+            }
+          ],
+          sliders: [
+            { id: 'cap_close', label: 'Capital close confidence', frame: 'RNF · Economy',
+              guide: { title: 'Close confidence', source: 'RNF Economy', body: ['Score the probability of closing your full need within your stated timeline. <6 = stall risk. 8+ = high confidence.'] } }
+          ]
+        },
+
+        // ── 3.2 Master planning
+        { id: 's3.2', num: '3.2', title: 'Master Planning',
+          frameworks: ['alchemy', 'rnf'],
+          tagLines: ['Alchemy: Area 8', 'RNF: All 5 Pillars'],
+          kind: 'masterplan',
+          fields: [
+            { id: 'mp_layout', label: 'Site layout principles', kind: 'textarea',
+              help: 'How do private, common, productive, and wild lands relate?',
+              guide: {
+                title: 'Layout zoning',
+                source: 'Alchemy §8 + permaculture zones',
+                body: [
+                  'Permaculture zones (0–5) are a useful frame: 0 = home · 1 = daily-tended (kitchen garden) · 2 = weekly · 3 = annual production · 4 = managed forest · 5 = wild.',
+                  'Layer in social zones: most-private dwellings · semi-private clusters · shared common buildings · public-facing visitor zones. The relationships between these zones are more important than any single building.'
+                ]
+              }
+            },
+            { id: 'land_dev_pct', label: 'Land development split (%)', kind: 'input',
+              help: 'Construction · food growth · conservation.',
+              guide: {
+                title: 'Development ratio',
+                source: 'Workbook §8',
+                body: ['Common splits in regenerative neighborhoods: 10–20% built · 20–40% productive (food, fiber, fuel) · 40–70% conservation/wild. Steeper toward conservation if regeneration is core mission.']
+              }
+            },
+            { id: 'mp_phasing', label: 'Build phasing strategy', kind: 'textarea',
+              help: 'What gets built first, second, third?',
+              guide: {
+                title: 'Build phasing',
+                source: 'Alchemy §8',
+                body: [
+                  'Typical phasing: 1) site infrastructure (water, road, power) 2) common house + 1–2 demonstration dwellings 3) phase-1 cluster of homes 4) productive infrastructure (gardens, barn) 5) further dwelling phases.',
+                  'Build the common house EARLY — it accelerates culture formation and proves the project to the next wave of members.'
+                ]
+              }
+            },
+            { id: 'mp_pillars', label: 'How does the master plan address each RNF pillar?', kind: 'textarea', rows: 6,
+              help: 'Ecology · Social · Economy · Hardware · Governance.',
+              guide: {
+                title: 'Five-pillar check',
+                source: 'RNF',
+                body: [
+                  'A regenerative master plan answers all 5 pillars:',
+                  '· Ecology: water cycles · soil regeneration · biodiversity · climate resilience.',
+                  '· Social: gathering spaces · privacy gradients · culture-carrying buildings.',
+                  '· Economy: revenue-generating zones (hospitality, production) · cost efficiency.',
+                  '· Hardware: durable materials · repairability · energy systems · waste cycles.',
+                  '· Governance: signage, decision-rooms, transparency-by-design.'
+                ]
+              }
+            },
+            { id: 'building_methods', label: 'Building methods', kind: 'input',
+              help: 'Traditional · bio construction · mixed · superadobe · CLT · other.',
+              guide: {
+                title: 'Building methods',
+                source: 'Workbook §9',
+                body: [
+                  'Options: Traditional construction (concrete/steel) · Bio construction (cob, straw bale, superadobe, hempcrete, bamboo) · Mass timber/CLT · Mixed approach.',
+                  'Bio construction is highest-aligned with regen ethics but requires skilled crews and may face zoning resistance. Mixed approaches let you use bio for some buildings and conventional for permit-sensitive ones.'
+                ]
+              }
+            },
+            { id: 'permaculture_zones', label: 'How will you apply permaculture zones (0–5) to your site layout?', kind: 'textarea',
+              help: 'Zone 0: home · Zone 1: daily kitchen garden · Zone 2: orchards · Zone 3: fields · Zone 4: managed forest · Zone 5: wild.',
+              guide: {
+                title: 'Permaculture zones',
+                source: 'Alchemy §8 · Permaculture Zones',
+                body: [
+                  'Zones match intensity of management to proximity from home. Zone 0 is your home — maximum attention. Zone 5 is wild — minimum intervention.',
+                  'Zone placement determines labor needs, path routes, and water flow. Design Zone 1 (daily harvest) so it\'s always on your path to somewhere else.'
+                ]
+              }
+            },
+            { id: 'density_target', label: 'How many people per acre (or hectare) does your design assume?', kind: 'input',
+              help: 'Low density: ~0.5/acre. High density: 20+/acre.',
+              guide: {
+                title: 'Population density',
+                source: 'Alchemy §4 · Density Per Sq M',
+                body: [
+                  'Low density (~0.5/acre) feels rural and spacious. High density (20+/acre) feels urban and vibrant. Your target density affects land need, parking, food production capacity, and community feel.',
+                  'Most regenerative neighborhoods sit at 1–5 people/acre. Choose intentionally — density is one of the hardest things to change after construction.'
+                ]
+              }
+            },
+            { id: 'resource_per_person', label: 'How much water, food, energy, and waste capacity per person per day does your design assume?', kind: 'textarea',
+              help: 'US average: 100 gal water, 2000 cal food, 12 kWh electricity. Aim for 30–70% reduction.',
+              guide: {
+                title: 'Resource calculations',
+                source: 'Alchemy §4 · Resources Calculation',
+                body: [
+                  'Don\'t guess — calculate. US average: 100 gallons water/day, 2000 cal food/day, 12 kWh electricity/day. Regenerative design should reduce these by 30–70%.',
+                  'Build the math into your master plan. Undersized water tanks, solar arrays, or food systems are the most common infrastructure failure point in the first 2 years.'
+                ]
+              }
+            },
+            { id: 'placemaking_character', label: 'What is the unique character and identity you want to create for this place?', kind: 'textarea',
+              help: 'Spirit of place — design with the land\'s history and natural patterns.',
+              guide: {
+                title: 'Placemaking & place character',
+                source: 'Alchemy §4 · Placemaking',
+                body: [
+                  'Every place has genius loci — spirit of place. Understand the land\'s history, local culture, and natural patterns. Design with them, not against them.',
+                  'Authentic placemaking honors what\'s already there. Walk the site blindfolded. What do you feel? What does the land want to become?'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'mp_integration', label: 'Pillar integration in master plan', frame: 'RNF · All Pillars',
+              guide: { title: 'Pillar integration', source: 'RNF', body: ['Score 8+ only when every building / zone serves at least 2 pillars (e.g. common house = social + governance + economy).'] } }
+          ]
+        },
+
+        // ── 3.3 Infrastructure & construction (water/energy/food/waste/connectivity)
+        { id: 's3.3', num: '3.3', title: 'Infrastructure & Construction',
+          frameworks: ['alchemy', 'clips', 'rnf'],
+          tagLines: ['Alchemy: Area 9', 'CLIPS: Practice', 'RNF: All Pillars'],
+          kind: 'construction',
+          checklist: [
+            { id: 'c_water', text: 'Water systems designed and permitted',
+              guide: { title: 'Water systems', source: 'Workbook §8 + RNF Ecology',
+                body: ['Tick when you have engineered drawings + permits for: source(s), storage, treatment, distribution, AND wastewater (black + grey). Include backup plan when primary source fails.',
+                  'Most regenerative projects aim for 2+ independent fresh-water sources. Verify yields across seasons, not just on the day you visited.'] } },
+            { id: 'c_energy', text: 'Energy systems designed and permitted',
+              guide: { title: 'Energy systems', source: 'Workbook §8',
+                body: ['Tick when you have: load calculation per building, generation system (solar/wind/micro-hydro), storage (battery sizing), distribution, and grid interconnection or off-grid resilience plan.',
+                  'A common oversight: sizing for "average" loads instead of peak. Peak winter heating or summer cooling can be 3× average.'] } },
+            { id: 'c_buildings', text: 'Buildings designed and permitted',
+              guide: { title: 'Buildings & permits', source: 'Workbook §9',
+                body: ['Tick when each phase-1 building has: stamped architectural drawings, structural engineering, MEP plans, AND issued permits.',
+                  'Bio-construction (cob, straw bale, superadobe) often requires extra engineering effort to satisfy local permit reviewers. Budget time for this.'] } },
+            { id: 'c_roads', text: 'Roads & access designed',
+              guide: { title: 'Roads & access', source: 'RNF Hardware',
+                body: ['Tick when you have: site access plan (entry points, gate, parking), internal circulation (vehicle, pedestrian, service), emergency access (fire truck turning radius), and wet-season passability.',
+                  'Roads are usually the largest single expense after land and dwellings. Walk the routes in rain before finalizing.'] } },
+            { id: 'c_waste', text: 'Waste cycles designed (closed-loop where possible)',
+              guide: { title: 'Waste cycles', source: 'Workbook §8',
+                body: ['Tick when you have closed-loop or near-closed-loop plans for: human waste, food waste, greywater, organic yard waste, AND a path for inorganic/recyclable/hazardous waste.',
+                  'The regenerative gold standard returns nutrients to the land. Composting toilets, biogas digesters, constructed wetlands all help.'] } },
+            { id: 'c_connectivity', text: 'Connectivity infrastructure planned',
+              guide: { title: 'Connectivity', source: 'Workbook §4',
+                body: ['Tick when you have: primary internet (fiber/cable/Starlink), redundant backup, distribution (mesh Wi-Fi or wired), cellular coverage assessment, and bandwidth that fits your member archetypes (digital nomads need ≥100 Mbps).',
+                  'Pulling fiber to a rural site can take 6–18 months — start the conversation with your provider early.'] } },
+            { id: 'c_food', text: 'Food production systems designed',
+              guide: { title: 'Food systems', source: 'Workbook §8',
+                body: ['Tick when you have a designed food strategy across: annual gardens, perennials/food forest, livestock (if any), greenhouse/season extension, and post-harvest infrastructure (storage, processing, preservation).',
+                  'Most projects aim for 30–70% on-site food in year 3+. Year 1 is rarely above 10% — plan accordingly.'] } }
+          ],
+          fields: [
+            { id: 'water_fresh', label: 'Fresh water system', kind: 'textarea',
+              help: 'Drinkable water source(s), treatment, distribution.',
+              guide: {
+                title: 'Fresh water',
+                source: 'Workbook §8',
+                body: ['Sources: well · spring · river · rainwater harvest · municipal · trucked. Most regenerative neighborhoods aim for 2+ independent sources. Treatment options: gravity filter, UV, ceramic, reverse osmosis. Distribution: gravity-fed wherever possible.']
+              }
+            },
+            { id: 'water_waste', label: 'Wastewater system', kind: 'textarea',
+              help: 'Black water + grey water management.',
+              guide: {
+                title: 'Wastewater',
+                source: 'Workbook §8',
+                body: [
+                  'Black water (toilets): septic · constructed wetland · composting toilet · biogas digester.',
+                  'Grey water (sinks/showers): wetland · mulch basin · subsurface irrigation · recycled to landscape.',
+                  'Closed-loop systems return nutrients to the land — the regenerative gold standard.'
+                ]
+              }
+            },
+            { id: 'energy_source', label: 'Energy source(s) & % self-produced', kind: 'textarea',
+              help: 'Grid · solar · wind · micro-hydro · biogas · battery.',
+              guide: {
+                title: 'Energy strategy',
+                source: 'Workbook §8',
+                body: [
+                  'Regenerative neighborhoods typically aim for 60–100% on-site renewable production. Hybrid (grid + on-site solar) is the most resilient and economical for most climates.',
+                  'Battery storage is the lever that turns solar from a daytime convenience into a 24-hour baseline.'
+                ]
+              }
+            },
+            { id: 'food_systems', label: 'Food systems implemented', kind: 'textarea',
+              help: 'Agroforestry · vertical gardens · aquaponics · hydroponics · livestock.',
+              guide: {
+                title: 'Food production',
+                source: 'Workbook §8',
+                body: [
+                  'Common systems: Agroforestry (food forest) · Annual gardens · Vertical gardens · Aquaponics · Hydroponics · Greenhouse · Livestock (chickens, goats, fish) · Wild harvest.',
+                  'Track: % of food consumption grown on site · % purchased locally · what you grow. Most projects aim for 30–70% on-site food in year 3+.'
+                ]
+              }
+            },
+            { id: 'waste_organic', label: 'Organic waste system', kind: 'textarea',
+              help: 'Composting, biogas, livestock cycling.',
+              guide: {
+                title: 'Organic waste',
+                source: 'Workbook §8',
+                body: ['Closed-loop options: hot compost · vermicompost · biogas digester · animal cycling (chickens, pigs) · black soldier fly larvae. Returns nutrients to the system; reduces waste-export costs.']
+              }
+            },
+            { id: 'waste_inorganic', label: 'Inorganic waste system', kind: 'textarea',
+              help: 'Recycling, hazardous waste, e-waste pathways.',
+              guide: {
+                title: 'Inorganic waste',
+                source: 'Workbook §8',
+                body: ['Plan: recycling pickup or co-op · hazardous waste pathway · e-waste path · plastic reduction at procurement. Targeting "zero waste to landfill" requires upstream design (procurement, packaging).']
+              }
+            },
+            { id: 'connectivity', label: 'Connectivity', kind: 'textarea',
+              help: 'Internet (wired/Starlink/Wi-Fi), cell service.',
+              guide: {
+                title: 'Connectivity',
+                source: 'Workbook §4',
+                body: ['Options: wired fiber · Starlink/satellite · cellular hotspots · mesh Wi-Fi distribution. Co-working and digital nomad communities need >100 Mbps with redundancy.']
+              }
+            },
+            { id: 'amenities', label: 'Shared / social amenities planned', kind: 'textarea',
+              help: 'Common house · kitchen · co-work · ceremony · gym · garden · school · art space · makerspace.',
+              guide: {
+                title: 'Shared amenities',
+                source: 'Workbook §4',
+                body: ['Common picks: Community shared house · Shared kitchen-dining · Co-working · Ceremony / temple · Gym · Body of water (pool, lake, river, cenote, ocean) · School · Community garden · Art space · First-aid space · Makerspace. Pick 3–5 to anchor first-phase build.']
+              }
+            },
+            { id: 'housing_typology', label: 'Housing typology', kind: 'textarea',
+              help: 'Apartments · houses on lots · co-living rooms · dorms.',
+              guide: {
+                title: 'Housing typology',
+                source: 'Workbook §4 + §9',
+                body: ['Co-living (private room, shared kitchen) · Co-housing (private kitchen, shared common house) · Single-family on lot · Apartments · Dorms (shared sleeping, for short-term). Most projects offer a mix.']
+              }
+            },
+            { id: 'water_self_sufficiency', label: 'Water self-sufficiency target (%)', kind: 'input',
+              help: 'What % of your water needs do you aim to produce on-site?',
+              guide: {
+                title: 'Water self-sufficiency',
+                source: 'Community Alchemy Playbook — Area 9: Infrastructure',
+                body: [
+                  'The Alchemy framework asks: what proportion of your water needs can the land itself sustain? Most regenerative projects target 70–100% for non-potable (irrigation, greywater) and 30–60% for drinking water in year 1, scaling toward full self-sufficiency.',
+                  'Account for seasonal variation — some months the land gives abundantly, others require reserves or municipal backup. State your realistic target and the gap to bridge.'
+                ]
+              }
+            },
+            { id: 'food_self_sufficiency', label: 'Food self-sufficiency target (% of calories, year 3)', kind: 'input',
+              help: 'Realistic on-site food production goal by end of year 3.',
+              guide: {
+                title: 'Food self-sufficiency',
+                source: 'Community Alchemy Playbook — Area 9: Infrastructure',
+                body: [
+                  'Alchemy asks every project to set an explicit food sovereignty goal. Most successful communities reach 20–40% caloric self-sufficiency in year 3, and 50–80% in year 5–7 with a full food forest.',
+                  'Distinguish: caloric sufficiency (grains, starches, fats) vs. nutritional variety (vegetables, protein) vs. luxury crops (fruit, nuts). Caloric sufficiency is hardest and most land-intensive — be honest about your target land area and labor.'
+                ]
+              }
+            },
+            { id: 'bioconstruction_detail', label: 'Bioconstruction & natural building approach', kind: 'textarea',
+              help: 'Cob · straw bale · rammed earth · bamboo · timber · hybrid.',
+              guide: {
+                title: 'Bioconstruction methods',
+                source: 'Community Alchemy Playbook — Area 9: Construction',
+                body: [
+                  'Alchemy encourages intentional material choices aligned with the land. Common natural building methods: cob (clay + straw + sand) · straw bale (high insulation) · rammed earth (excellent thermal mass) · bamboo (fast-renewable structure) · timber frame · hybrid (natural infill with conventional structure).',
+                  'Consider: which materials are locally abundant? Who on your team has these skills or who will you hire? Does your local permit authority have experience with these methods (if not, budget for engineer stamps + extended review)?'
+                ]
+              }
+            },
+            { id: 'build_timeline', label: 'Phased construction timeline', kind: 'textarea',
+              help: 'What gets built in phase 1, 2, 3 — and by when?',
+              guide: {
+                title: 'Construction phasing',
+                source: 'Community Alchemy Playbook — Area 9: Build Timeline',
+                body: [
+                  'Alchemy stresses sequencing: build infrastructure BEFORE dwellings (water before walls), build shared spaces BEFORE private (common house before cottages), build revenue-generators BEFORE amenities.',
+                  'A typical Phase 1: water system + septic + access road + 1 shared building (common house or workshop). Phase 2: first private dwellings + energy system. Phase 3: food infrastructure, remaining dwellings, amenities.',
+                  'Set real calendar dates, even if they shift — ambiguity kills momentum.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'practice_ready', label: 'How ready is the team to actually build & operate?', frame: 'CLIPS · Practice',
+              guide: { title: 'Practice readiness', source: 'CLIPS Practice', body: ['CLIPS Practice = your daily lived behaviors. Score honestly: do you have the skills, contractors, and project management to actually execute?'] } }
+          ]
+        },
+
+        // ── 3.4 Community activation / culture
+        { id: 's3.4', num: '3.4', title: 'Community Activation',
+          frameworks: ['alchemy', 'clips', 'rcos'],
+          tagLines: ['Alchemy: Area 10', 'CLIPS: Community', 'RCOS: Layer 2'],
+          kind: 'culture',
+          fields: [
+            { id: 'rituals', label: 'Rituals & rhythms', kind: 'textarea',
+              help: 'Daily, weekly, seasonal markers that build culture.',
+              guide: {
+                title: 'Rituals & rhythms',
+                source: 'Alchemy §10',
+                body: [
+                  'Daily: shared meals · morning circle · workday close.',
+                  'Weekly: community meeting · shared workday · open mic / arts night.',
+                  'Seasonal: solstice · harvest · founders day · grief tending.',
+                  'Rituals are how culture compounds. A community without rhythm becomes a housing development.'
+                ]
+              }
+            },
+            { id: 'gatherings_internal', label: 'Internal gatherings', kind: 'textarea',
+              help: 'Meetings, communication circles, workshops.',
+              guide: {
+                title: 'Internal gatherings',
+                source: 'Workbook §10',
+                body: ['Forms: business meeting · communication circle · workshop · skill share · grief / celebration ritual · dreaming session. Mix doing-meetings with being-meetings.']
+              }
+            },
+            { id: 'events_external', label: 'Events open to visitors', kind: 'textarea',
+              help: 'Ecstatic dance, ceremonies, workshops, tours.',
+              guide: {
+                title: 'External events',
+                source: 'Workbook §10',
+                body: ['Examples: ecstatic dance · cacao ceremony · bioconstruction workshop · permaculture tour · community day · retreat. External events are revenue + recruitment + cultural transmission.']
+              }
+            },
+            { id: 'volunteering', label: 'Volunteer & energy-exchange opportunities', kind: 'textarea',
+              help: 'Work-trade programs.',
+              guide: {
+                title: 'Energy exchange',
+                source: 'Workbook §10',
+                body: ['Common forms: WWOOF · work-trade for food/lodging · multi-week internships · skill-based residencies. A clear program prevents the most common failure: ad-hoc volunteers who feel exploited.']
+              }
+            },
+            { id: 'lifestyle_practices', label: 'Lifestyle practices', kind: 'textarea',
+              help: 'Shared meals, dietary, alcohol, substances, spiritual, healthcare.',
+              guide: {
+                title: 'Lifestyle practices',
+                source: 'Workbook §10',
+                body: [
+                  'Be explicit about: shared meals (frequency, dietary norms) · alcohol · tobacco · psychedelic substance use · spiritual practices · healthcare options · domesticated animals.',
+                  'Naming these EARLY filters out misalignment before it becomes housing.'
+                ]
+              }
+            },
+            { id: 'languages', label: 'Languages spoken', kind: 'input',
+              help: 'Main + others.',
+              guide: { title: 'Languages', source: 'Workbook §10', body: ['Pick a primary working language for community decisions. Other languages can flourish socially. Bilingual communities benefit from explicit translation norms in meetings.'] }
+            },
+            { id: 'onboarding', label: 'Member onboarding process', kind: 'textarea',
+              help: 'How does a new member become "of" the place?',
+              guide: {
+                title: 'Onboarding',
+                source: 'Alchemy §2.7 — Onboarding',
+                body: [
+                  'Common stages: pass screening · short visit · work trade · longer guest stay · community interview · written agreements · membership fee · community vote.',
+                  'Many communities also do reviews at 1mo, 6mo, and 1yr. Onboarding should feel like a relationship, not a transaction.'
+                ]
+              }
+            },
+            { id: 'screening', label: 'Screening process', kind: 'textarea',
+              help: 'Application · interviews · references · community feedback · trial period.',
+              guide: {
+                title: 'Screening',
+                source: 'Alchemy §2.6 — Screening',
+                body: [
+                  'A proper screening process: informational session · application · interview · reference checks · community feedback · trial period · agreements signed · community consensus on acceptance.',
+                  'Balance alignment with inclusion — avoid discriminatory criteria; do not foster hope in people who realistically can\'t join (financial, immigration, family obligations).'
+                ]
+              }
+            },
+            { id: 'offboarding', label: 'Offboarding process', kind: 'textarea',
+              help: 'Phasing out, removal, exit interview.',
+              guide: {
+                title: 'Offboarding',
+                source: 'Alchemy §2.10 — Offboarding',
+                body: [
+                  'Design before you accept anyone. Cover: clear behavioral grounds for dismissal · warning system · review cadence · meeting where the person can express their side · community vote · exit interview.',
+                  'Also handle: phasing out investors · old age / mental health / inability to participate · death, bankruptcy · legacy (children, relatives who don\'t align with values).'
+                ]
+              }
+            },
+            { id: 'culture_carriers', label: 'Who carries the culture?', kind: 'textarea',
+              help: 'Names, not roles.',
+              guide: {
+                title: 'Culture carriers',
+                source: 'Alchemy §10 + RCOS Layer 2',
+                body: ['In every community, 3–7 people disproportionately carry the culture — they hold rituals, repair conflicts, model norms. Name them. Support them. Plan for what happens if they leave.']
+              }
+            },
+            { id: 'personal_regen_practices', label: 'Personal regeneration practices', kind: 'textarea',
+              help: 'What personal wellbeing practices are encouraged or part of community life?',
+              guide: {
+                title: 'Personal regeneration',
+                source: 'Community Alchemy Playbook — Area 10: Personal Regeneration',
+                body: [
+                  'Alchemy recognizes that regenerating the land requires regenerated people. What practices support your members\' wellbeing? Common examples: morning meditation or movement circle · personal growth budget per member · access to counseling · somatic or trauma-informed practices · regular sabbath / rest day · vision quests or solo retreat.',
+                  'Communities that neglect personal wellbeing burn through their most engaged members fastest. Design rest into the rhythm, not as an afterthought.'
+                ]
+              }
+            },
+            { id: 'required_trainings', label: 'Required trainings for all members', kind: 'textarea',
+              help: 'Non-violent communication, first aid, fire safety, facilitation, etc.',
+              guide: {
+                title: 'Required trainings',
+                source: 'Community Alchemy Playbook — Area 10: Education & Trainings',
+                body: [
+                  'Alchemy recommends that every member complete a baseline set of trainings before full residency. Common requirements: Nonviolent Communication (NVC) or sociocracy facilitation basics · First aid + CPR · Fire safety and evacuation drill · Community agreements orientation · Specific skill for their role.',
+                  'Trainings are not punishment — they are the shared language that makes conflict resolution faster and self-governance possible. Budget time and money to run them in-house or sponsor members to external courses.'
+                ]
+              }
+            },
+            { id: 'daily_rhythms', label: 'Daily & weekly rhythms', kind: 'textarea',
+              help: 'What does a typical day and week look like for a resident?',
+              guide: {
+                title: 'Daily rhythms',
+                source: 'Community Alchemy Playbook — Area 10: Rhythms & Rituals',
+                body: [
+                  'Alchemy asks you to design the ordinary day with as much intention as the extraordinary ritual. What happens at dawn? At the end of the workday? On Friday evening? Structure creates freedom — when people know what to expect, they can relax into community rather than negotiating everything.',
+                  'Sketch: morning anchor (shared breakfast, circle, or solo) · work blocks · rest/siesta · shared dinner nights (how many per week?) · one community work day per week · one rest day. Then ask: does this rhythm sustain the life you want to live?'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'culture_strength', label: 'Strength of emerging community culture', frame: 'CLIPS · Community',
+              guide: { title: 'Culture strength', source: 'CLIPS Community', body: ['Score: do new visitors describe a felt sense of "what this place is" within their first 48 hours? If yes, 7+. If no, work on rituals.'] } }
+          ]
+        },
+
+        // ── Gates 3 & 4
+        { id: 'g34', num: 'G3·4', title: 'Gates 3 & 4', subtitle: 'Capital Closed & Activation Ready',
+          frameworks: ['rnf'], tagLines: ['RNF · Gate Checkpoints'], kind: 'gate',
+          gateNum: 34,
+          criteria: [
+            { id: 'g3c1', text: 'Capital fully committed', metric: 'cap_close' },
+            { id: 'g3c2', text: 'Master plan complete & approved', metric: 'mp_integration' },
+            { id: 'g3c3', text: 'Permits secured', metric: 'c_water' },
+            { id: 'g4c1', text: 'First buildings habitable', metric: 'c_buildings' },
+            { id: 'g4c2', text: 'Community culture forming visibly', metric: 'culture_strength' }
+          ]
+        }
+      ]
+    },
+
+    // ────────────────────────────────────────────────────────────────────
+    // PHASE 4 — LIVE
+    // ────────────────────────────────────────────────────────────────────
+    {
+      id: 'p4', num: '04', name: 'Live', subtitle: 'Operations & Evolution',
+      time: 'Year 2+', spiral: 5, spiralName: 'Continuous Regeneration',
+      lede: 'This is where you find out if you built what you intended to build.',
+      steps: [
+        // ── 4.1 Operations
+        { id: 's4.1', num: '4.1', title: 'Operations Go Live',
+          frameworks: ['rcos', 'clips', 'rnf'],
+          tagLines: ['RCOS: Layer 5', 'CLIPS: Practice', 'RNF: All Pillars'],
+          kind: 'operations',
+          fields: [
+            { id: 'ops_roles', label: 'Operational roles & rotation', kind: 'textarea',
+              help: 'RCOS Layer 5. Who does what, how does it rotate?',
+              guide: {
+                title: 'Operational roles',
+                source: 'RCOS Layer 5 + Workbook',
+                body: [
+                  'Document each operational role: name · responsibilities · time commitment · compensation · review cadence.',
+                  'Rotation prevents burnout AND prevents single-point-of-knowledge failures. But over-rotation destroys mastery — find the right cadence per role (some roles benefit from 6mo rotation; others need 2-year continuity).'
+                ]
+              }
+            },
+            { id: 'ops_burnout', label: 'Burnout prevention practices', kind: 'textarea',
+              help: 'How will you spot and address burnout early?',
+              guide: {
+                title: 'Burnout prevention',
+                source: 'CLIPS Practice + RCOS',
+                body: [
+                  'Practices: monthly check-in 1:1s · sabbatical policy · capped weekly hours per role · explicit "no" rights · paid time off for residents in roles · external supervision for emotionally heavy roles.',
+                  'Founder burnout is the #1 cause of community failure in years 2–4. Build the rest cadence BEFORE someone breaks.'
+                ]
+              }
+            },
+            { id: 'security', label: 'Security measures', kind: 'textarea',
+              help: 'Gated, cameras, neighborhood watch, emergency response.',
+              guide: {
+                title: 'Security & safety',
+                source: 'Workbook §11 + Alchemy §3',
+                body: ['Layered approach: physical (gates, lighting, locks) · social (neighborhood watch, member training) · digital (account security) · emergency (fire plan, medical kit, evacuation routes). Don\'t over-securitize — a gated fortress vibe is its own failure mode.']
+              }
+            },
+            { id: 'currency', label: 'Currency / value tokens used internally', kind: 'input',
+              help: 'FIAT (which?) · cryptocurrency · internal currency.',
+              guide: {
+                title: 'Currency',
+                source: 'Workbook §11',
+                body: ['Most communities use local FIAT for external transactions. Some add: internal currency or time-bank for member-to-member exchanges · cryptocurrency for global members or investor relations · scrip for guest spending. Keep it simple early.']
+              }
+            },
+            { id: 'tools', label: 'Communication & management tooling', kind: 'textarea',
+              help: 'Internal messaging + project management tools.',
+              guide: {
+                title: 'Tooling',
+                source: 'Workbook §11',
+                body: ['Communication: WhatsApp · Telegram · Discord · Tribes · ReVillager. Project & task: Asana · Trello · Airtable · Notion · Kanban boards · shared docs · whiteboards. Pick one tool per category and stick with it.']
+              }
+            },
+            { id: 'content_storytelling', label: 'Content & storytelling strategy', kind: 'textarea',
+              help: 'How do you document and share the story of what you are building?',
+              guide: {
+                title: 'Content & storytelling',
+                source: 'Community Alchemy Playbook — Area 11: Storytelling',
+                body: [
+                  'Alchemy emphasizes that how you tell your story IS part of your community design. Your narrative attracts members, investors, and allies who share your values — or repels those who don\'t.',
+                  'Consider: who owns the content creation? What channels (newsletter, Instagram, YouTube, podcast, blog)? What cadence is sustainable? What stories are off-limits or require member consent? A consistent authentic voice is worth more than a polished but infrequent one.',
+                  'Document the building process — the struggles and discoveries — not just the beautiful finished shots. Future communities learn from your real journey.'
+                ]
+              }
+            },
+            { id: 'local_partnerships', label: 'Local partnerships being cultivated', kind: 'textarea',
+              help: 'Local farms, service providers, indigenous communities, schools, governments.',
+              guide: {
+                title: 'Local partnerships',
+                source: 'Community Alchemy Playbook — Area 11: Local Integration',
+                body: [
+                  'Alchemy warns against insular intentional communities that become enclaves — beautiful inside the fence, disconnected or even exploitative outside it. Strong local partnerships prevent this.',
+                  'Map: which local farms can you source from? Which local contractors will you hire? Which indigenous or traditional communities hold historical ties to the land — and how can you honor that? Which local schools or youth programs might partner with you? Which local government officials should know you by name?',
+                  'List 3–5 specific relationships you are actively cultivating in year 1.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'ops_smooth', label: 'Daily operations smoothness', frame: 'RCOS · Layer 5',
+              guide: { title: 'Operations health', source: 'RCOS Layer 5', body: ['Ask: do small operational decisions get made cleanly without escalation? If most decisions hit a founder bottleneck, score lower.'] } }
+          ]
+        },
+
+        // ── 4.2 Governance review + activism
+        { id: 's4.2', num: '4.2', title: 'Culture & Ongoing Governance',
+          frameworks: ['alchemy', 'rcos', 'clips'],
+          tagLines: ['Alchemy: Area 10', 'RCOS: Layer 2', 'CLIPS: Community'],
+          kind: 'governance',
+          fields: [
+            { id: 'gov_review', label: 'Governance review cadence', kind: 'textarea',
+              help: 'When do you review and revise governance?',
+              guide: {
+                title: 'Governance review',
+                source: 'RCOS Layer 2',
+                body: ['Healthy communities review governance annually at minimum, with smaller checkpoints quarterly. Schedule it before you need it. Review questions: what isn\'t working? · who\'s carrying too much? · what\'s out of date? · what new realities require new agreements?']
+              }
+            },
+            { id: 'gov_feedback', label: 'Feedback loops in place', kind: 'textarea',
+              help: 'How does the community speak to itself?',
+              guide: {
+                title: 'Feedback loops',
+                source: 'CLIPS Community',
+                body: ['Forms: regular community meetings · anonymous feedback box · 1:1 check-ins with rotating peers · annual member survey · circle process for hard topics. Multiple channels capture different communication styles.']
+              }
+            },
+            { id: 'activism', label: 'Activism & give-back programs', kind: 'textarea',
+              help: 'Animals · nature · humans.',
+              guide: {
+                title: 'Activism',
+                source: 'Workbook §10',
+                body: ['Common directions: local wildlife protection · watershed restoration · refugee support · indigenous solidarity · open-source teaching. Connecting your community to wider regenerative work prevents insularity.']
+              }
+            },
+            { id: 'local_network', label: 'Local network development', kind: 'textarea',
+              help: 'Local communities, farms, resources, service providers.',
+              guide: {
+                title: 'Local network',
+                source: 'Workbook §11',
+                body: ['Map: local communities around you · local farms · local resources · local service providers. Strong neighbors = resilience. Weak neighbors = isolation. Prioritize relationships outside your fence.']
+              }
+            },
+            { id: 'education', label: 'Education center / homeschool program', kind: 'input',
+              help: 'Yes / no / hybrid; what kind?',
+              guide: {
+                title: 'Education',
+                source: 'Workbook §10',
+                body: ['Options: homeschool co-op · micro-school · forest school · unschooling · partner with existing school · adult education center. Consider regulatory requirements early — education is heavily regulated in most jurisdictions.']
+              }
+            },
+            { id: 'web_marketing', label: 'Web & marketing presence', kind: 'textarea',
+              help: 'Website, Maps, Instagram, FB, X, LinkedIn, YouTube, deck, photos.',
+              guide: {
+                title: 'Web presence',
+                source: 'Workbook §7',
+                body: ['Baseline: website · Google Maps profile · 1–2 social platforms (where your audience actually is) · pitch deck · photo library (banner, logo, gallery). Do fewer, better — a stale Twitter is worse than no Twitter.']
+              }
+            },
+            { id: 'brand_identity', label: 'Brand & visual identity', kind: 'textarea',
+              help: 'Name, logo, colors, aesthetic language, tone of voice.',
+              guide: {
+                title: 'Brand identity',
+                source: 'Community Alchemy Playbook — Area 7: Brand & Aesthetic',
+                body: [
+                  'Alchemy treats aesthetics as culture made visible. Your brand is not decoration — it signals what kind of community you are and who belongs here.',
+                  'Develop: community name (and what it means) · wordmark or logo · 2–3 primary colors and their meaning · aesthetic language (earthy, minimal, vibrant, ceremonial?) · tone of voice (warm and personal, or professional and precise?) · photo style that represents your actual community life, not aspirational stock images.',
+                  'Consistency across all touchpoints (signage, merch, website, social) creates belonging. A confused aesthetic creates a confused culture.'
+                ]
+              }
+            },
+            { id: 'recruitment_funnel', label: 'Member recruitment funnel', kind: 'textarea',
+              help: 'How do potential members find you, get interested, and decide to join?',
+              guide: {
+                title: 'Recruitment funnel',
+                source: 'Community Alchemy Playbook — Area 7: Member Attraction',
+                body: [
+                  'Alchemy maps the prospective member journey: Awareness (how they hear about you) → Interest (what makes them want to learn more) → Application (how they enter your process) → Visit (their first in-person experience) → Decision (what tips them to commit).',
+                  'Identify your strongest acquisition channel: word of mouth, events, social media, speaking, or partnerships. Most intentional communities fill 80% of spots from personal referrals — design your referral process intentionally.',
+                  'Common mistake: excellent content, broken funnel. Someone visits your Instagram, loves it, clicks the website, can\'t find how to express interest, and gives up. Map the exact path and remove every friction point.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'gov_health', label: 'Health of governance practice', frame: 'RCOS · Layer 2',
+              guide: { title: 'Governance health', source: 'RCOS Layer 2', body: ['Healthy = decisions get made, members feel heard, conflict is processed. Unhealthy = decisions stall, members feel ignored, conflict goes underground.'] } }
+          ]
+        },
+
+        // ── 4.3 Learning & evolution
+        { id: 's4.3', num: '4.3', title: 'Learning & Evolution',
+          frameworks: ['rcos', 'clips', 'rnf'],
+          tagLines: ['RCOS: Layer 6', 'CLIPS: Practice', 'RNF: Measurement'],
+          kind: 'evolution',
+          fields: [
+            { id: 'metrics', label: 'What you measure', kind: 'textarea',
+              help: 'Ecology, social, economy, hardware, governance — concrete metrics.',
+              guide: {
+                title: 'Measurement',
+                source: 'RNF Measurement',
+                body: [
+                  'Pick 1–3 metrics per RNF pillar:',
+                  '· Ecology: biodiversity index · soil organic carbon · water cycle (in/out) · food self-sufficiency %.',
+                  '· Social: belonging score · member retention · conflict resolution time · ritual attendance.',
+                  '· Economy: revenue diversification · operating margin · runway · member equity coverage.',
+                  '· Hardware: energy self-production % · waste diversion · maintenance backlog.',
+                  '· Governance: decision turnaround · participation rate · review compliance.',
+                  'Measure quarterly. What you measure becomes what you optimize — pick carefully.'
+                ]
+              }
+            },
+            { id: 'learning_practices', label: 'Learning & adaptation practices', kind: 'textarea',
+              help: 'How does the community learn and change?',
+              guide: {
+                title: 'Learning practices (RCOS Layer 6)',
+                source: 'RCOS Layer 6',
+                body: ['Practices: annual retrospective · post-mortems on failures · external visits / peer learning · reading groups · skill shares · advisory council · documentation discipline. Communities that don\'t learn calcify.']
+              }
+            },
+            { id: 'next_horizon', label: 'Next horizon — what does the community want to become?', kind: 'textarea',
+              help: 'The vision evolves; capture where it\'s heading next.',
+              guide: {
+                title: 'Next horizon',
+                source: 'Spiral Framework',
+                body: ['Spiral 5 (continuous regeneration) repeats: every 1–3 years, the community renews its vision in light of what it has become. The next horizon is not "scale up" by default — it might be deeper, slower, more local.']
+              }
+            },
+            { id: 'documentation_practice', label: 'Knowledge documentation & sharing practice', kind: 'textarea',
+              help: 'How do you capture what you learn and make it accessible internally and externally?',
+              guide: {
+                title: 'Documentation practice',
+                source: 'Community Alchemy Playbook — Area 12: Knowledge Commons',
+                body: [
+                  'Alchemy places knowledge stewardship as a core community responsibility. What gets documented: decisions and their rationale · experiments and outcomes · conflict resolutions and lessons · technical specs for infrastructure · role handovers.',
+                  'Formats: shared wiki (Notion, Obsidian) · video library · onboarding manual that is actually updated · role transition documents. The test: could a key person leave and the community carry on? If not, documentation is underdone.',
+                  'External sharing: which learnings are you willing to open-source for the wider regenerative movement? A community that publishes its failures teaches more than one that only shares successes.'
+                ]
+              }
+            },
+            { id: 'external_contributions', label: 'Contributions to the wider regenerative movement', kind: 'textarea',
+              help: 'Teaching, publishing, hosting, open-sourcing, consulting — what do you give back?',
+              guide: {
+                title: 'External contributions',
+                source: 'Community Alchemy Playbook — Area 12: Movement Building',
+                body: [
+                  'Alchemy sees each intentional community as a node in a larger regenerative network. What unique learning can your community contribute? Options: host tours and site visits · run workshops or intensives · publish case studies · contribute to open-source governance or design templates · advise other projects · speak at conferences.',
+                  'Start small: even one well-documented published lesson per year adds to the commons. Aim for reciprocity — you benefited from others who shared before you.'
+                ]
+              }
+            },
+            { id: 'quarterly_review_process', label: 'Quarterly review process', kind: 'textarea',
+              help: 'How do you run your quarterly retrospective and planning session?',
+              guide: {
+                title: 'Quarterly review',
+                source: 'Community Alchemy Playbook — Area 12: Learning Cadence',
+                body: [
+                  'Alchemy recommends a quarterly rhythm as the backbone of organizational learning: look back (what worked, what didn\'t, what surprised us) · look at the present (health of each pillar — ecology, social, economy, hardware, governance) · look forward (what are our priorities for next quarter, what do we need to decide?).',
+                  'A quarterly review takes 2–4 hours. It should feel energizing, not bureaucratic. Include ALL members in at least a read-out; deeper synthesis can be done by a smaller team. Share a written summary after — it becomes your community\'s institutional memory.'
+                ]
+              }
+            }
+          ],
+          sliders: [
+            { id: 'evo_capacity', label: 'Adaptive capacity', frame: 'RCOS · Layer 6',
+              guide: { title: 'Adaptive capacity', source: 'RCOS Layer 6', body: ['Can the community make a major change (a key member leaves, market shifts, climate shock) without breaking? 8+ = highly adaptive. <5 = brittle.'] } }
+          ]
+        }
+      ]
+    }
+  ]
+};
