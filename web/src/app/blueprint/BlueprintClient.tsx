@@ -151,6 +151,7 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
   onClose: () => void; onApply: (vals: Values) => void; currentValues: Values; scope?: ImportScope
 }) {
   const [stage, setStage] = useState<'upload' | 'scanning' | 'review' | 'error'>('upload')
+  const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 0 })
   const [docText, setDocText] = useState('')
   const [fileName, setFileName] = useState('')
   const [extracted, setExtracted] = useState<Record<string, unknown> | null>(null)
@@ -172,6 +173,7 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
   const handleScan = async () => {
     if (!docText.trim()) { setErrorMsg('Paste some text or upload a file first.'); return }
     setStage('scanning'); setErrorMsg('')
+
     const catalog = buildFieldCatalog(scope)
     const fieldsByStep: Record<string, FieldCatalogEntry[]> = {}
     catalog.forEach(f => { const k = `${f.phase} — ${f.step}`; if (!fieldsByStep[k]) fieldsByStep[k] = []; fieldsByStep[k].push(f) })
@@ -179,24 +181,24 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
       `### ${s}\n` + fields.map(f => `- ${f.id} (${f.kind}): "${f.label}"${f.help ? ' — ' + f.help : ''}`).join('\n')
     ).join('\n\n')
     const scopeHint = scope?.step ? `\n\nIMPORTANT: Focus only on the "${scope.step.title}" step${scope.section ? ' (' + scope.section + ' section)' : ''}. Only return fields listed below.` : ''
-    // Build existing-answers context for fields that have content
+
     const existingAnswers = catalog
-      .filter(f => {
-        const v = currentValues[f.id]
-        return v != null && v !== '' && String(v).length > 0
-      })
+      .filter(f => { const v = currentValues[f.id]; return v != null && v !== '' && String(v).length > 0 })
       .map(f => {
         const v = currentValues[f.id]
         const display = f.kind === 'slider' ? `${v}/10` : f.kind === 'check' ? (v ? 'Yes' : 'No') : String(v)
         return `- ${f.id} (${f.kind}): "${f.label}" → EXISTING: ${display}`
-      })
-      .join('\n')
+      }).join('\n')
+    const existingBlock = existingAnswers ? `\nEXISTING ANSWERS (already filled by the user):\n${existingAnswers}\n` : ''
 
-    const existingBlock = existingAnswers
-      ? `\nEXISTING ANSWERS (already filled by the user):\n${existingAnswers}\n`
-      : ''
+    const CHUNK_SIZE = 8000
+    const chunks: string[] = []
+    for (let i = 0; i < docText.length; i += CHUNK_SIZE) chunks.push(docText.slice(i, i + CHUNK_SIZE))
+    setChunkProgress({ current: 0, total: chunks.length })
 
-    const prompt = `You are helping pre-fill a Regenerative Neighborhood Framework wizard from an existing project document. Some fields already have user-written answers — treat those with care.
+    const buildPrompt = (chunkText: string, chunkNum: number, totalChunks: number) => {
+      const chunkNote = totalChunks > 1 ? `\n\nNote: This is chunk ${chunkNum} of ${totalChunks} of the full document. Extract what you can from this portion.` : ''
+      return `You are helping pre-fill a Regenerative Neighborhood Framework wizard from an existing project document. Some fields already have user-written answers — treat those with care.
 
 Below is the user's document, followed by the catalog of wizard fields and any existing answers.${existingBlock}
 
@@ -208,20 +210,22 @@ Rules:
 - For check fields (id without "_note" suffix): return true only if the document clearly indicates this is in place. Omit if not evident.
 - For checklist note fields (id ending in "_note"): write a 1-2 sentence note if the doc has relevant info, merging with any existing note.
 - Only include fields where you have actual document evidence. Never guess or hallucinate.
-- Also include "_summary" with a 2-sentence summary of the document.
-- Also include "_extracted_count" with the number of fields you are proposing changes for.${scopeHint}
+- Also include "_summary" with a 2-sentence summary of this document portion.
+- Also include "_extracted_count" with the number of fields you are proposing.${scopeHint}${chunkNote}
 
 DOCUMENT:
 """
-${docText.slice(0, scope?.step ? 10000 : 6000)}
+${chunkText}
 """
 
 WIZARD FIELDS:
 ${fieldList}
 
 Return ONLY valid JSON, no markdown fences, no commentary.`
+    }
 
-    try {
+    const scanChunk = async (chunkText: string, chunkNum: number, totalChunks: number): Promise<Record<string, unknown>> => {
+      const prompt = buildPrompt(chunkText, chunkNum, totalChunks)
       const resp = await fetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
       if (!resp.ok) { const err = await resp.json().catch(() => ({})) as { error?: string }; throw new Error(err.error ?? `Request failed (${resp.status})`) }
       const { result } = await resp.json() as { result: string }
@@ -229,10 +233,39 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
       if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '')
       const start = cleaned.indexOf('{'); const end = cleaned.lastIndexOf('}')
       if (start >= 0 && end > start) cleaned = cleaned.slice(start, end + 1)
-      const parsed = JSON.parse(cleaned) as Record<string, unknown>
-      setExtracted(parsed)
+      return JSON.parse(cleaned) as Record<string, unknown>
+    }
+
+    const mergeResults = (results: Record<string, unknown>[]): Record<string, unknown> => {
+      const merged: Record<string, unknown> = {}
+      results.forEach(r => {
+        Object.entries(r).forEach(([k, v]) => {
+          if (k.startsWith('_')) { if (!merged[k]) merged[k] = v; return }
+          const existing = merged[k]
+          if (existing == null) { merged[k] = v; return }
+          if (typeof v === 'string' && typeof existing === 'string') {
+            if (v.length > (existing as string).length) merged[k] = v
+          } else if (typeof v === 'number' && typeof existing === 'number') {
+            merged[k] = Math.round(((existing as number) + v) / 2)
+          } else if (typeof v === 'boolean') {
+            merged[k] = (existing as boolean) || v
+          }
+        })
+      })
+      return merged
+    }
+
+    try {
+      const allResults: Record<string, unknown>[] = []
+      for (let i = 0; i < chunks.length; i++) {
+        setChunkProgress({ current: i + 1, total: chunks.length })
+        const result = await scanChunk(chunks[i], i + 1, chunks.length)
+        allResults.push(result)
+      }
+      const merged = mergeResults(allResults)
+      setExtracted(merged)
       const accepted: Record<string, boolean> = {}
-      Object.keys(parsed).forEach(k => { if (!k.startsWith('_')) accepted[k] = true })
+      Object.keys(merged).forEach(k => { if (!k.startsWith('_')) accepted[k] = true })
       setAcceptedKeys(accepted)
       setStage('review')
     } catch (e) {
@@ -272,7 +305,12 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
             <div style={{ marginTop: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--ink-2)' }}>Or paste document text</div>
               <textarea className="textarea" rows={8} placeholder="Paste your project charter, vision document, business plan, meeting notes…" value={docText} onChange={e => setDocText(e.target.value)} style={{ width: '100%', resize: 'vertical' }} />
-              {docText && <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 4, letterSpacing: '0.08em' }}>{docText.length.toLocaleString()} CHARS{docText.length > 12000 ? ' · will truncate first 12k' : ''}</div>}
+              {docText && (
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 4, letterSpacing: '0.08em' }}>
+                  {docText.length.toLocaleString()} CHARS
+                  {docText.length > 8000 ? ` · will scan in ${Math.ceil(docText.length / 8000)} chunks` : ' · full document will be scanned'}
+                </div>
+              )}
             </div>
             <div className="card" style={{ marginTop: 18, fontSize: 12.5, lineHeight: 1.5, background: 'var(--bg-2)', padding: 16, borderRadius: 'var(--radius)' }}>
               <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M2.7 reads your document and proposes answers for fields it finds evidence for. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Best for plain-text (.txt, .md). PDFs need text pasted manually.
@@ -288,7 +326,17 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
           <div style={{ padding: '40px 0', textAlign: 'center' }}>
             <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
             <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>Reading your document…</div>
-            <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8, fontStyle: 'italic' }}>Mapping content to RNF · Alchemy · RCOS · CLIPS fields</div>
+            {chunkProgress.total > 1 && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
+                  Chunk {chunkProgress.current} of {chunkProgress.total}
+                </div>
+                <div style={{ width: 200, height: 4, background: 'var(--rule)', borderRadius: 2, margin: '10px auto 0' }}>
+                  <div style={{ height: '100%', width: `${(chunkProgress.current / chunkProgress.total) * 100}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 300ms' }} />
+                </div>
+              </div>
+            )}
+            {chunkProgress.total <= 1 && <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8, fontStyle: 'italic' }}>Mapping content to RNF · Alchemy · RCOS · CLIPS fields</div>}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24 }}>
               {(['rnf', 'alchemy', 'rcos', 'clips'] as const).map((k, i) => (
                 <div key={k} style={{ width: 10, height: 10, borderRadius: '50%', background: `var(--${k})`, animation: `pulse 1s ${i * 150}ms infinite` }} />
