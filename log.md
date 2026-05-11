@@ -1,14 +1,5 @@
 # TribesPlatform v2 — Change Log
 
-## 2026-05-10
-### Module 04 — Blueprint / Framework Wizard: Migrated into Platform
-- All files from `agnetO/projects/active/framework regenerative-neighborhood/` moved into `tribesplatform-v2/Modules/m4_framework_wizard/`
-- Wizard app (`framework_wizard/`), source framework docs (`framework/`), log and README all present
-- Module docs rewritten to reflect current state, correct Vercel URL, and platform context
-- Live at: https://framework-wizard.vercel.app
-
----
-
 ## 2026-05-08
 ### Module Structure Updated to 14 Modules (00–13)
 
@@ -46,62 +37,6 @@
 - Genesis (10) handles Telegram bridge — member requests → leadership approval → MycoNet writes DB
 - Two Telegram groups: Community Group (all members + Genesis) and Leadership Group (CM + Dept Leads + MycoNet + Genesis)
 - MycoNet Pro tier: proactive push updates to Leadership Group on every module write
-
----
-
-## 2026-05-02
-### Module 01 — Community Network: Full Build (Phase A + B)
-
-#### Auth & Onboarding
-- Magic link login + signup pages (`/auth/login`, `/auth/signup`, `/auth/callback`)
-- Two-step onboarding flow (`/onboarding`) — username + display name on first sign-in
-- Middleware protecting all routes except auth pages
-
-#### Profile System
-- `user_profiles` table: username, display_name, avatar_url, bio, status, location, user_types
-- `user_bio` table: archetypes, values, OCEAN sliders, MBTI type, goals, skills, interests, creative focus, community fit, fun facts
-- Full bio wizard at `/profile/edit` — tabbed cards covering all bio sections
-- Avatar upload to Supabase Storage (`avatars` bucket)
-- Public profile page at `/u/[username]` displaying all bio data
-- Current project URL auto-detected and rendered as clickable link
-
-#### Bio Fields Added
-- MBTI type selector — 16 types with cognitive role labels (Architect, Mediator, etc.)
-- Favourite colour + favourite animal (fun facts section)
-- `ALTER TABLE user_bio ADD COLUMN mbti TEXT, favorite_color TEXT, favorite_animal TEXT`
-
-#### Discover Page (Phase B)
-- Server component fetches all profiles + bios
-- Client component with live filters: search, status, user type
-- Match scoring computed client-side (max 100 pts):
-  - Values overlap: 30 pts
-  - Skills overlap: 16 pts
-  - Interests overlap: 14 pts
-  - OCEAN similarity: 18 pts
-  - MBTI cognitive compatibility: 22 pts (ideal pair / secondary / same type / temperament / letters)
-- MBTI compatibility uses cognitive function theory — not just letter matching
-- MemberCard shows: avatar, name, MBTI badge, status, location, types, archetypes, skills, match score + reason pills
-
-#### UI / Design
-- Dark mode toggle (`ThemeToggle.tsx`) with localStorage persistence
-- Flash-prevention inline script in `layout.tsx`
-- `suppressHydrationWarning` on `<html>` to handle theme attribute mismatch
-
-#### Email / Auth Rate Limits
-- Identified Supabase default: 4 OTP emails/hour per project
-- Configured Resend SMTP (`smtp.resend.com`) in Supabase Auth settings
-- Domain `regentribe.co` needs DNS verification in Cloudflare (in progress)
-- Interim workaround: `mailer_autoconfirm: true` (bypasses email for now)
-- Pending: Add Resend DKIM + SPF records in Cloudflare, then set sender to `hello@regentribe.co`
-
-#### Project Migration
-- App codebase moved from `/Users/oscacorrea/dev/regen-platform` to
-  `tribesplatform-v2/Modules/m1_comm_network`
-- Verified with `diff -rq` (only `.DS_Store` differences)
-- Original directory deleted; Vercel link travels with `.vercel/project.json`
-
-#### Docs Updated
-- `Modules/m1_comm_network/README.md` — full module spec (stack, pages, DB tables, bio fields, match scoring, local dev, deploy, key files)
 
 ---
 
