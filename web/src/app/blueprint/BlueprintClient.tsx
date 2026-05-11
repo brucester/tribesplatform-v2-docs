@@ -179,18 +179,37 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
       `### ${s}\n` + fields.map(f => `- ${f.id} (${f.kind}): "${f.label}"${f.help ? ' — ' + f.help : ''}`).join('\n')
     ).join('\n\n')
     const scopeHint = scope?.step ? `\n\nIMPORTANT: Focus only on the "${scope.step.title}" step${scope.section ? ' (' + scope.section + ' section)' : ''}. Only return fields listed below.` : ''
-    const prompt = `You are helping pre-fill a Regenerative Neighborhood Framework wizard from an existing project document.
+    // Build existing-answers context for fields that have content
+    const existingAnswers = catalog
+      .filter(f => {
+        const v = currentValues[f.id]
+        return v != null && v !== '' && String(v).length > 0
+      })
+      .map(f => {
+        const v = currentValues[f.id]
+        const display = f.kind === 'slider' ? `${v}/10` : f.kind === 'check' ? (v ? 'Yes' : 'No') : String(v)
+        return `- ${f.id} (${f.kind}): "${f.label}" → EXISTING: ${display}`
+      })
+      .join('\n')
 
-Below is the user's document, followed by the catalog of wizard fields. Extract any information from the document that maps to these fields. Return a JSON object with field IDs as keys.
+    const existingBlock = existingAnswers
+      ? `\nEXISTING ANSWERS (already filled by the user):\n${existingAnswers}\n`
+      : ''
+
+    const prompt = `You are helping pre-fill a Regenerative Neighborhood Framework wizard from an existing project document. Some fields already have user-written answers — treat those with care.
+
+Below is the user's document, followed by the catalog of wizard fields and any existing answers.${existingBlock}
 
 Rules:
-- For text fields: return a string with extracted/synthesized content (1-3 sentences). If nothing relevant, omit the key.
-- For slider fields: return an integer 0-10 reflecting confidence/maturity in that area based on document evidence. If unclear, omit.
-- For check fields (id without "_note" suffix): return true only if the document clearly indicates this is in place. Otherwise omit.
-- For checklist note fields (id ending in "_note"): if the corresponding checklist item is true OR the doc has relevant info, write a 1-2 sentence note. Be concrete.
-- Only include fields where you have actual evidence from the document. Omit anything you'd be guessing.
+- For text fields with NO existing answer: extract/synthesize 1-3 sentences from the document if relevant. Omit if no evidence.
+- For text fields WITH an existing answer: only return a value if the document meaningfully adds to or updates it. If so, write a merged answer that preserves the user's intent and adds the new detail. If the document just repeats what's there, omit the key entirely.
+- For slider fields with NO existing answer: return an integer 0-10 based on document evidence. Omit if unclear.
+- For slider fields WITH an existing answer: only update if the document gives strong evidence the score should change. If so, return the revised score.
+- For check fields (id without "_note" suffix): return true only if the document clearly indicates this is in place. Omit if not evident.
+- For checklist note fields (id ending in "_note"): write a 1-2 sentence note if the doc has relevant info, merging with any existing note.
+- Only include fields where you have actual document evidence. Never guess or hallucinate.
 - Also include "_summary" with a 2-sentence summary of the document.
-- Also include "_extracted_count" with the number of fields you populated.${scopeHint}
+- Also include "_extracted_count" with the number of fields you are proposing changes for.${scopeHint}
 
 DOCUMENT:
 """
