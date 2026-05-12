@@ -191,7 +191,8 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
       }).join('\n')
     const existingBlock = existingAnswers ? `\nEXISTING ANSWERS (already filled by the user):\n${existingAnswers}\n` : ''
 
-    const CHUNK_SIZE = 5000
+    const CHUNK_SIZE = 15000
+    const CONCURRENCY = 4
     const chunks: string[] = []
     for (let i = 0; i < docText.length; i += CHUNK_SIZE) chunks.push(docText.slice(i, i + CHUNK_SIZE))
     setChunkProgress({ current: 0, total: chunks.length })
@@ -259,11 +260,17 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
     }
 
     try {
-      const allResults: Record<string, unknown>[] = []
-      for (let i = 0; i < chunks.length; i++) {
-        setChunkProgress({ current: i + 1, total: chunks.length })
-        const result = await scanChunk(chunks[i], i + 1, chunks.length)
-        allResults.push(result)
+      const allResults: Record<string, unknown>[] = new Array(chunks.length)
+      let completed = 0
+      for (let batchStart = 0; batchStart < chunks.length; batchStart += CONCURRENCY) {
+        const batch = chunks.slice(batchStart, batchStart + CONCURRENCY)
+        await Promise.all(batch.map(async (chunk, batchIdx) => {
+          const i = batchStart + batchIdx
+          const result = await scanChunk(chunk, i + 1, chunks.length)
+          allResults[i] = result
+          completed++
+          setChunkProgress({ current: completed, total: chunks.length })
+        }))
       }
       const merged = mergeResults(allResults)
       setExtracted(merged)
