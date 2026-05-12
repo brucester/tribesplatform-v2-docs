@@ -999,6 +999,7 @@ function WelcomeView({ onStart, hasProgress, onJumpToDashboard, onImport }: {
               <button className="btn btn-primary helper-btn" onClick={onImport}>
                 ✨ Upload a document to start
               </button>
+              <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 6, fontFamily: 'var(--mono)', letterSpacing: '0.08em' }}>v2.05</div>
             </div>
           </div>
         </div>
