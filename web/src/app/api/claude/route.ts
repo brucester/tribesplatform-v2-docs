@@ -2,6 +2,46 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'edge'
 
+function extractJSON(content: string): string {
+  const strip = (s: string) => {
+    let c = s.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    if (c.startsWith('```')) c = c.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '').trim()
+    return c
+  }
+  const tryParse = (s: string) => { try { JSON.parse(s); return s } catch { return null } }
+  const findLastObject = (s: string) => {
+    // Walk backwards from end to find a closing } that pairs with an opening {
+    for (let e = s.length - 1; e >= 0; e--) {
+      if (s[e] !== '}') continue
+      for (let st = 0; st <= e; st++) {
+        if (s[st] !== '{') continue
+        const candidate = s.slice(st, e + 1)
+        if (tryParse(candidate)) return candidate
+      }
+    }
+    return null
+  }
+
+  // 1. After </think> tag (complete think block)
+  const thinkEnd = content.lastIndexOf('</think>')
+  if (thinkEnd >= 0) {
+    const after = strip(content.slice(thinkEnd + 8))
+    const r = tryParse(after) ?? findLastObject(after)
+    if (r) return r
+  }
+
+  // 2. Strip complete think blocks
+  const stripped = strip(content)
+  const r2 = tryParse(stripped) ?? findLastObject(stripped)
+  if (r2) return r2
+
+  // 3. Find last { } pair in raw content (handles truncated think blocks)
+  const r3 = findLastObject(content)
+  if (r3) return r3
+
+  return content
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.MINIMAX_API_KEY
   if (!apiKey) {
@@ -82,12 +122,8 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Strip <think>...</think> blocks then find the JSON object
-        let cleaned = fullContent.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-        if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '')
-        const start = cleaned.indexOf('{')
-        const end = cleaned.lastIndexOf('}')
-        const result = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned
+        // Extract JSON robustly — handles complete/incomplete <think> blocks
+        const result = extractJSON(fullContent)
 
         const payload = JSON.stringify({ result })
         controller.enqueue(new TextEncoder().encode(payload))
