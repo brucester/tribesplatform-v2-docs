@@ -3,14 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'edge'
 
 function extractJSON(content: string): string {
-  const strip = (s: string) => {
+  const clean = (s: string) => {
     let c = s.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    // strip leading </think> if think content was in a separate field
+    if (c.startsWith('</think>')) c = c.slice(8).trim()
     if (c.startsWith('```')) c = c.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '').trim()
     return c
   }
   const tryParse = (s: string) => { try { JSON.parse(s); return s } catch { return null } }
   const findLastObject = (s: string) => {
-    // Walk backwards from end to find a closing } that pairs with an opening {
     for (let e = s.length - 1; e >= 0; e--) {
       if (s[e] !== '}') continue
       for (let st = 0; st <= e; st++) {
@@ -22,20 +23,20 @@ function extractJSON(content: string): string {
     return null
   }
 
-  // 1. After </think> tag (complete think block)
+  // 1. After last </think> tag
   const thinkEnd = content.lastIndexOf('</think>')
   if (thinkEnd >= 0) {
-    const after = strip(content.slice(thinkEnd + 8))
+    const after = clean(content.slice(thinkEnd + 8))
     const r = tryParse(after) ?? findLastObject(after)
     if (r) return r
   }
 
-  // 2. Strip complete think blocks
-  const stripped = strip(content)
-  const r2 = tryParse(stripped) ?? findLastObject(stripped)
+  // 2. Clean full content (strips think blocks + leading </think>)
+  const cleaned = clean(content)
+  const r2 = tryParse(cleaned) ?? findLastObject(cleaned)
   if (r2) return r2
 
-  // 3. Find last { } pair in raw content (handles truncated think blocks)
+  // 3. Find last valid {..} anywhere in raw content
   const r3 = findLastObject(content)
   if (r3) return r3
 
