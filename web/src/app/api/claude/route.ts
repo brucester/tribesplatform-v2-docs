@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const maxDuration = 60
+export const maxDuration = 90
 
-function extractJSON(content: string): string {
+function extractJSON(content: string): string | null {
   const clean = (s: string) => {
     let c = s.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
     if (c.startsWith('</think>')) c = c.slice(8).trim()
@@ -22,6 +22,7 @@ function extractJSON(content: string): string {
     return null
   }
 
+  // 1. After last </think>
   const thinkEnd = content.lastIndexOf('</think>')
   if (thinkEnd >= 0) {
     const after = clean(content.slice(thinkEnd + 8))
@@ -29,14 +30,16 @@ function extractJSON(content: string): string {
     if (r) return r
   }
 
+  // 2. Clean full content (strips complete think blocks)
   const cleaned = clean(content)
   const r2 = tryParse(cleaned) ?? findLastObject(cleaned)
   if (r2) return r2
 
+  // 3. Find last valid {...} anywhere in raw content
   const r3 = findLastObject(content)
   if (r3) return r3
 
-  return content
+  return null
 }
 
 export async function POST(req: NextRequest) {
@@ -74,7 +77,7 @@ export async function POST(req: NextRequest) {
           },
           { role: 'user', content: prompt },
         ],
-        max_completion_tokens: 1500,
+        max_completion_tokens: 4096,
         temperature: 0.1,
       }),
     })
@@ -93,10 +96,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `MiniMax error: ${detail}` }, { status: 502 })
   }
 
-  const data = await minimaxRes.json() as { choices?: { message?: { content?: string; reasoning_content?: string } }[] }
-  const message = data.choices?.[0]?.message
-  const rawContent = (message?.content ?? '') + (message?.reasoning_content ?? '')
+  const data = await minimaxRes.json() as { choices?: { message?: { content?: string } }[] }
+  const rawContent = data.choices?.[0]?.message?.content ?? ''
   const result = extractJSON(rawContent)
+
+  if (!result) {
+    return NextResponse.json(
+      { error: "We're working on our scanning process, thanks for the patience. Try again later please." },
+      { status: 502 }
+    )
+  }
 
   return NextResponse.json({ result })
 }
