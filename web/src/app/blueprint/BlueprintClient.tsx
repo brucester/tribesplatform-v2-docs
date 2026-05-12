@@ -225,7 +225,8 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
 
     const scanChunk = async (chunkText: string, chunkNum: number, totalChunks: number): Promise<Record<string, unknown>> => {
       const prompt = buildPrompt(chunkText, chunkNum, totalChunks)
-      const resp = await fetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
+      const aiUrl = process.env.NEXT_PUBLIC_AI_WORKER_URL || '/api/claude'
+      const resp = await fetch(aiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({})) as { error?: string }
         throw new Error(err.error ?? `Request failed (${resp.status})`)
@@ -997,7 +998,7 @@ function WelcomeView({ onStart, hasProgress, onJumpToDashboard, onImport }: {
               <button className="btn btn-primary helper-btn" onClick={onImport}>
                 ✨ Upload a document to start
               </button>
-              <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 6, fontFamily: 'var(--mono)', letterSpacing: '0.08em' }}>v2.06</div>
+              <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 6, fontFamily: 'var(--mono)', letterSpacing: '0.08em' }}>v2.07</div>
             </div>
           </div>
         </div>
