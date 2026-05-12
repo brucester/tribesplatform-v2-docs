@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const runtime = 'edge'
-
 function extractJSON(content: string): string | null {
   // Strip complete <think>...</think> blocks first
   let c = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
