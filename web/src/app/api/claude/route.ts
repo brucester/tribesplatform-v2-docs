@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const maxDuration = 60
+export const runtime = 'edge'
 
 function extractJSON(content: string): string | null {
   // Strip complete <think>...</think> blocks first
