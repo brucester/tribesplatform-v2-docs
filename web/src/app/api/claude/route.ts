@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'MiniMax-M2.7-highspeed',
+        model: 'MiniMax-M2.7',
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 2048,
         temperature: 0.3,

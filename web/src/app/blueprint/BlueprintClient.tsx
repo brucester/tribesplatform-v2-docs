@@ -178,7 +178,7 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
     const fieldsByStep: Record<string, FieldCatalogEntry[]> = {}
     catalog.forEach(f => { const k = `${f.phase} — ${f.step}`; if (!fieldsByStep[k]) fieldsByStep[k] = []; fieldsByStep[k].push(f) })
     const fieldList = Object.entries(fieldsByStep).map(([s, fields]) =>
-      `### ${s}\n` + fields.map(f => `- ${f.id} (${f.kind}): "${f.label}"${f.help ? ' — ' + f.help : ''}`).join('\n')
+      `### ${s}\n` + fields.map(f => `- ${f.id} (${f.kind}): "${f.label}"`).join('\n')
     ).join('\n\n')
     const scopeHint = scope?.step ? `\n\nIMPORTANT: Focus only on the "${scope.step.title}" step${scope.section ? ' (' + scope.section + ' section)' : ''}. Only return fields listed below.` : ''
 
