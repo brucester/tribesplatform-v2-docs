@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const maxDuration = 90
+export const maxDuration = 120
 
 function extractJSON(content: string): string | null {
   const clean = (s: string) => {
@@ -22,7 +22,6 @@ function extractJSON(content: string): string | null {
     return null
   }
 
-  // 1. After last </think>
   const thinkEnd = content.lastIndexOf('</think>')
   if (thinkEnd >= 0) {
     const after = clean(content.slice(thinkEnd + 8))
@@ -30,12 +29,10 @@ function extractJSON(content: string): string | null {
     if (r) return r
   }
 
-  // 2. Clean full content (strips complete think blocks)
   const cleaned = clean(content)
   const r2 = tryParse(cleaned) ?? findLastObject(cleaned)
   if (r2) return r2
 
-  // 3. Find last valid {...} anywhere in raw content
   const r3 = findLastObject(content)
   if (r3) return r3
 
@@ -79,6 +76,7 @@ export async function POST(req: NextRequest) {
         ],
         max_completion_tokens: 4096,
         temperature: 0.1,
+        stream: true,
       }),
     })
   } catch (e) {
@@ -96,16 +94,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `MiniMax error: ${detail}` }, { status: 502 })
   }
 
-  const data = await minimaxRes.json() as { choices?: { message?: { content?: string } }[] }
-  const rawContent = data.choices?.[0]?.message?.content ?? ''
-  const result = extractJSON(rawContent)
+  // Stream from MiniMax to keep the connection alive during chain-of-thought.
+  // Collect all content deltas server-side, then send one complete JSON to the client.
+  const outputStream = new ReadableStream({
+    async start(controller) {
+      const reader = minimaxRes.body!.getReader()
+      const decoder = new TextDecoder()
+      let fullContent = ''
 
-  if (!result) {
-    return NextResponse.json(
-      { error: "We're working on our scanning process, thanks for the patience. Try again later please." },
-      { status: 502 }
-    )
-  }
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const chunk = decoder.decode(value, { stream: true })
+          for (const line of chunk.split('\n')) {
+            if (!line.startsWith('data: ')) continue
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') continue
+            try {
+              const parsed = JSON.parse(data) as { choices?: { delta?: { content?: string } }[] }
+              const delta = parsed.choices?.[0]?.delta?.content ?? ''
+              if (delta) fullContent += delta
+            } catch { /* skip malformed SSE line */ }
+          }
+        }
 
-  return NextResponse.json({ result })
+        const result = extractJSON(fullContent)
+        if (!result) {
+          controller.enqueue(new TextEncoder().encode(
+            JSON.stringify({ error: "We're working on our scanning process, thanks for the patience. Try again later please." })
+          ))
+        } else {
+          controller.enqueue(new TextEncoder().encode(JSON.stringify({ result })))
+        }
+      } catch (e) {
+        controller.enqueue(new TextEncoder().encode(
+          JSON.stringify({ error: `Stream error: ${(e as Error).message}` })
+        ))
+      } finally {
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(outputStream, { headers: { 'Content-Type': 'application/json' } })
 }
