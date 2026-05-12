@@ -405,8 +405,14 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
         {stage === 'error' && (
           <div>
             <div className="card" style={{ padding: 24, background: 'var(--warn-soft)', borderRadius: 'var(--radius)' }}>
-              <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginBottom: 8 }}>Something went wrong</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>{errorMsg}</div>
+              <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginBottom: 8 }}>
+                {errorMsg.includes('504') || errorMsg.includes('rate limit') ? "We're working on our scanning process" : 'Something went wrong'}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                {errorMsg.includes('504') || errorMsg.includes('rate limit')
+                  ? "We're working on our scanning process, thanks for the patience. Try again later please."
+                  : errorMsg}
+              </div>
             </div>
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
               <button className="btn btn-ghost" onClick={onClose}>Close</button>
