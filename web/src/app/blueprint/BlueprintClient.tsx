@@ -227,7 +227,10 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
     const scanChunk = async (chunkText: string, chunkNum: number, totalChunks: number): Promise<Record<string, unknown>> => {
       const prompt = buildPrompt(chunkText, chunkNum, totalChunks)
       const resp = await fetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
-      if (!resp.ok) { const err = await resp.json().catch(() => ({})) as { error?: string }; throw new Error(err.error ?? `Request failed (${resp.status})`) }
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({})) as { error?: string }
+        throw new Error(err.error ?? `Request failed (${resp.status})`)
+      }
       const { result } = await resp.json() as { result: string }
       let cleaned = result.trim()
       if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '')

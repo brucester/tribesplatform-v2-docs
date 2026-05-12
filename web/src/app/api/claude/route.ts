@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'MiniMax-M2.7',
+        model: 'MiniMax-M2.7-highspeed',
         messages: [{ role: 'user', content: prompt }],
         max_completion_tokens: 2048,
         temperature: 0.3,
@@ -42,8 +42,17 @@ export async function POST(req: NextRequest) {
 
   const rawText = await minimaxRes.text()
 
+  if (minimaxRes.status === 429) {
+    return NextResponse.json({ error: 'MiniMax rate limit reached. Please try again in a few hours.' }, { status: 429 })
+  }
+
   if (!minimaxRes.ok) {
-    return NextResponse.json({ error: `MiniMax error ${minimaxRes.status}: ${rawText.slice(0, 400)}` }, { status: 502 })
+    let detail = rawText.slice(0, 400)
+    try {
+      const parsed = JSON.parse(rawText)
+      detail = parsed?.error?.message ?? detail
+    } catch { /* use raw */ }
+    return NextResponse.json({ error: `MiniMax error: ${detail}` }, { status: 502 })
   }
 
   let data: { choices?: { message?: { content?: string } }[] }
@@ -53,9 +62,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Non-JSON response: ${rawText.slice(0, 400)}` }, { status: 502 })
   }
 
-  const result = data.choices?.[0]?.message?.content ?? ''
+  // Strip <think>...</think> blocks the model sometimes emits before the JSON
+  let result = data.choices?.[0]?.message?.content ?? ''
+  result = result.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+
   if (!result) {
-    return NextResponse.json({ error: `Empty result from MiniMax.` }, { status: 502 })
+    return NextResponse.json({ error: 'Empty result from MiniMax.' }, { status: 502 })
   }
 
   return NextResponse.json({ result })
