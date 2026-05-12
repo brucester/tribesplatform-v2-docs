@@ -191,7 +191,7 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
       }).join('\n')
     const existingBlock = existingAnswers ? `\nEXISTING ANSWERS (already filled by the user):\n${existingAnswers}\n` : ''
 
-    const CHUNK_SIZE = 8000
+    const CHUNK_SIZE = 5000
     const chunks: string[] = []
     for (let i = 0; i < docText.length; i += CHUNK_SIZE) chunks.push(docText.slice(i, i + CHUNK_SIZE))
     setChunkProgress({ current: 0, total: chunks.length })
@@ -311,7 +311,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               {docText && (
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)', marginTop: 4, letterSpacing: '0.08em' }}>
                   {docText.length.toLocaleString()} CHARS
-                  {docText.length > 8000 ? ` · will scan in ${Math.ceil(docText.length / 8000)} chunks` : ' · full document will be scanned'}
+                  {docText.length > 5000 ? ` · will scan in ${Math.ceil(docText.length / 5000)} chunks` : ' · full document will be scanned'}
                 </div>
               )}
             </div>

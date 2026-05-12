@@ -31,9 +31,15 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: 'MiniMax-M2.7',
-        messages: [{ role: 'user', content: prompt }],
-        max_completion_tokens: 2048,
-        temperature: 0.3,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a JSON extraction API. Output ONLY a valid JSON object — no thinking, no reasoning, no explanation, no markdown fences. Your entire response must be a single JSON object starting with { and ending with }.',
+          },
+          { role: 'user', content: prompt },
+        ],
+        max_completion_tokens: 1500,
+        temperature: 0.1,
       }),
     })
   } catch (e) {
