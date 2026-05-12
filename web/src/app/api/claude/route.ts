@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const runtime = 'edge'
+export const maxDuration = 60
 
 function extractJSON(content: string): string {
   const clean = (s: string) => {
     let c = s.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-    // strip leading </think> if think content was in a separate field
     if (c.startsWith('</think>')) c = c.slice(8).trim()
     if (c.startsWith('```')) c = c.replace(/^```(json)?\s*/, '').replace(/```\s*$/, '').trim()
     return c
@@ -23,7 +22,6 @@ function extractJSON(content: string): string {
     return null
   }
 
-  // 1. After last </think> tag
   const thinkEnd = content.lastIndexOf('</think>')
   if (thinkEnd >= 0) {
     const after = clean(content.slice(thinkEnd + 8))
@@ -31,12 +29,10 @@ function extractJSON(content: string): string {
     if (r) return r
   }
 
-  // 2. Clean full content (strips think blocks + leading </think>)
   const cleaned = clean(content)
   const r2 = tryParse(cleaned) ?? findLastObject(cleaned)
   if (r2) return r2
 
-  // 3. Find last valid {..} anywhere in raw content
   const r3 = findLastObject(content)
   if (r3) return r3
 
@@ -80,7 +76,6 @@ export async function POST(req: NextRequest) {
         ],
         max_completion_tokens: 1500,
         temperature: 0.1,
-        stream: true,
       }),
     })
   } catch (e) {
@@ -98,46 +93,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `MiniMax error: ${detail}` }, { status: 502 })
   }
 
-  // Stream: collect all SSE chunks, extract content deltas, return complete result
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = minimaxRes.body!.getReader()
-      const decoder = new TextDecoder()
-      let fullContent = ''
+  const data = await minimaxRes.json() as { choices?: { message?: { content?: string; reasoning_content?: string } }[] }
+  const message = data.choices?.[0]?.message
+  const rawContent = (message?.content ?? '') + (message?.reasoning_content ?? '')
+  const result = extractJSON(rawContent)
 
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n')
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue
-            const data = line.slice(6).trim()
-            if (data === '[DONE]') continue
-            try {
-              const parsed = JSON.parse(data) as { choices?: { delta?: { content?: string } }[] }
-              const delta = parsed.choices?.[0]?.delta?.content ?? ''
-              if (delta) fullContent += delta
-            } catch { /* skip malformed SSE line */ }
-          }
-        }
-
-        // Extract JSON robustly — handles complete/incomplete <think> blocks
-        const result = extractJSON(fullContent)
-
-        const payload = JSON.stringify({ result })
-        controller.enqueue(new TextEncoder().encode(payload))
-      } catch (e) {
-        const payload = JSON.stringify({ error: `Stream error: ${(e as Error).message}` })
-        controller.enqueue(new TextEncoder().encode(payload))
-      } finally {
-        controller.close()
-      }
-    },
-  })
-
-  return new Response(stream, {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return NextResponse.json({ result })
 }
