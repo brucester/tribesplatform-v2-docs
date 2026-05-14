@@ -1609,7 +1609,9 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
   }, [D])
 
   const [values, setValues] = useState<Values>(initialAnswers)
-  const [currentId, setCurrentId] = useState('welcome')
+  const [currentId, setCurrentId] = useState(() =>
+    readOnly || Object.keys(initialAnswers).length > 0 ? 'dashboard' : 'welcome'
+  )
 
   const supabase = createClient()
   // eslint-disable-next-line react-hooks/exhaustive-deps
