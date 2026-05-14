@@ -13,7 +13,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   // Profile being viewed + viewer's own data (for sidebar/right panel) fetched in parallel
   const [profileRes, viewerProfileRes, viewerBioRes, viewerOffersRes, viewerRequestsRes] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('username', username).single(),
-    user ? supabase.from('user_profiles').select('username, display_name, avatar_url, first_name, headline').eq('id', user.id).single() : Promise.resolve({ data: null }),
+    user ? supabase.from('user_profiles').select('username, avatar_url, first_name, headline').eq('id', user.id).single() : Promise.resolve({ data: null }),
     user ? supabase.from('user_bio').select('values_principles, skills, goals, personality_details').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
     user ? supabase.from('user_offers').select('id').eq('user_id', user.id) : Promise.resolve({ data: null }),
     user ? supabase.from('user_requests').select('id').eq('user_id', user.id) : Promise.resolve({ data: null }),
@@ -32,7 +32,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const vp = viewerProfileRes.data
   const vb = viewerBioRes.data
   const vpd = vb?.personality_details as any
-  const sidebarUser = vp ? { username: vp.username, display_name: vp.display_name, avatar_url: vp.avatar_url } : null
+  const sidebarUser = vp ? { username: vp.username, first_name: vp.first_name, avatar_url: vp.avatar_url } : null
 
   let rightPanelData = null
   if (user && vp) {

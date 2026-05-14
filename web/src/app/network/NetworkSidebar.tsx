@@ -21,7 +21,7 @@ const NAV_ITEMS = [
 ]
 
 interface Props {
-  user: { username: string | null; display_name: string | null; avatar_url: string | null } | null
+  user: { username: string | null; first_name: string | null; avatar_url: string | null } | null
 }
 
 export default function NetworkSidebar({ user }: Props) {
@@ -30,7 +30,7 @@ export default function NetworkSidebar({ user }: Props) {
   const supabase = createClient()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const initial = (user?.display_name ?? user?.username ?? '?')[0].toUpperCase()
+  const initial = (user?.first_name ?? user?.username ?? '?')[0].toUpperCase()
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -116,7 +116,7 @@ export default function NetworkSidebar({ user }: Props) {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-sidebar-foreground truncate">
-                    {user.display_name ?? user.username}
+                    {user.first_name ?? user.username}
                   </p>
                   {user.username && (
                     <p className="text-xs text-muted-foreground truncate">@{user.username}</p>

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import {
   Pencil, MapPin, User, Heart, Brain, Star,
-  Target, Gift, HelpCircle, Plane, Briefcase,
+  Target, Gift, HelpCircle, Plane, Briefcase, Camera, Loader2,
 } from 'lucide-react'
 
 const OCEAN_LABELS = [
@@ -31,6 +31,8 @@ export default function NetworkProfilePage() {
   const [bio, setBio] = useState<any>(null)
   const [offers, setOffers] = useState<any[]>([])
   const [seeks, setSeeks] = useState<any[]>([])
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -45,6 +47,7 @@ export default function NetworkProfilePage() {
       ])
 
       setProfile(p.data)
+      setAvatarUrl(p.data?.avatar_url ?? null)
       setBio(b.data)
       setOffers(o.data ?? [])
       setSeeks(s.data ?? [])
@@ -77,6 +80,26 @@ export default function NetworkProfilePage() {
     )
   }
 
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !profile?.id) return
+    setAvatarUploading(true)
+    try {
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `${profile.id}.${ext}`
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', profile.id)
+      setAvatarUrl(publicUrl)
+    } catch (err) {
+      console.error('Avatar upload failed:', err)
+    } finally {
+      setAvatarUploading(false)
+      e.target.value = ''
+    }
+  }
+
   const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.username
   const initial = displayName[0]?.toUpperCase() ?? '?'
   const location = [profile.city, profile.country].filter(Boolean).join(', ')
@@ -91,10 +114,18 @@ export default function NetworkProfilePage() {
         <div className="h-24 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5" />
         <CardContent className="px-6 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 mb-4">
-            <Avatar className="h-20 w-20 border-4 border-background shadow-md">
-              <AvatarImage src={profile.avatar_url ?? undefined} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">{initial}</AvatarFallback>
-            </Avatar>
+            <label htmlFor="avatar-upload-profile" className="cursor-pointer group relative flex-shrink-0" style={{ width: 80, height: 80 }}>
+              <Avatar className="h-20 w-20 border-4 border-background shadow-md">
+                <AvatarImage src={avatarUrl ?? undefined} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">{initial}</AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {avatarUploading
+                  ? <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  : <Camera className="h-5 w-5 text-white" />}
+              </div>
+              <input id="avatar-upload-profile" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            </label>
             <div className="flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
