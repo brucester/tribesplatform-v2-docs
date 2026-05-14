@@ -2,6 +2,26 @@
 
 ---
 
+## 2026-05-14 — PDF upload, nav links, admin review panels
+
+### Blueprint — PDF upload (large file support)
+- Added `pdfjs-dist` for client-side PDF text extraction
+- PDF.js loaded dynamically; worker loaded from cdnjs CDN to avoid bundle bloat
+- New `extractPdfText()` function extracts text page-by-page with progress callback
+- New `extracting` stage shown during PDF parsing with live page progress bar
+- File dropzone now accepts `.pdf,application/pdf` in addition to text files
+- CHUNK_SIZE increased from 5,000 → 15,000 chars (3× fewer API calls for same document)
+- MAX_CHUNKS cap of 30 (450,000 chars) with truncation warning shown in review panel
+- Hint text updated: "Works with PDF, .txt, and .md files"
+
+### Nav — direct links for logged-in users
+- Operations, Agreements, and Join added to the desktop nav bar
+- Edit profile link removed from desktop bar (still in hamburger dropdown)
+
+### Admin role
+- Oscar accounts reset to `joining` and manually restored to `admin`
+- `is_admin()` RLS function correctly gates admin-only operations
+
 ## 2026-05-14 — Phase 0 Complete
 
 ### Platform identity clarified

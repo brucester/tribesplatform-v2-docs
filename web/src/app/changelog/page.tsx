@@ -2,6 +2,19 @@ import Link from 'next/link'
 
 const ENTRIES = [
   {
+    version: 'v3.08',
+    date: '2026-05-14',
+    title: 'PDF upload support + nav links + admin role fixes',
+    items: [
+      'Blueprint file upload now supports PDF files (including 100 MB+). PDF.js extracts text page-by-page in the browser with a live progress bar before scanning begins.',
+      'Chunk size increased from 5,000 → 15,000 characters. Large documents now need far fewer API calls to scan fully.',
+      'Documents larger than 450,000 characters (30 chunks) show a truncation notice in the review panel so you know if content was cut.',
+      'File dropzone now accepts .PDF alongside .txt, .md, and .json.',
+      'Desktop nav bar now shows Operations, Agreements, and Join links directly for logged-in users — no more digging through the hamburger menu.',
+      'Oscar admin role restored (had been reset to joining). Role enforcement is now consistent.',
+    ],
+  },
+  {
     version: 'v3.05',
     date: '2026-05-14',
     title: 'Dashboard polish — color order, module layout, M02/M03',

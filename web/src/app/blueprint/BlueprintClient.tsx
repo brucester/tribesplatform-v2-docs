@@ -5,6 +5,22 @@ import { createClient } from '@/lib/supabase/client'
 import { FW_DATA, PILLAR_STEPS, type StepDef, type PhaseDef, type GuideContent } from './wizard-data'
 import './wizard.css'
 
+async function extractPdfText(file: File, onProgress?: (page: number, total: number) => void): Promise<string> {
+  const pdfjs = await import('pdfjs-dist')
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
+  const parts: string[] = []
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const pageText = content.items.map((item: any) => item.str).join(' ')
+    parts.push(pageText)
+    onProgress?.(i, pdf.numPages)
+  }
+  return parts.join('\n\n')
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Values = Record<string, unknown>
@@ -135,12 +151,12 @@ function FileDropzone({ onFile, fileName }: { onFile: (f: File) => void; fileNam
       onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f) }}
     >
-      <input ref={inputRef} type="file" accept=".txt,.md,.markdown,.json,text/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) onFile(e.target.files[0]) }} />
+      <input ref={inputRef} type="file" accept=".pdf,.txt,.md,.markdown,.json,text/*,application/pdf" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) onFile(e.target.files[0]) }} />
       <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
       <div style={{ fontFamily: 'var(--display)', fontSize: 18 }}>
         {fileName ? <span>Loaded: <strong>{fileName}</strong></span> : 'Drop a document, or click to browse'}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6, fontFamily: 'var(--mono)', letterSpacing: '0.1em' }}>.TXT · .MD · .JSON · plain text</div>
+      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6, fontFamily: 'var(--mono)', letterSpacing: '0.1em' }}>.PDF · .TXT · .MD · .JSON · plain text</div>
     </div>
   )
 }
@@ -150,18 +166,30 @@ function FileDropzone({ onFile, fileName }: { onFile: (f: File) => void; fileNam
 function ImportModal({ onClose, onApply, currentValues, scope }: {
   onClose: () => void; onApply: (vals: Values) => void; currentValues: Values; scope?: ImportScope
 }) {
-  const [stage, setStage] = useState<'upload' | 'scanning' | 'review' | 'error'>('upload')
+  const [stage, setStage] = useState<'upload' | 'extracting' | 'scanning' | 'review' | 'error'>('upload')
   const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 0 })
+  const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 })
   const [docText, setDocText] = useState('')
   const [fileName, setFileName] = useState('')
   const [extracted, setExtracted] = useState<Record<string, unknown> | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [acceptedKeys, setAcceptedKeys] = useState<Record<string, boolean>>({})
+  const [wasTruncated, setWasTruncated] = useState(false)
 
   const handleFile = async (file: File) => {
     setFileName(file.name)
-    if (file.type === 'application/pdf') {
-      setDocText(`[PDF: ${file.name}] — PDF parsing not available in browser. Please paste text content instead.`)
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    if (isPdf) {
+      setStage('extracting')
+      setPdfProgress({ current: 0, total: 0 })
+      try {
+        const text = await extractPdfText(file, (page, total) => setPdfProgress({ current: page, total }))
+        setDocText(text)
+        setStage('upload')
+      } catch (e) {
+        setErrorMsg(`Could not read PDF: ${(e as Error).message}`)
+        setStage('error')
+      }
       return
     }
     const text = await new Promise<string>((resolve, reject) => {
@@ -191,10 +219,13 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
       }).join('\n')
     const existingBlock = existingAnswers ? `\nEXISTING ANSWERS (already filled by the user):\n${existingAnswers}\n` : ''
 
-    const CHUNK_SIZE = 5000
+    const CHUNK_SIZE = 15000
     const CONCURRENCY = 2
-    const chunks: string[] = []
-    for (let i = 0; i < docText.length; i += CHUNK_SIZE) chunks.push(docText.slice(i, i + CHUNK_SIZE))
+    const MAX_CHUNKS = 30
+    const allChunks: string[] = []
+    for (let i = 0; i < docText.length; i += CHUNK_SIZE) allChunks.push(docText.slice(i, i + CHUNK_SIZE))
+    const truncated = allChunks.length > MAX_CHUNKS
+    const chunks = allChunks.slice(0, MAX_CHUNKS)
     setChunkProgress({ current: 0, total: chunks.length })
 
     const buildPrompt = (chunkText: string, chunkNum: number, totalChunks: number) => {
@@ -273,6 +304,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
       }
       const merged = mergeResults(allResults)
       setExtracted(merged)
+      setWasTruncated(truncated)
       const accepted: Record<string, boolean> = {}
       Object.keys(merged).forEach(k => { if (!k.startsWith('_')) accepted[k] = true })
       setAcceptedKeys(accepted)
@@ -322,12 +354,29 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               )}
             </div>
             <div className="card" style={{ marginTop: 18, fontSize: 12.5, lineHeight: 1.5, background: 'var(--bg-2)', padding: 16, borderRadius: 'var(--radius)' }}>
-              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M2.7 reads your document and proposes answers for fields it finds evidence for. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Best for plain-text (.txt, .md). PDFs need text pasted manually.
+              <strong style={{ fontFamily: 'var(--display)', fontSize: 14 }}>How it works.</strong> MiniMax M2.7 reads your document and proposes answers for fields it finds evidence for. You review and accept what&rsquo;s good — nothing is applied without your sign-off. Works with PDF, .txt, and .md files.
             </div>
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
               <button className="btn btn-primary" onClick={handleScan} disabled={!docText.trim()}>Scan with AI →</button>
             </div>
+          </div>
+        )}
+
+        {stage === 'extracting' && (
+          <div style={{ padding: '40px 0', textAlign: 'center' }}>
+            <div style={{ width: 36, height: 36, border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
+            <div style={{ fontFamily: 'var(--display)', fontSize: 22, marginTop: 20 }}>Extracting text from PDF…</div>
+            {pdfProgress.total > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 13, color: 'var(--ink-3)', fontStyle: 'italic' }}>
+                  Page {pdfProgress.current} of {pdfProgress.total}
+                </div>
+                <div style={{ width: 200, height: 4, background: 'var(--rule)', borderRadius: 2, margin: '10px auto 0' }}>
+                  <div style={{ height: '100%', width: `${(pdfProgress.current / pdfProgress.total) * 100}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 200ms' }} />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -362,6 +411,11 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
               <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 12, letterSpacing: '0.1em' }}>
                 {Object.keys(extracted).filter(k => !k.startsWith('_')).length} FIELDS POPULATED · REVIEW BELOW
               </div>
+              {wasTruncated && (
+                <div style={{ marginTop: 10, fontSize: 12, color: '#f59e0b', background: '#f59e0b15', border: '1px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '6px 10px' }}>
+                  ⚠ Large document — scanned the first 450,000 characters. If key content appears later in the file, consider splitting it into smaller uploads.
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
