@@ -1,20 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import BlueprintClient from './BlueprintClient'
 
 export default async function BlueprintPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth/login')
-
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  const isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(profile?.role ?? '')
+  let isAdmin = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(profile?.role ?? '')
+  }
 
   // Everyone reads the same community blueprint — the most recently updated one with content.
   // Admins can edit it; everyone else sees it read-only.
@@ -41,7 +40,7 @@ export default async function BlueprintPage() {
     // Create the first community blueprint owned by this admin
     const { data: created } = await supabase
       .from('blueprints')
-      .insert({ user_id: user.id, answers: {}, flags: {} })
+      .insert({ user_id: user!.id, answers: {}, flags: {} })
       .select()
       .single()
 
