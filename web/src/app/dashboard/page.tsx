@@ -89,6 +89,11 @@ export default async function DashboardPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px 80px' }}>
 
+      {/* Version */}
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.08em', marginBottom: 8 }}>
+        v2.05
+      </div>
+
       {/* Header */}
       <div style={{ marginBottom: 36 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
