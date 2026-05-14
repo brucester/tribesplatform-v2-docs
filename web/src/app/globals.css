@@ -214,10 +214,14 @@ a { color: inherit; text-decoration: none; }
 
 /* ─── Network layout ────────────────────────────────────────────── */
 .net-sidebar { display: flex; }
+.net-right-panel { display: flex; }
 .net-mobile-nav { display: none; }
 .net-content { padding-bottom: 0; }
 .net-nav-item:hover { background-color: var(--sidebar-accent) !important; }
 
+@media (max-width: 1024px) {
+  .net-right-panel { display: none; }
+}
 @media (max-width: 768px) {
   .net-sidebar { display: none; }
   .net-mobile-nav { display: flex; }
