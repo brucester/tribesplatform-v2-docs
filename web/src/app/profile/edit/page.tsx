@@ -46,12 +46,40 @@ const ZODIAC = [
 const HUMAN_DESIGN = ['Manifestor','Generator','Manifesting Generator','Projector','Reflector']
 
 const USER_TYPES = [
-  { id: 'Exploring',               label: 'Exploring' },
-  { id: 'Community Member',        label: 'Community Member' },
-  { id: 'Vision Holder',           label: 'Vision Holder' },
-  { id: 'Service Provider',        label: 'Service Provider' },
-  { id: 'Resource Holder - Land',  label: 'Resource Holder – Land' },
-  { id: 'Resource Holder - Money', label: 'Resource Holder – Money' },
+  {
+    id: 'Exploring',
+    label: 'Exploring',
+    description: 'Curious about regenerative neighborhoods & community life',
+  },
+  {
+    id: 'Community Member',
+    label: 'Community Member',
+    description: 'Living in or looking to join a regenerative neighborhood',
+    subOptions: [
+      { id: 'Community Member - Living In',    label: 'Living in one',   description: "I'm already part of a regenerative community" },
+      { id: 'Community Member - Looking For',  label: 'Looking for one', description: "I'm searching for a regenerative community to join" },
+    ],
+  },
+  {
+    id: 'Vision Holder',
+    label: 'Vision Holder',
+    description: 'I hold a vision or am actively building a regenerative project',
+  },
+  {
+    id: 'Service Provider',
+    label: 'Service Provider',
+    description: 'I offer skills, services, or expertise to communities',
+  },
+  {
+    id: 'Resource Holder - Land',
+    label: 'Resource Holder – Land',
+    description: 'I have land that could support a regenerative project',
+  },
+  {
+    id: 'Resource Holder - Money',
+    label: 'Resource Holder – Money',
+    description: 'I have financial resources to invest in regenerative projects',
+  },
 ]
 
 const OFFER_CATEGORIES = [
@@ -254,10 +282,15 @@ export default function ProfileWizard() {
   const update = <K extends keyof FormData>(key: K, val: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: val }))
 
-  const toggleUserType = (id: string) =>
-    update('user_types', form.user_types.includes(id)
-      ? form.user_types.filter(t => t !== id)
-      : [...form.user_types, id])
+  const toggleUserType = (id: string) => {
+    if (form.user_types.includes(id)) {
+      const parent = USER_TYPES.find(t => t.id === id)
+      const subIds = parent?.subOptions?.map(s => s.id) ?? []
+      update('user_types', form.user_types.filter(x => x !== id && !subIds.includes(x)))
+    } else {
+      update('user_types', [...form.user_types, id])
+    }
+  }
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -463,18 +496,45 @@ export default function ProfileWizard() {
               <div className="space-y-3">
                 <Label>Who are you in this network?</Label>
                 <p className="text-xs text-muted-foreground">Select all that apply</p>
-                <div className="grid sm:grid-cols-2 gap-2">
-                  {USER_TYPES.map(t => (
-                    <button key={t.id} type="button" onClick={() => toggleUserType(t.id)}
-                      className={`flex items-center gap-2 p-3 rounded-lg border text-sm text-left transition-colors ${
-                        form.user_types.includes(t.id)
-                          ? 'border-primary bg-primary/10 text-primary font-medium'
-                          : 'border-border hover:bg-muted'
-                      }`}>
-                      {form.user_types.includes(t.id) && <Check className="h-4 w-4 flex-shrink-0" />}
-                      {t.label}
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-2">
+                  {USER_TYPES.map(t => {
+                    const isSelected = form.user_types.includes(t.id)
+                    return (
+                      <div key={t.id}>
+                        <button type="button" onClick={() => toggleUserType(t.id)}
+                          className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${
+                            isSelected ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted'
+                          }`}>
+                          <div className={`mt-0.5 h-4 w-4 rounded flex-shrink-0 border flex items-center justify-center ${
+                            isSelected ? 'bg-primary border-primary' : 'border-muted-foreground'
+                          }`}>
+                            {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
+                          <div>
+                            <div className={`text-sm font-medium ${isSelected ? 'text-primary' : ''}`}>{t.label}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">{t.description}</div>
+                          </div>
+                        </button>
+
+                        {'subOptions' in t && isSelected && (
+                          <div className="ml-7 mt-2 grid grid-cols-2 gap-2">
+                            {t.subOptions!.map(sub => {
+                              const subSelected = form.user_types.includes(sub.id)
+                              return (
+                                <button key={sub.id} type="button" onClick={() => toggleUserType(sub.id)}
+                                  className={`flex flex-col gap-1 p-3 rounded-lg border text-left transition-colors ${
+                                    subSelected ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted'
+                                  }`}>
+                                  <span className="text-sm font-medium">{sub.label}</span>
+                                  <span className="text-xs text-muted-foreground">{sub.description}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
               <div className="space-y-2">
