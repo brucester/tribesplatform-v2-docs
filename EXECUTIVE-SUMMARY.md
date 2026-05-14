@@ -1,257 +1,152 @@
-# TribesPlatform v2 — Executive Summary
+# MyCoNet v2 — Executive Summary
 
-> Version: 2.0 | Date: 2026-05-07 | Status: ITERATING
+> Version: 3.0 | Date: 2026-05-14 | Status: ACTIVE — Phase 0 live
 
 ---
 
-## What Is TribesPlatform v2?
+## What Is MyCoNet?
 
-**TribesPlatform v2** is an AI-native operating system for regenerative neighborhoods — a modular ecosystem for building, growing, and sustaining communities that regenerate the land and the people on it.
+**MyCoNet** is a community operating system for regenerative neighborhoods — a single portal where a community can share its blueprint, onboard new members, manage active projects, create collaboration agreements, track contributions, and decide together.
 
-It's the all-in-one platform: from finding your tribe, to designing your community, forming agreements, governing collectively, and coordinating daily operations. Everything in one place, built for real communities in the real world.
+**Current deployment:** A **single-community portal**. One community. One URL. All users are members or prospective members of the same project. The platform is not yet a multi-community marketplace — that comes in Phase 1. The vision is a modular ecosystem for 14 functional areas, from discovery to governance to AI coordination. The foundation is being built now.
 
-**Three AI agents** work together to keep the system alive:
-- **Quinn** — personal AI assistant for each member
-- **MycoNet** — the community brain and coordination layer
-- **Genesis** — Telegram interface that connects members to the system
+---
+
+## What's Live Today (Phase 0)
+
+| Module | Status | What it does |
+|---|---|---|
+| M00 — Dashboard | ✅ Live | Personal home screen after login. Role-scoped view of all modules a member has access to. |
+| M01 — Community Network | ✅ Live | Profiles, bio wizard, AI match scoring (values, skills, OCEAN, MBTI), discover page, offers/seeks. |
+| M04 — Blueprint | ✅ Live | Shared community planning document. Admin uploads and edits. All members read. AI document scanning (MiniMax M2.7) fills fields from uploaded PDFs/docs. |
+| M05 — Join | ✅ Live | Application form (questions set by admin in Blueprint step 1.4). Admin reviews submissions and accepts or declines. Accepted members get `joining` role. |
+| M06 — Agreements | ✅ Live | Members with `joining` role or above propose collaboration on open projects — what they'll do and what they expect in return. Admin reviews, accepts, and tracks proposals through to completion. |
+| M07 — Operations | ✅ Live | Admin creates and manages community projects, posts timeline updates, toggles open-for-collaborators status. |
+| M02 — Neighborhood Directory | 🔗 v1 link | Links out to v1 tribesplatform.app until v2 is built. |
+| M03 — Resources & Tools | 🔗 v1 link | Links out to v1 tribesplatform.app until v2 is built. |
+| M08–M13 | ⏳ Planned | See module table below. |
+
+---
+
+## Member Role Journey
+
+Members progress through roles as they deepen their commitment to the community:
+
+| Role | How you get it | What you can do |
+|---|---|---|
+| `explorer` | Creates account | View Blueprint (read-only), browse member profiles |
+| `joining` | Join application accepted by admin | Everything above + submit collaboration proposals (M06) |
+| `resident` | Manually assigned by admin | Everything above + full operations access, contribution tracking, governance |
+| `circle_lead` | Assigned by admin | Resident access + can edit Blueprint sections for their circle |
+| `project_lead` | Assigned by admin | Resident access + admin views for project management |
+| `admin` | Assigned directly | Full access — edit Blueprint, manage roles, review all applications and agreements |
 
 ---
 
 ## The 14 Modules
 
-| #   | Module                    | Description | Status |
-| --- | ------------------------- | ----------- | ------ |
-| 00  | MyCoNet Dashboard         | Real-time view of all module activity. Core team sees pending tasks, decisions, community pulse, and agent status in one place. | Planning |
-| 01  | Community Network         | Profile-based discovery with AI matching for the four key archetypes: community members, vision holders, service providers, resource holders. | Building V2 |
-| 02  | Neighborhood Directory    | Live map of regenerative neighborhoods. Community profiles, posts, milestones, check-ins, guest book, events. Onboards neighborhoods via Module 04. | Building V2 |
-| 03  | Resources & Tools         | Curated, community-powered archive of regenerative resources, tools, guides, and case studies — smart-tagged by AI. | Building V2 |
-| 04  | Blueprint                 | The Regenerative Neighborhood Wizard — guided planning through SPARK → PROVE → BUILD → LIVE with 5 pillars and milestone gates. | Building |
-| 05  | Join                      | Application and full onboarding flow — from initial inquiry to welcome. | V1 Building |
-| 06  | Agreements                | Digital agreements and Stripe payment rails for community participation. | Planned |
-| 07  | Operations                | Project boards, task assignment, budget tracking, and reporting for community teams. | Planned |
-| 08  | Contribution Tracking     | Points, badges, and reputation tracking that make regenerative action visible and rewarding. | Planned |
-| 09  | Governance                | AI-facilitated governance — mediates conflicts, surfaces proposals, guides decisions across democracy, sociocracy, meritocracy. | V2 Planned |
-| 10  | Genesis Bot               | Telegram bot living in community group chat. Can see the database and share what's happening. When a change is requested, Genesis posts it to the leadership chat for approval, then MycoNet makes the changes in the DB. | Planning |
-| 11  | Quinn                     | Personal AI guide for each resident — daily reminders, goal tracking, routing community info, helping each member participate at their best. | Planned |
-| 12  | MycoNet Agent             | The community brain. Reads across all modules, connects the dots, pushes updates to leadership, runs the approval queue, keeps Genesis and Quinn informed. | Planning |
-| 13  | Hive                      | Inter-community layer — connecting neighborhoods into a living network for shared resources, collaboration, and mutual aid. | Planning |
+| # | Module | Description | Status |
+|---|---|---|---|
+| 00 | MyCoNet Dashboard | Personal home screen — role-scoped view of every module a member has access to. Explorers see Blueprint and profiles. Admins see pending applications, agreements, and project stats. | ✅ Live |
+| 01 | Community Network | Profile-based discovery with AI match scoring across values, skills, personality (OCEAN + MBTI), and archetypes. Offers and seeks exchange. | ✅ Live |
+| 02 | Neighborhood Directory | Live map of regenerative neighborhoods — community profiles, posts, milestones, check-ins, guest book, events. | 🔗 v1 / Building |
+| 03 | Resources & Tools | Curated, community-powered archive of regenerative resources and tools — smart-tagged by AI. | 🔗 v1 / Building |
+| 04 | Blueprint | The Regenerative Neighborhood Wizard — shared community document covering SPARK → PROVE → BUILD → LIVE phases. Admin edits, all members read. AI document scanning fills fields. | ✅ Live |
+| 05 | Join | Member application flow. Admin-configurable questions. Admin reviews submissions and accepts or declines. Accepted members gain access to M06. | ✅ Live |
+| 06 | Agreements | Collaboration proposal system. Joining+ members browse open projects and submit proposals (what I'll do + what I expect). Admin reviews, accepts, and tracks through to completion. | ✅ Live |
+| 07 | Operations | Community project management. Admin creates projects and posts timeline updates. Open projects surface in M06 for collaboration proposals. | ✅ Live |
+| 08 | Contribution Tracking | Points, badges, and reputation that make regenerative action visible and rewarding. | ⏳ Planned |
+| 09 | Governance | AI-facilitated governance — mediates conflicts, surfaces proposals, guides decisions across democracy, sociocracy, meritocracy. | ⏳ Planned |
+| 10 | Genesis Bot | Telegram bot in the community group chat. Members request database changes; leadership approves in chat; MycoNet executes the write. | ⏳ Planned |
+| 11 | Quinn | Personal AI guide per member — daily reminders, goal tracking, routing community info, helping each member participate at their best. | ⏳ Planned |
+| 12 | MycoNet Agent | The community brain. Reads across all modules, connects the dots, pushes updates to leadership, runs the approval queue, keeps Genesis and Quinn informed. | ⏳ Planned |
+| 13 | Hive | Inter-community layer — connecting neighborhoods into a living network for shared resources, collaboration, and mutual aid. | ⏳ Planned |
 
 ---
 
-## The Three Agents
+## How the Core Loop Works (Today)
+
+```
+ADMIN sets up community
+  → Uploads governing documents to Blueprint (M04) — AI scans and fills fields
+  → Sets join application questions in Blueprint step 1.4
+  → Creates projects in Operations (M07)
+
+NEW MEMBER signs up
+  → Lands on Dashboard (M00) — sees Blueprint, member profiles, join prompt
+  → Reads the community Blueprint (M04)
+  → Submits join application (M05)
+
+ADMIN reviews join application
+  → Accepts → member gets 'joining' role
+  → Member now sees collaboration proposals in Dashboard
+
+JOINING MEMBER browses open projects (M06)
+  → Submits proposal: what I'll do + what I expect in return
+
+ADMIN reviews proposals (M06)
+  → Accepts → Active → Completed
+  → Project timeline updated in Operations (M07)
+```
+
+---
+
+## Three Agents (Planned — Phase 4)
 
 ### Quinn — Personal AI (one per member)
 Every member gets their own Quinn. It learns their goals, preferences, and community involvement — then proactively reminds, suggests, and helps them show up well.
 
-- Daily check-ins and reminders
-- Personalized community recommendations
-- Routes member input up to MycoNet
-- Lives in the member's dashboard, Telegram, or WhatsApp
-
 ### MycoNet — Community Brain (one per community)
-MycoNet is the operating system layer for the whole community. It subscribes to every module event, maintains community memory, pushes real-time updates to leadership, and coordinates the approval queue.
-
-- Subscribes to all module writes (event-driven via PostgreSQL LISTEN/NOTIFY)
-- Pushes notifications to the Leadership Telegram group on every module event
-- Sends 30-minute heartbeat reminders for pending decisions
-- Maintains structured community memory and vector embeddings
-- Routes approved changes to the database
-- Coordinates with Genesis on approval outcomes
+The operating system layer for the whole community. Subscribes to every module event, maintains community memory, pushes real-time updates to leadership, and coordinates the approval queue.
 
 ### Genesis — Telegram Bridge (one per community)
-Genesis is the community's Telegram bot. Members interact with it in the Community Group to request changes, ask questions, and get confirmations.
-
-- Present in both the Community Group and the Leadership Group
-- Members invoke it with "@Genesis record that..." or "@Genesis request..."
-- Posts structured requests to the Leadership Group for approval
-- Confirms approved/rejected outcomes back in the Community Group
-- Passes requests to MycoNet for processing
-- Can share database activity info with community group
-- All requests require human approval before any database write
-
----
-
-## How the Three Agents Work Together
-
-```
-MEMBER (Telegram Community Group)
-    @Genesis "record that I finished the garden task"
-           ↓
-    Genesis → MycoNet API → MycoNet dashboard (pending queue)
-    Genesis → Leadership Group (approval request)
-           ↓
-    Leader approves in chat OR dashboard
-           ↓
-    MycoNet → executes DB write → notifies Genesis
-           ↓
-    Genesis confirms in Community Group
-           ↓
-    MycoNet → pushes update to Leadership Group
-           ↓
-    Quinn → notifies affected members
-```
-
-**Heartbeat:** Every 30 minutes, MycoNet Pro reminds leadership of all pending decisions until resolved.
-
-### Two Telegram Groups (per community)
-- **Community Group** — All members + Genesis. Members make requests, receive confirmations. Genesis shares what's happening in the database.
-- **Leadership Group** — Community Manager + Department Leads + MycoNet + Genesis. Approvals happen here. MycoNet Pro pushes all activity here in real-time.
-
----
-
-## MycoNet Pro — Premium Tier
-
-The free MycoNet tier gives every community the dashboard and database. **MycoNet Pro** adds the proactive AI agent layer:
-
-- Pushes to Leadership Group on every module write (not just dashboard views)
-- 30-minute heartbeat reminder for all pending decisions
-- Cross-module intelligence — connects patterns across modules
-- Reads and synthesizes community data to surface insights
-- Responds to leadership queries in natural language
-
----
-
-## User Journey
-
-1. **Stranger → Member** — Someone discovers the platform, joins Module 01 (Community Network), builds their profile, gets matched with communities.
-2. **Member → Applicant** — They explore neighborhoods in Module 02, apply to visit through Module 05.
-3. **Applicant → Resident** — Complete onboarding, sign agreements in Module 06, get oriented.
-4. **Resident → Contributor** — Work projects in Module 07, earn recognition via Module 08, participate in governance via Module 09.
-5. **Resident → Leader** — Access the MycoNet Dashboard (Module 00), oversee all modules, coordinate agents.
-
-Throughout all stages, **Quinn** accompanies each member. **MycoNet** coordinates the community. **Genesis** handles the Telegram interface.
-
----
-
-## Module Feature Breakdown
-
-### Module 00: MyCoNet Dashboard
-Real-time command center for core team. Displays all module activity, pending decisions, budget status, member activity, governance queue, and agent status. Passive view — leaders check it when they want.
-
-### Module 01: Community Network
-Profile-based discovery. AI matching for four archetypes: community members, vision holders, service providers, resource holders. Interest and skill filters, geographic search, direct messaging, events, requests/offers.
-
-### Module 02: Neighborhood Directory
-Live map of regenerative neighborhoods. Community profiles with phase status (SPARK/PROVE/BUILD/LIVE), activity feeds, milestone tracking, guest check-ins, community events. Onboards new neighborhoods through Module 04.
-
-### Module 03: Resources & Tools
-Curated community archive. AI smart-tags uploads (ecology, human systems, hardware, economy, technology). Searchable, filterable, upvotable library of articles, tools, templates, and case studies.
-
-### Module 04: Blueprint
-The Regenerative Neighborhood Wizard. Guided planning through SPARK → PROVE → BUILD → LIVE. Five pillars (Ecology, Social, Economy, Hardware, Governance). Five milestone gates. Framework integration (RNF, Community Alchemy, RCOS). PDF export, template library, progress tracking.
-
-### Module 05: Join
-Application and onboarding. Configurable application forms, status tracking (pending/under review/accepted/rejected), orientation content, onboarding checklists, probation tracking, automated welcome sequences.
-
-### Module 06: Agreements
-Digital agreement templates (membership, land lease, collaboration). Custom clause builder. Digital signatures. Stripe integration for payments, subscriptions, recurring billing, escrow. Full transaction history.
-
-### Module 07: Operations
-Project boards (Kanban), Gantt charts, task management, finance dashboard (income/expenses/budget categories), monthly reports, shared calendar, document storage.
-
-### Module 08: Contribution Tracking
-Points and badge system. Earn for contributions and milestones. Levels and leaderboards. Reputation scores. Founder, Builder, Helper, Learner badges and more.
-
-### Module 09: Governance
-AI-facilitated decision-making. Situation submission with context gathering. AI decision engine reasoned from community values. Supports democracy, sociocracy, meritocracy modes. Searchable decision history. Anonymous option. Appeal process.
-
-### Module 10: Genesis Bot
-Telegram bot living in the community group chat. Members invoke it with "@Genesis record that..." or "@Genesis request...". Can see the database and shares what's happening with the community. When a change is requested, posts it to the Leadership Group for approval. Confirms approved/rejected outcomes in the Community Group. All requests require human approval before database write.
-
-### Module 11: Quinn
-Personal AI assistant per member. Daily check-ins, goal tracking, personalized recommendations (communities, people, resources, skills), calendar help, reflection prompts. Privacy controls. Reads across all modules to serve the member.
-
-### Module 12: MycoNet Agent
-The community brain. Event-driven subscription to all module writes (PostgreSQL LISTEN/NOTIFY). Maintains community memory (structured JSONB + vector embeddings). Pushes real-time updates to Leadership Group via MycoNet Pro. Runs the Genesis approval queue. Sends 30-minute heartbeat reminders for pending decisions. Cross-module intelligence — surfaces connections like "Your governance decision affects your budget."
-
-### Module 13: Hive
-Inter-community network layer. Network-wide feed, shared resource libraries, cross-community project collaboration, mutual aid requests, network votes, community spotlight, partnership tools.
-
----
-
-## Database Architecture
-
-One PostgreSQL database. All modules share data — enabling JOINs across modules and AI reasoning across the full community context.
-
-```
-USERS & AUTH
-├── users
-├── community_members
-└── personal_ai_memories
-
-COMMUNITIES
-├── communities
-├── applications
-└── check_ins
-
-CONTENT & SOCIAL
-├── posts
-├── comments
-├── resources
-└── events
-
-OPERATIONS
-├── projects
-├── tasks
-├── transactions
-└── agreements
-
-CONNECTIONS
-├── connections
-├── event_rsvps
-├── requests_offers
-└── governance_decisions
-
-REWARDS
-└── rewards
-```
-
----
-
-## Development Phases
-
-### Phase 1: Foundation (Weeks 1–4)
-Database setup, authentication, user profiles (Module 01), community profiles (Module 02), Blueprint integration (Module 04).
-
-### Phase 2: Community Building (Weeks 5–8)
-Join module (Module 05), Network/Feed (Module 02), Resources & Tools (Module 03), basic Operations (Module 07).
-
-### Phase 3: Governance & Payments (Weeks 9–12)
-Agreements (Module 06), Governance (Module 09), Stripe integration.
-
-### Phase 4: Intelligence (Weeks 13–16)
-Contribution Tracking (Module 08), Genesis Bot (Module 10), Quinn (Module 11), MycoNet Agent (Module 12), Hive (Module 13), MyCoNet Dashboard (Module 00).
+The community's Telegram bot. Members interact with it in the Community Group to request changes, ask questions, and get confirmations. All requests require human approval before any database write.
 
 ---
 
 ## Tech Stack
 
-| Layer      | Technology                          |
-|------------|-------------------------------------|
-| Frontend   | Next.js (Web) + React Native (Mobile) |
-| Backend    | Node.js + NestJS or Go + Fiber     |
-| Database   | PostgreSQL + pgvector              |
-| Real-time  | Supabase Realtime or Postgres LISTEN/NOTIFY |
-| Search     | Meilisearch                         |
-| Cache      | Redis                               |
-| Storage    | S3 / Cloudflare R2                  |
-| Auth       | Clerk or Auth0                      |
-| Payments   | Stripe                              |
-| AI         | OpenAI GPT-4o / Claude API          |
-| Telegram   | python-telegram-bot / Node.js libs |
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16 (App Router) |
+| Auth | Supabase Auth |
+| Database | Supabase PostgreSQL with Row Level Security |
+| Hosting | Cloudflare Workers (via @opennextjs/cloudflare) |
+| AI (Blueprint scanning) | MiniMax M2.7 |
+| AI (future — Quinn, MycoNet, Governance) | Claude API (Anthropic) |
+| Payments (planned) | Stripe |
+| Telegram (planned) | node-telegram-bot-api |
+
+---
+
+## Development Phases
+
+### Phase 0 — Single Community Portal (Current)
+One community. One portal. M00, M01, M04, M05, M06, M07 are live. Members progress from explorer → joining via the application flow. Admin manages everything through the same portal. This phase proves the core loop: community publishes its blueprint → people apply → admin accepts → members collaborate on projects.
+
+### Phase 1 — Per-Community Rollout
+Other regenerative projects adopt the platform. Each gets their own isolated portal — same codebase, same DB structure, scoped by `community_id`. Each community manages its own members, Blueprint, agreements, and operations independently.
+
+### Phase 2 — Hive (Inter-Community Layer)
+Once multiple communities are live, a shared container opens above the individual portals. Members can discover users and communities beyond their own project — cross-community discovery, shared resource libraries, mutual aid requests, inter-community collaboration. This is Module 13 (Hive).
+
+### Phase 3 — Contribution Tracking + Governance
+Module 08 (contribution points and badges) and Module 09 (AI-facilitated governance) roll out. The community can now track who contributes what and make collective decisions with AI facilitation.
+
+### Phase 4 — Agent Stack
+Genesis Bot (M10), Quinn personal AI (M11), MycoNet community brain (M12) — the intelligence layer that makes the platform feel alive and proactive.
 
 ---
 
 ## Why This Platform Exists
 
-Building a regenerative community is hard. You need to find like-minded people, plan with proven frameworks, form legal agreements, govern decisions fairly, track finances and projects, and coordinate daily life — all at the same time.
+Building a regenerative community is hard. You need to share your vision clearly, attract the right people, onboard them thoughtfully, run projects together, honor contributions, and make decisions collectively — all while the community is still forming.
 
 Most tools are generic. None of them are built for the specific complexity of regenerative neighborhoods — where the goal is not just efficiency but regeneration, not just governance but ecological and social healing.
 
-**TribesPlatform v2 is built for this.**
+**MyCoNet is built for this.**
 
 ---
 
-*Status: ITERATING — document updated 2026-05-08*
-*Three agents: Quinn (personal, Module 11) · MycoNet (community, Module 12) · Genesis (Telegram bridge, Module 10)*
-*14 modules: 00 Dashboard · 01–09 Core modules · 10 Genesis · 11 Quinn · 12 MycoNet Agent · 13 Hive*
+*Status: Phase 0 live — M00, M01, M04, M05, M06, M07 deployed on Cloudflare Workers*
+*Updated: 2026-05-14*

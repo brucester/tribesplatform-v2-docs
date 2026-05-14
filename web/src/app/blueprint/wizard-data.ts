@@ -381,6 +381,12 @@ export const FW_DATA: FWData = {
               guide: { title: 'Shared life outlook', source: 'Alchemy §3 · Shared Life Outlook',
                 body: ['Name it all: shared meals? dietary norms? alcohol/substances? meditation? conventional vs. alternative medicine?',
                   'Clarity filters misalignment early. Communities that are vague here often discover incompatibilities only after someone has invested their life savings.'] } },
+            { id: 'join_application_questions', label: 'Join application questions — what will you ask people who want to join?', kind: 'textarea', rows: 8,
+              help: 'Write each question on its own line. These will appear on the M05 Join page that applicants fill out.',
+              guide: { title: 'Application screening', source: 'Alchemy §2.6 · Member Screening',
+                body: ['Good application questions surface values alignment, practical capacity, and commitment level before the community invests time in a candidate.',
+                  'Examples: What draws you to this project? What skills or resources do you bring? What is your availability to contribute? What are your expectations of community life? Describe a time you navigated conflict in a group setting.',
+                  'These answers become the first filter — let them do the work of a first conversation.'] } },
           ],
           sliders: [
             { id: 'structure_explicit', label: 'How explicit are your agreements?', frame: 'CLIPS · Structure',

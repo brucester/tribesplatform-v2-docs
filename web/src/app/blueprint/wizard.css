@@ -168,6 +168,26 @@
   font-weight: 400;
 }
 
+/* Home link */
+.wizard-root .home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  text-decoration: none;
+  padding: 5px 10px 5px 0;
+  margin-bottom: 20px;
+  border-radius: var(--radius-sm);
+  transition: color 120ms;
+  letter-spacing: 0.01em;
+}
+.wizard-root .home-link:hover {
+  color: var(--accent);
+}
+
 /* Theme toggle */
 .wizard-root .theme-toggle {
   display: inline-flex;

@@ -7,8 +7,8 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
-  title: 'Tribes Platform — Build regenerative communities',
-  description: 'A platform for people co-creating regenerative neighborhoods. Connect, plan, and build together.',
+  title: 'MyCoNet — MyCommunityNetwork',
+  description: 'The member portal for your regenerative community. Connect, plan, and build together.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

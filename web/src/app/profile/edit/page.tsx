@@ -1,360 +1,769 @@
 'use client'
-import { useState, useEffect, useRef, type ChangeEvent } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { UserStatus } from '@/types/database'
-import BasicSection from './_sections/BasicSection'
-import IdentitySection from './_sections/IdentitySection'
-import ValuesSection from './_sections/ValuesSection'
-import PersonalitySection from './_sections/PersonalitySection'
-import GoalsSection from './_sections/GoalsSection'
-import CommunitySection from './_sections/CommunitySection'
-import OffersSection from './_sections/OffersSection'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
+import { Slider } from '@/components/ui/slider'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  ArrowLeft, ArrowRight, Save, Loader2, User, Heart, Brain,
+  Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Sparkles,
+} from 'lucide-react'
 
-const TABS = ['Basic', 'Identity', 'Values', 'Personality', 'Goals', 'Community', 'Offers'] as const
-type Tab = typeof TABS[number]
+const STEPS = [
+  { id: 1, title: 'Basic Info',        icon: User,       description: 'Your public identity' },
+  { id: 2, title: 'Values & Purpose',  icon: Heart,      description: 'What guides you' },
+  { id: 3, title: 'Personality',       icon: Brain,      description: 'Your psychological profile' },
+  { id: 4, title: 'Archetypes',        icon: Star,       description: 'Spiritual & energetic patterns' },
+  { id: 5, title: 'Goals & Growth',    icon: Target,     description: 'Your aspirations' },
+  { id: 6, title: 'Offers',            icon: Gift,       description: 'What you provide' },
+  { id: 7, title: 'Requests',          icon: HelpCircle, description: 'What you need' },
+  { id: 8, title: 'Travel Plans',      icon: MapPin,     description: 'Where you\'re going' },
+]
 
-type OceanState = {
-  ocean_openness: number
-  ocean_conscientiousness: number
-  ocean_extraversion: number
-  ocean_agreeableness: number
-  ocean_neuroticism: number
+const MBTI_TYPES = [
+  { code: 'INTJ', name: 'Architect' }, { code: 'INTP', name: 'Logician' },
+  { code: 'ENTJ', name: 'Commander' }, { code: 'ENTP', name: 'Debater' },
+  { code: 'INFJ', name: 'Advocate' },  { code: 'INFP', name: 'Mediator' },
+  { code: 'ENFJ', name: 'Protagonist' },{ code: 'ENFP', name: 'Campaigner' },
+  { code: 'ISTJ', name: 'Logistician' },{ code: 'ISFJ', name: 'Defender' },
+  { code: 'ESTJ', name: 'Executive' }, { code: 'ESFJ', name: 'Consul' },
+  { code: 'ISTP', name: 'Virtuoso' },  { code: 'ISFP', name: 'Adventurer' },
+  { code: 'ESTP', name: 'Entrepreneur' },{ code: 'ESFP', name: 'Entertainer' },
+]
+
+const ZODIAC = [
+  'Aries','Taurus','Gemini','Cancer','Leo','Virgo',
+  'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces',
+]
+
+const HUMAN_DESIGN = ['Manifestor','Generator','Manifesting Generator','Projector','Reflector']
+
+const USER_TYPES = [
+  { id: 'Exploring',               label: 'Exploring' },
+  { id: 'Community Member',        label: 'Community Member' },
+  { id: 'Vision Holder',           label: 'Vision Holder' },
+  { id: 'Service Provider',        label: 'Service Provider' },
+  { id: 'Resource Holder - Land',  label: 'Resource Holder – Land' },
+  { id: 'Resource Holder - Money', label: 'Resource Holder – Money' },
+]
+
+const OFFER_CATEGORIES = [
+  'Permaculture','Construction','Healing','Education',
+  'Technology','Art','Music','Food','Childcare',
+  'Legal','Finance','Consulting','Other',
+]
+
+const COMPENSATION = [
+  { value: 'Free',        label: 'Free' },
+  { value: 'Donation',    label: 'Donation-based' },
+  { value: 'Fixed Price', label: 'Fixed Price' },
+  { value: 'Hourly',      label: 'Hourly Rate' },
+  { value: 'Barter',      label: 'Barter / Trade' },
+  { value: 'Other',       label: 'Other' },
+]
+
+const REQUEST_CATEGORIES = [
+  'Housing','Transport','Skills','Resources',
+  'Community','Mentorship','Funding','Land','Tools','Knowledge','Other',
+]
+
+type Offer = { id?: string; title: string; description: string; category: string; compensation_model: string; price: string }
+type Request = { id?: string; request_text: string; category: string; urgency: string }
+type TravelPlan = { location: string; startDate: string; endDate: string; notes: string }
+
+interface FormData {
+  // Step 1 – Basic
+  first_name: string; last_name: string; headline: string
+  country: string; city: string; user_types: string[]
+  skills: string[]; interests: string[]
+  // Step 2 – Values
+  values_principles: string; what_creating: string
+  // Step 3 – Personality
+  myersBriggs: string
+  ocean: { openness: number; conscientiousness: number; extraversion: number; agreeableness: number; neuroticism: number }
+  // Step 4 – Archetypes
+  astrologySun: string; astrologyMoon: string; astrologyRising: string
+  humanDesign: string; geneKey: string; mayan: string
+  // Step 5 – Goals
+  goals: string; fears: string; traumas: string
+  // Step 6 – Offers
+  offers: Offer[]
+  // Step 7 – Requests
+  requests: Request[]
+  // Step 8 – Travel
+  placesTraveling: TravelPlan[]
 }
 
-type EditOffer = { id?: string; category: string; title: string; description: string }
-type EditRequest = { id?: string; category: string; title: string; description: string }
-type EditTravel = { id?: string; location: string; date_from: string; date_to: string; description: string }
-
-const DEFAULT_OCEAN: OceanState = {
-  ocean_openness: 5,
-  ocean_conscientiousness: 5,
-  ocean_extraversion: 5,
-  ocean_agreeableness: 5,
-  ocean_neuroticism: 5,
+const DEFAULT: FormData = {
+  first_name: '', last_name: '', headline: '', country: '', city: '',
+  user_types: [], skills: [], interests: [],
+  values_principles: '', what_creating: '',
+  myersBriggs: '',
+  ocean: { openness: 50, conscientiousness: 50, extraversion: 50, agreeableness: 50, neuroticism: 50 },
+  astrologySun: '', astrologyMoon: '', astrologyRising: '',
+  humanDesign: '', geneKey: '', mayan: '',
+  goals: '', fears: '', traumas: '',
+  offers: [], requests: [], placesTraveling: [],
 }
 
-export default function ProfileEditPage() {
+function TagInput({ value, onChange, placeholder, suggestions = [] }: {
+  value: string[]; onChange: (v: string[]) => void; placeholder: string; suggestions?: string[]
+}) {
+  const [input, setInput] = useState('')
+  const add = (tag: string) => {
+    const t = tag.trim()
+    if (t && !value.includes(t)) onChange([...value, t])
+    setInput('')
+  }
+  const remove = (tag: string) => onChange(value.filter(t => t !== tag))
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[42px] bg-background">
+        {value.map(tag => (
+          <Badge key={tag} variant="secondary" className="gap-1">
+            {tag}
+            <button type="button" onClick={() => remove(tag)}><X className="h-3 w-3" /></button>
+          </Badge>
+        ))}
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(input) }
+            if (e.key === 'Backspace' && !input && value.length) remove(value[value.length - 1])
+          }}
+          placeholder={value.length === 0 ? placeholder : 'Add more...'}
+          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+        />
+      </div>
+      {suggestions.filter(s => !value.includes(s)).length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {suggestions.filter(s => !value.includes(s)).slice(0, 6).map(s => (
+            <button key={s} type="button" onClick={() => add(s)}
+              className="text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted/80 transition-colors">
+              + {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function OceanSlider({ label, value, onChange, description, low, high }: {
+  label: string; value: number; onChange: (v: number) => void; description: string
+  low: string; high: string
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <Label className="font-medium">{label}</Label>
+        <span className="text-sm text-muted-foreground">{value}%</span>
+      </div>
+      <Slider value={[value]} onValueChange={([v]: number[]) => onChange(v)} max={100} step={5} />
+      <div className="flex justify-between">
+        <span className="text-xs text-muted-foreground">{low}</span>
+        <span className="text-xs text-muted-foreground">{high}</span>
+      </div>
+    </div>
+  )
+}
+
+export default function ProfileWizard() {
   const supabase = createClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // meta
-  const [userId, setUserId] = useState('')
-  const [username, setUsername] = useState('')
+  const router = useRouter()
+  const [step, setStep] = useState(1)
+  const [form, setForm] = useState<FormData>(DEFAULT)
+  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [activeTab, setActiveTab] = useState<Tab>('Basic')
-
-  // basic
-  const [displayName, setDisplayName] = useState('')
-  const [pronouns, setPronouns] = useState('')
-  const [location, setLocation] = useState('')
-  const [status, setStatus] = useState<UserStatus>('looking')
-  const [bio, setBio] = useState('')
-  const [websiteUrl, setWebsiteUrl] = useState('')
-  const [instagram, setInstagram] = useState('')
-  const [userTypes, setUserTypes] = useState<string[]>([])
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [avatarUploading, setAvatarUploading] = useState(false)
-
-  // identity
-  const [archetypes, setArchetypes] = useState<string[]>([])
-  const [mbti, setMbti] = useState<string | null>(null)
-
-  // values
-  const [valuesList, setValuesList] = useState<string[]>([])
-  const [lifePrinciples, setLifePrinciples] = useState('')
-
-  // personality
-  const [ocean, setOcean] = useState<OceanState>(DEFAULT_OCEAN)
-
-  // goals
-  const [shortTermGoal, setShortTermGoal] = useState('')
-  const [longTermGoal, setLongTermGoal] = useState('')
-  const [lifeVision, setLifeVision] = useState('')
-  const [currentProject, setCurrentProject] = useState('')
-  const [creativeMediums, setCreativeMediums] = useState<string[]>([])
-  const [skills, setSkills] = useState<string[]>([])
-  const [interests, setInterests] = useState<string[]>([])
-  const [favoriteColor, setFavoriteColor] = useState('')
-  const [favoriteAnimal, setFavoriteAnimal] = useState('')
-
-  // community
-  const [idealCommunityVibe, setIdealCommunityVibe] = useState('')
-  const [dealBreakers, setDealBreakers] = useState('')
-  const [openToTravel, setOpenToTravel] = useState(false)
-  const [travelStyle, setTravelStyle] = useState('')
-
-  // offers / requests / travel
-  const [offers, setOffers] = useState<EditOffer[]>([])
-  const [requests, setRequests] = useState<EditRequest[]>([])
-  const [travel, setTravel] = useState<EditTravel[]>([])
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
+      if (!user) { router.push('/auth/login'); return }
       setUserId(user.id)
 
-      const [profileRes, bioRes, offersRes, requestsRes, travelRes] = await Promise.all([
-        supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
-        supabase.from('user_bio').select('*').eq('user_id', user.id).single(),
-        supabase.from('user_offers').select('*').eq('user_id', user.id),
-        supabase.from('user_requests').select('*').eq('user_id', user.id),
-        supabase.from('user_travel_plans').select('*').eq('user_id', user.id),
+      const [profileRes, bioRes, offersRes, requestsRes] = await Promise.all([
+        supabase.from('user_profiles').select('*').eq('id', user.id).single(),
+        supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('user_offers').select('*').eq('user_id', user.id).order('created_at'),
+        supabase.from('user_requests').select('*').eq('user_id', user.id).order('created_at'),
       ])
 
       const p = profileRes.data
-      if (p) {
-        setUsername(p.username ?? '')
-        setDisplayName(p.display_name ?? '')
-        setPronouns(p.pronouns ?? '')
-        setLocation(p.location ?? '')
-        setStatus((p.status as UserStatus) ?? 'looking')
-        setBio(p.bio ?? '')
-        setWebsiteUrl(p.website_url ?? '')
-        setInstagram(p.instagram ?? '')
-        setUserTypes(p.user_types ?? [])
-        setAvatarUrl(p.avatar_url ?? null)
-      }
-
       const b = bioRes.data
-      if (b) {
-        setArchetypes(b.archetypes ?? [])
-        setMbti(b.mbti ?? null)
-        setValuesList(b.values_list ?? [])
-        setLifePrinciples(b.life_principles ?? '')
-        setOcean({
-          ocean_openness: b.ocean_openness ?? 5,
-          ocean_conscientiousness: b.ocean_conscientiousness ?? 5,
-          ocean_extraversion: b.ocean_extraversion ?? 5,
-          ocean_agreeableness: b.ocean_agreeableness ?? 5,
-          ocean_neuroticism: b.ocean_neuroticism ?? 5,
-        })
-        setShortTermGoal(b.short_term_goal ?? '')
-        setLongTermGoal(b.long_term_goal ?? '')
-        setLifeVision(b.life_vision ?? '')
-        setCurrentProject(b.current_project ?? '')
-        setCreativeMediums(b.creative_mediums ?? [])
-        setSkills(b.skills ?? [])
-        setInterests(b.interests ?? [])
-        setFavoriteColor(b.favorite_color ?? '')
-        setFavoriteAnimal(b.favorite_animal ?? '')
-        setIdealCommunityVibe(b.ideal_community_vibe ?? '')
-        setDealBreakers(b.deal_breakers ?? '')
-        setOpenToTravel(b.open_to_travel ?? false)
-        setTravelStyle(b.travel_style ?? '')
-      }
+      const pd = b?.personality_details as any
+      const arc = b?.archetypes as any
+      const travels = (b?.places_traveling ?? []) as any[]
 
-      if (offersRes.data) setOffers(offersRes.data)
-      if (requestsRes.data) setRequests(requestsRes.data)
-      if (travelRes.data) setTravel(travelRes.data)
-
+      setForm({
+        first_name: p?.first_name ?? '',
+        last_name:  p?.last_name ?? '',
+        headline:   p?.headline ?? '',
+        country:    p?.country ?? '',
+        city:       p?.city ?? '',
+        user_types: p?.user_types ?? [],
+        skills:     b?.skills ?? [],
+        interests:  b?.interests ?? [],
+        values_principles: b?.values_principles ?? '',
+        what_creating:     b?.what_creating ?? '',
+        myersBriggs:       pd?.myersBriggs ?? '',
+        ocean: {
+          openness:         pd?.ocean?.openness         ?? 50,
+          conscientiousness:pd?.ocean?.conscientiousness ?? 50,
+          extraversion:     pd?.ocean?.extraversion      ?? 50,
+          agreeableness:    pd?.ocean?.agreeableness     ?? 50,
+          neuroticism:      pd?.ocean?.neuroticism        ?? 50,
+        },
+        astrologySun:   arc?.astrology?.sun    ?? '',
+        astrologyMoon:  arc?.astrology?.moon   ?? '',
+        astrologyRising:arc?.astrology?.rising ?? '',
+        humanDesign:    arc?.humanDesign ?? '',
+        geneKey:        arc?.geneKey    ?? '',
+        mayan:          arc?.mayan      ?? '',
+        goals:   b?.goals  ?? '',
+        fears:   b?.fears  ?? '',
+        traumas: b?.traumas ?? '',
+        offers: (offersRes.data ?? []).map((o: any) => ({
+          id: o.id, title: o.title, description: o.description ?? '',
+          category: o.category ?? '', compensation_model: o.compensation_model ?? 'Other', price: o.price ?? '',
+        })),
+        requests: (requestsRes.data ?? []).map((r: any) => ({
+          id: r.id, request_text: r.request_text, category: r.category ?? '', urgency: r.urgency ?? 'normal',
+        })),
+        placesTraveling: travels.map((t: any) => ({
+          location: t.location ?? '', startDate: t.startDate ?? '', endDate: t.endDate ?? '', notes: t.notes ?? '',
+        })),
+      })
       setLoading(false)
     }
     load()
   }, [])
 
-  async function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setAvatarUploading(true)
+  const update = <K extends keyof FormData>(key: K, val: FormData[K]) =>
+    setForm(prev => ({ ...prev, [key]: val }))
+
+  const toggleUserType = (id: string) =>
+    update('user_types', form.user_types.includes(id)
+      ? form.user_types.filter(t => t !== id)
+      : [...form.user_types, id])
+
+  async function save() {
+    if (!userId) return
+    setSaving(true)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `${userId}/avatar.${ext}`
-      const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
-      if (error) throw error
-      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-      setAvatarUrl(data.publicUrl)
+      // Update profile
+      await supabase.from('user_profiles').update({
+        first_name: form.first_name || null,
+        last_name:  form.last_name  || null,
+        headline:   form.headline   || null,
+        country:    form.country    || null,
+        city:       form.city       || null,
+        user_types: form.user_types,
+      }).eq('id', userId)
+
+      // Upsert bio
+      await supabase.from('user_bio').upsert({
+        user_id: userId,
+        values_principles: form.values_principles || null,
+        what_creating:     form.what_creating     || null,
+        personality_details: {
+          myersBriggs: form.myersBriggs || null,
+          ocean: form.ocean,
+        },
+        archetypes: {
+          astrology: {
+            sun:    form.astrologySun    || null,
+            moon:   form.astrologyMoon   || null,
+            rising: form.astrologyRising || null,
+          },
+          humanDesign: form.humanDesign || null,
+          geneKey:     form.geneKey     || null,
+          mayan:       form.mayan       || null,
+        },
+        goals:   form.goals   || null,
+        fears:   form.fears   || null,
+        traumas: form.traumas || null,
+        skills:   form.skills,
+        interests: form.interests,
+        places_traveling: form.placesTraveling.filter(t => t.location.trim()),
+      }, { onConflict: 'user_id' })
+
+      // Sync offers: delete all then re-insert
+      await supabase.from('user_offers').delete().eq('user_id', userId)
+      if (form.offers.length) {
+        await supabase.from('user_offers').insert(
+          form.offers.filter(o => o.title.trim()).map(o => ({
+            user_id: userId,
+            title: o.title,
+            description: o.description || null,
+            category: o.category || null,
+            compensation_model: o.compensation_model,
+            price: o.price || null,
+            is_active: true,
+          }))
+        )
+      }
+
+      // Sync requests: delete all then re-insert
+      await supabase.from('user_requests').delete().eq('user_id', userId)
+      if (form.requests.length) {
+        await supabase.from('user_requests').insert(
+          form.requests.filter(r => r.request_text.trim()).map(r => ({
+            user_id: userId,
+            request_text: r.request_text,
+            category: r.category || null,
+            urgency: r.urgency,
+            is_active: true,
+          }))
+        )
+      }
     } finally {
-      setAvatarUploading(false)
+      setSaving(false)
     }
   }
 
-  async function save() {
-    setSaving(true)
-    setSaved(false)
-
-    const profileUpsert = supabase.from('user_profiles').upsert({
-      user_id: userId,
-      username,
-      display_name: displayName,
-      pronouns,
-      location,
-      status,
-      bio,
-      website_url: websiteUrl,
-      instagram,
-      user_types: userTypes,
-      avatar_url: avatarUrl,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
-
-    const bioUpsert = supabase.from('user_bio').upsert({
-      user_id: userId,
-      archetypes,
-      mbti,
-      values_list: valuesList,
-      life_principles: lifePrinciples,
-      ...ocean,
-      short_term_goal: shortTermGoal,
-      long_term_goal: longTermGoal,
-      life_vision: lifeVision,
-      current_project: currentProject,
-      creative_mediums: creativeMediums,
-      skills,
-      interests,
-      favorite_color: favoriteColor,
-      favorite_animal: favoriteAnimal,
-      ideal_community_vibe: idealCommunityVibe,
-      deal_breakers: dealBreakers,
-      open_to_travel: openToTravel,
-      travel_style: travelStyle,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' })
-
-    const offerUpserts = offers.map(o =>
-      o.id
-        ? supabase.from('user_offers').update({ category: o.category, title: o.title, description: o.description }).eq('id', o.id)
-        : supabase.from('user_offers').insert({ user_id: userId, category: o.category, title: o.title, description: o.description })
-    )
-
-    const requestUpserts = requests.map(r =>
-      r.id
-        ? supabase.from('user_requests').update({ category: r.category, title: r.title, description: r.description }).eq('id', r.id)
-        : supabase.from('user_requests').insert({ user_id: userId, category: r.category, title: r.title, description: r.description })
-    )
-
-    const travelUpserts = travel.map(t =>
-      t.id
-        ? supabase.from('user_travel_plans').update({ location: t.location, date_from: t.date_from, date_to: t.date_to, description: t.description }).eq('id', t.id)
-        : supabase.from('user_travel_plans').insert({ user_id: userId, location: t.location, date_from: t.date_from, date_to: t.date_to, description: t.description })
-    )
-
-    await Promise.all([profileUpsert, bioUpsert, ...offerUpserts, ...requestUpserts, ...travelUpserts])
-
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+  async function handleNext() {
+    await save()
+    if (step < STEPS.length) setStep(s => s + 1)
+    else router.push('/network/profile')
   }
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: 'var(--ink-3)', fontSize: 14 }}>
-        Loading profile…
-      </div>
-    )
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  )
+
+  const stepData = STEPS[step - 1]
+  const StepIcon = stepData.icon
+  const progress = (step / STEPS.length) * 100
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 20px 80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink-1)', margin: 0 }}>Edit profile</h1>
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          style={{
-            padding: '9px 22px', borderRadius: 'var(--radius)', border: 'none',
-            background: 'var(--accent)', color: '#fff',
-            fontWeight: 600, fontSize: 13.5, cursor: saving ? 'default' : 'pointer',
-            opacity: saving ? 0.7 : 1, transition: 'opacity 0.15s',
-          }}
-        >
-          {saving ? 'Saving…' : saved ? 'Saved!' : 'Save changes'}
-        </button>
+    <div className="p-3 sm:p-6 max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">Complete Your Profile</h1>
+            <p className="text-muted-foreground">Step {step} of {STEPS.length}: {stepData.title}</p>
+          </div>
+          <Button variant="outline" onClick={save} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="mr-2 h-4 w-4" />Save Draft</>}
+          </Button>
+        </div>
+        <Progress value={progress} className="h-2" />
+        <div className="flex justify-between mt-2 overflow-x-auto pb-1 gap-1">
+          {STEPS.map(s => {
+            const Icon = s.icon
+            return (
+              <button key={s.id} onClick={() => setStep(s.id)}
+                className={`flex flex-col items-center gap-1 min-w-[56px] p-2 rounded-lg transition-colors ${
+                  s.id === step ? 'bg-primary/10 text-primary' : s.id < step ? 'text-primary' : 'text-muted-foreground'
+                }`}>
+                {s.id < step ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                <span className="text-[10px] font-medium hidden sm:block text-center leading-tight">{s.title}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Tab bar */}
-      <div style={{
-        display: 'flex', gap: 4, marginBottom: 28, overflowX: 'auto',
-        borderBottom: '1px solid var(--rule)', paddingBottom: 0,
-      }}>
-        {TABS.map(tab => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '8px 14px', fontSize: 13, fontWeight: activeTab === tab ? 600 : 400,
-              color: activeTab === tab ? 'var(--accent)' : 'var(--ink-3)',
-              background: 'none', border: 'none',
-              borderBottom: `2px solid ${activeTab === tab ? 'var(--accent)' : 'transparent'}`,
-              cursor: 'pointer', whiteSpace: 'nowrap',
-              marginBottom: -1, transition: 'color 0.15s',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+      <Card className="border-card-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <StepIcon className="h-5 w-5 text-primary" />
+            {stepData.title}
+          </CardTitle>
+          <CardDescription>{stepData.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+
+          {/* ── Step 1: Basic Info ── */}
+          {step === 1 && (
+            <>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>First Name</Label>
+                  <Input value={form.first_name} onChange={e => update('first_name', e.target.value)} placeholder="e.g., Alex" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Last Name</Label>
+                  <Input value={form.last_name} onChange={e => update('last_name', e.target.value)} placeholder="e.g., Rivera" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Headline</Label>
+                <Input value={form.headline} onChange={e => update('headline', e.target.value)}
+                  placeholder="e.g., Permaculture Designer & Community Builder" />
+                <p className="text-xs text-muted-foreground">A short description that appears under your name</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Country</Label>
+                  <Input value={form.country} onChange={e => update('country', e.target.value)} placeholder="e.g., Costa Rica" />
+                </div>
+                <div className="space-y-2">
+                  <Label>City</Label>
+                  <Input value={form.city} onChange={e => update('city', e.target.value)} placeholder="e.g., San José" />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Label>Who are you in this network?</Label>
+                <p className="text-xs text-muted-foreground">Select all that apply</p>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {USER_TYPES.map(t => (
+                    <button key={t.id} type="button" onClick={() => toggleUserType(t.id)}
+                      className={`flex items-center gap-2 p-3 rounded-lg border text-sm text-left transition-colors ${
+                        form.user_types.includes(t.id)
+                          ? 'border-primary bg-primary/10 text-primary font-medium'
+                          : 'border-border hover:bg-muted'
+                      }`}>
+                      {form.user_types.includes(t.id) && <Check className="h-4 w-4 flex-shrink-0" />}
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Skills</Label>
+                <TagInput value={form.skills} onChange={v => update('skills', v)}
+                  placeholder="Add your skills..."
+                  suggestions={['Permaculture','Construction','Teaching','Healing','Technology','Art']} />
+              </div>
+              <div className="space-y-2">
+                <Label>Interests</Label>
+                <TagInput value={form.interests} onChange={v => update('interests', v)}
+                  placeholder="Add your interests..."
+                  suggestions={['Sustainability','Community','Spirituality','Nature','Music','Travel']} />
+              </div>
+            </>
+          )}
+
+          {/* ── Step 2: Values & Purpose ── */}
+          {step === 2 && (
+            <>
+              <div className="space-y-2">
+                <Label>Core Values & Principles</Label>
+                <Textarea value={form.values_principles} onChange={e => update('values_principles', e.target.value)}
+                  placeholder="What principles guide your life and work? What do you stand for?"
+                  className="min-h-[150px]" />
+                <p className="text-xs text-muted-foreground">Share what matters most to you and what you believe in</p>
+              </div>
+              <div className="space-y-2">
+                <Label>What are you creating?</Label>
+                <Textarea value={form.what_creating} onChange={e => update('what_creating', e.target.value)}
+                  placeholder="What projects, visions, or initiatives are you working on?"
+                  className="min-h-[100px]" />
+              </div>
+            </>
+          )}
+
+          {/* ── Step 3: Personality ── */}
+          {step === 3 && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Myers-Briggs Type</Label>
+                  <a href="https://www.16personalities.com/free-personality-test" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors">
+                    click here to find yours
+                  </a>
+                </div>
+                <Select value={form.myersBriggs} onValueChange={v => update('myersBriggs', v)}>
+                  <SelectTrigger><SelectValue placeholder="Select your type" /></SelectTrigger>
+                  <SelectContent>
+                    {MBTI_TYPES.map(t => (
+                      <SelectItem key={t.code} value={t.code}>{t.code} – {t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">OCEAN / Big Five Personality</Label>
+                <OceanSlider label="Openness" value={form.ocean.openness}
+                  onChange={v => update('ocean', { ...form.ocean, openness: v })}
+                  description="Curiosity, creativity, and openness to new experiences"
+                  low="Conventional" high="Curious & creative" />
+                <OceanSlider label="Conscientiousness" value={form.ocean.conscientiousness}
+                  onChange={v => update('ocean', { ...form.ocean, conscientiousness: v })}
+                  description="Organization, dependability, and self-discipline"
+                  low="Spontaneous" high="Organised & disciplined" />
+                <OceanSlider label="Extraversion" value={form.ocean.extraversion}
+                  onChange={v => update('ocean', { ...form.ocean, extraversion: v })}
+                  description="Sociability, energy, and talkativeness"
+                  low="Introvert" high="Extravert" />
+                <OceanSlider label="Agreeableness" value={form.ocean.agreeableness}
+                  onChange={v => update('ocean', { ...form.ocean, agreeableness: v })}
+                  description="Cooperation, trust, and helpfulness"
+                  low="Direct & independent" high="Harmony-seeking" />
+                <OceanSlider label="Neuroticism" value={form.ocean.neuroticism}
+                  onChange={v => update('ocean', { ...form.ocean, neuroticism: v })}
+                  description="Emotional sensitivity and tendency to experience negative emotions"
+                  low="Calm & stable" high="Emotionally intense" />
+              </div>
+            </>
+          )}
+
+          {/* ── Step 4: Archetypes ── */}
+          {step === 4 && (
+            <>
+              <p className="text-muted-foreground text-sm">Share your archetypal patterns if you know them — all fields are optional.</p>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {[
+                  { label: 'Sun Sign',    val: form.astrologySun,    key: 'astrologySun' },
+                  { label: 'Moon Sign',   val: form.astrologyMoon,   key: 'astrologyMoon' },
+                  { label: 'Rising Sign', val: form.astrologyRising, key: 'astrologyRising' },
+                ].map(({ label, val, key }) => (
+                  <div key={key} className="space-y-2">
+                    <Label>{label}</Label>
+                    <Select value={val} onValueChange={v => update(key as keyof FormData, v as any)}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{ZODIAC.map(z => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <Label>Human Design Type</Label>
+                <Select value={form.humanDesign} onValueChange={v => update('humanDesign', v)}>
+                  <SelectTrigger><SelectValue placeholder="Select your type" /></SelectTrigger>
+                  <SelectContent>{HUMAN_DESIGN.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Gene Key / I-Ching</Label>
+                <Input value={form.geneKey} onChange={e => update('geneKey', e.target.value)} placeholder="e.g., Gene Key 22" />
+              </div>
+              <div className="space-y-2">
+                <Label>Mayan Sign</Label>
+                <Input value={form.mayan} onChange={e => update('mayan', e.target.value)} placeholder="e.g., White Rhythmic Wizard" />
+              </div>
+            </>
+          )}
+
+          {/* ── Step 5: Goals & Growth ── */}
+          {step === 5 && (
+            <>
+              <div className="space-y-2">
+                <Label>Goals & Aspirations</Label>
+                <Textarea value={form.goals} onChange={e => update('goals', e.target.value)}
+                  placeholder="What are you working towards? What do you want to achieve or create in the next few years?"
+                  className="min-h-[120px]" />
+              </div>
+              <div className="space-y-2">
+                <Label>Fears & Challenges</Label>
+                <Textarea value={form.fears} onChange={e => update('fears', e.target.value)}
+                  placeholder="What are you working to overcome? What challenges do you face?"
+                  className="min-h-[100px]" />
+                <p className="text-xs text-muted-foreground">Optional – sharing vulnerabilities helps create deeper connections</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Healing Journey</Label>
+                <Textarea value={form.traumas} onChange={e => update('traumas', e.target.value)}
+                  placeholder="What healing work are you doing? What have you overcome?"
+                  className="min-h-[100px]" />
+                <p className="text-xs text-muted-foreground">Optional – share only what feels comfortable</p>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 6: Offers ── */}
+          {step === 6 && (
+            <>
+              <p className="text-muted-foreground text-sm">What services, skills, or resources can you offer to the community?</p>
+              <div className="space-y-4">
+                {form.offers.map((offer, i) => (
+                  <Card key={i} className="border-card-border">
+                    <CardContent className="pt-4 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <p className="font-medium">Offer {i + 1}</p>
+                        <Button variant="ghost" size="icon"
+                          onClick={() => update('offers', form.offers.filter((_, j) => j !== i))}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Title</Label>
+                        <Input value={offer.title} onChange={e => {
+                          const o = [...form.offers]; o[i] = { ...o[i], title: e.target.value }; update('offers', o)
+                        }} placeholder="e.g., Permaculture Design Consultation" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Description</Label>
+                        <Textarea value={offer.description} onChange={e => {
+                          const o = [...form.offers]; o[i] = { ...o[i], description: e.target.value }; update('offers', o)
+                        }} placeholder="Describe what you offer..." />
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Category</Label>
+                          <Select value={offer.category} onValueChange={v => {
+                            const o = [...form.offers]; o[i] = { ...o[i], category: v }; update('offers', o)
+                          }}>
+                            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                            <SelectContent>{OFFER_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Compensation</Label>
+                          <Select value={offer.compensation_model} onValueChange={v => {
+                            const o = [...form.offers]; o[i] = { ...o[i], compensation_model: v }; update('offers', o)
+                          }}>
+                            <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
+                            <SelectContent>{COMPENSATION.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {(offer.compensation_model === 'Fixed Price' || offer.compensation_model === 'Hourly') && (
+                        <div className="space-y-2">
+                          <Label>Price</Label>
+                          <Input value={offer.price} onChange={e => {
+                            const o = [...form.offers]; o[i] = { ...o[i], price: e.target.value }; update('offers', o)
+                          }} placeholder="e.g., $50/hour" />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Button variant="outline" className="w-full"
+                onClick={() => update('offers', [...form.offers, { title: '', description: '', category: '', compensation_model: 'Other', price: '' }])}>
+                <Plus className="mr-2 h-4 w-4" />Add Offer
+              </Button>
+            </>
+          )}
+
+          {/* ── Step 7: Requests ── */}
+          {step === 7 && (
+            <>
+              <p className="text-muted-foreground text-sm">What help, resources, or connections are you looking for?</p>
+              <div className="space-y-4">
+                {form.requests.map((req, i) => (
+                  <Card key={i} className="border-card-border">
+                    <CardContent className="pt-4 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <p className="font-medium">Request {i + 1}</p>
+                        <Button variant="ghost" size="icon"
+                          onClick={() => update('requests', form.requests.filter((_, j) => j !== i))}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>What do you need?</Label>
+                        <Textarea value={req.request_text} onChange={e => {
+                          const r = [...form.requests]; r[i] = { ...r[i], request_text: e.target.value }; update('requests', r)
+                        }} placeholder="Describe what you're looking for..." />
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Category</Label>
+                          <Select value={req.category} onValueChange={v => {
+                            const r = [...form.requests]; r[i] = { ...r[i], category: v }; update('requests', r)
+                          }}>
+                            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                            <SelectContent>{REQUEST_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Urgency</Label>
+                          <Select value={req.urgency} onValueChange={v => {
+                            const r = [...form.requests]; r[i] = { ...r[i], urgency: v }; update('requests', r)
+                          }}>
+                            <SelectTrigger><SelectValue placeholder="Select urgency" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low – Whenever</SelectItem>
+                              <SelectItem value="normal">Normal</SelectItem>
+                              <SelectItem value="high">High – Soon</SelectItem>
+                              <SelectItem value="urgent">Urgent – ASAP</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Button variant="outline" className="w-full"
+                onClick={() => update('requests', [...form.requests, { request_text: '', category: '', urgency: 'normal' }])}>
+                <Plus className="mr-2 h-4 w-4" />Add Request
+              </Button>
+            </>
+          )}
+
+          {/* ── Step 8: Travel Plans ── */}
+          {step === 8 && (
+            <>
+              <p className="text-muted-foreground text-sm">Where are you planning to travel? This helps connect you with communities along your path.</p>
+              <div className="space-y-4">
+                {form.placesTraveling.map((plan, i) => (
+                  <Card key={i} className="border-card-border">
+                    <CardContent className="pt-4 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <p className="font-medium">Travel Plan {i + 1}</p>
+                        <Button variant="ghost" size="icon"
+                          onClick={() => update('placesTraveling', form.placesTraveling.filter((_, j) => j !== i))}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Destination</Label>
+                        <Input value={plan.location} onChange={e => {
+                          const t = [...form.placesTraveling]; t[i] = { ...t[i], location: e.target.value }; update('placesTraveling', t)
+                        }} placeholder="e.g., Costa Rica" />
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Start Date</Label>
+                          <Input type="date" value={plan.startDate} onChange={e => {
+                            const t = [...form.placesTraveling]; t[i] = { ...t[i], startDate: e.target.value }; update('placesTraveling', t)
+                          }} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>End Date</Label>
+                          <Input type="date" value={plan.endDate} onChange={e => {
+                            const t = [...form.placesTraveling]; t[i] = { ...t[i], endDate: e.target.value }; update('placesTraveling', t)
+                          }} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Notes</Label>
+                        <Textarea value={plan.notes} onChange={e => {
+                          const t = [...form.placesTraveling]; t[i] = { ...t[i], notes: e.target.value }; update('placesTraveling', t)
+                        }} placeholder="What are you looking to do there?" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Button variant="outline" className="w-full"
+                onClick={() => update('placesTraveling', [...form.placesTraveling, { location: '', startDate: '', endDate: '', notes: '' }])}>
+                <Plus className="mr-2 h-4 w-4" />Add Travel Plan
+              </Button>
+            </>
+          )}
+
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between mt-6 gap-4">
+        <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 1}>
+          <ArrowLeft className="mr-2 h-4 w-4" />Previous
+        </Button>
+        <Button onClick={handleNext} disabled={saving}>
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {step === STEPS.length
+            ? <><Check className="mr-2 h-4 w-4" />Save & Finish</>
+            : <>Next<ArrowRight className="ml-2 h-4 w-4" /></>}
+        </Button>
       </div>
-
-      {activeTab === 'Basic' && (
-        <BasicSection
-          fileRef={fileInputRef}
-          onAvatarChange={handleAvatarChange}
-          avatarUrl={avatarUrl}
-          avatarUploading={avatarUploading}
-          displayName={displayName} setDisplayName={setDisplayName}
-          pronouns={pronouns} setPronouns={setPronouns}
-          location={location} setLocation={setLocation}
-          status={status} setStatus={setStatus}
-          bio={bio} setBio={setBio}
-          websiteUrl={websiteUrl} setWebsiteUrl={setWebsiteUrl}
-          instagram={instagram} setInstagram={setInstagram}
-          userTypes={userTypes} setUserTypes={setUserTypes}
-        />
-      )}
-
-      {activeTab === 'Identity' && (
-        <IdentitySection
-          archetypes={archetypes} setArchetypes={setArchetypes}
-          mbti={mbti} setMbti={setMbti}
-        />
-      )}
-
-      {activeTab === 'Values' && (
-        <ValuesSection
-          valuesList={valuesList} setValuesList={setValuesList}
-          lifePrinciples={lifePrinciples} setLifePrinciples={setLifePrinciples}
-        />
-      )}
-
-      {activeTab === 'Personality' && (
-        <PersonalitySection ocean={ocean} setOcean={setOcean} />
-      )}
-
-      {activeTab === 'Goals' && (
-        <GoalsSection
-          shortTermGoal={shortTermGoal} setShortTermGoal={setShortTermGoal}
-          longTermGoal={longTermGoal} setLongTermGoal={setLongTermGoal}
-          lifeVision={lifeVision} setLifeVision={setLifeVision}
-          currentProject={currentProject} setCurrentProject={setCurrentProject}
-          creativeMediums={creativeMediums} setCreativeMediums={setCreativeMediums}
-          skills={skills} setSkills={setSkills}
-          interests={interests} setInterests={setInterests}
-          favoriteColor={favoriteColor} setFavoriteColor={setFavoriteColor}
-          favoriteAnimal={favoriteAnimal} setFavoriteAnimal={setFavoriteAnimal}
-        />
-      )}
-
-      {activeTab === 'Community' && (
-        <CommunitySection
-          idealCommunityVibe={idealCommunityVibe} setIdealCommunityVibe={setIdealCommunityVibe}
-          dealBreakers={dealBreakers} setDealBreakers={setDealBreakers}
-          openToTravel={openToTravel} setOpenToTravel={setOpenToTravel}
-          travelStyle={travelStyle} setTravelStyle={setTravelStyle}
-        />
-      )}
-
-      {activeTab === 'Offers' && (
-        <OffersSection
-          offers={offers} setOffers={setOffers}
-          requests={requests} setRequests={setRequests}
-          travel={travel} setTravel={setTravel}
-        />
-      )}
     </div>
   )
 }

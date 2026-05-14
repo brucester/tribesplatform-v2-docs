@@ -92,7 +92,7 @@ export default function OnboardingPage() {
           <div>
             <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, marginBottom: 8 }}>Create your profile</h1>
             <p style={{ color: 'var(--ink-3)', fontSize: 14, marginBottom: 32 }}>
-              This is your public presence in the Tribes network.
+              This is your public presence in the MyCoNet.
             </p>
 
             <Field label="Display name" required>

@@ -1,19 +1,20 @@
 export type Bio = {
-  values_list?: string[]
-  skills?: string[]
-  interests?: string[]
-  mbti?: string | null
-  ocean_openness?: number
-  ocean_conscientiousness?: number
-  ocean_extraversion?: number
-  ocean_agreeableness?: number
-  ocean_neuroticism?: number
+  skills?: string[] | null
+  interests?: string[] | null
+  personality_details?: {
+    myersBriggs?: string | null
+    ocean?: {
+      openness?: number | null
+      conscientiousness?: number | null
+      extraversion?: number | null
+      agreeableness?: number | null
+      neuroticism?: number | null
+    } | null
+  } | null
 } | null
 
 export type MatchResult = { score: number; reasons: string[] }
 
-// Cognitive function complement pairs — dominant/auxiliary functions directly complement
-// each other (e.g. INTJ Ni-Te <-> ENFP Ne-Fi share the Te-Fi axis).
 const MBTI_IDEAL_PAIRS: Record<string, string[]> = {
   INTJ: ['ENFP', 'ENTP'], INTP: ['ENTJ', 'ENFJ'],
   INFJ: ['ENFP', 'ENTP'], INFP: ['ENFJ', 'ENTJ'],
@@ -25,7 +26,6 @@ const MBTI_IDEAL_PAIRS: Record<string, string[]> = {
   ESFJ: ['ISFP', 'ISTP'], ESFP: ['ISTJ', 'ISFJ'],
 }
 
-// NT Analysts, NF Diplomats, SJ Sentinels, SP Explorers
 const MBTI_TEMPERAMENT: Record<string, string> = {
   INTJ: 'NT', INTP: 'NT', ENTJ: 'NT', ENTP: 'NT',
   INFJ: 'NF', INFP: 'NF', ENFJ: 'NF', ENFP: 'NF',
@@ -33,13 +33,13 @@ const MBTI_TEMPERAMENT: Record<string, string> = {
   ISTP: 'SP', ISFP: 'SP', ESTP: 'SP', ESFP: 'SP',
 }
 
-function mbtiCompat(a: string | null | undefined, b: string | null | undefined): { points: number; label: string | null } {
+function mbtiCompat(a?: string | null, b?: string | null): { points: number; label: string | null } {
   if (!a || !b) return { points: 0, label: null }
-  if (a === b) return { points: 12, label: 'Same type' }
+  if (a === b) return { points: 12, label: 'Same MBTI type' }
   if (MBTI_IDEAL_PAIRS[a]?.[0] === b || MBTI_IDEAL_PAIRS[b]?.[0] === a)
-    return { points: 22, label: 'Ideal MBTI pair' }
+    return { points: 25, label: 'Ideal MBTI pair' }
   if (MBTI_IDEAL_PAIRS[a]?.includes(b))
-    return { points: 16, label: 'MBTI complement' }
+    return { points: 18, label: 'MBTI complement' }
   if (MBTI_TEMPERAMENT[a] === MBTI_TEMPERAMENT[b])
     return { points: 10, label: 'Same temperament' }
   const shared = [...a].filter((ch, i) => ch === b[i]).length
@@ -48,43 +48,41 @@ function mbtiCompat(a: string | null | undefined, b: string | null | undefined):
 }
 
 // Score breakdown (max 100):
-//   Values shared    → up to 30 (5 pts each)
-//   Skills shared    → up to 16 (4 pts each)
-//   Interests shared → up to 14 (2 pts each)
-//   OCEAN similarity → up to 18 (euclidean distance)
-//   MBTI compat      → up to 22
+//   Skills shared    → up to 30 (5 pts each, max 6)
+//   Interests shared → up to 20 (4 pts each, max 5)
+//   OCEAN similarity → up to 25 (euclidean distance, 0-100 scale)
+//   MBTI compat      → up to 25
 export function computeMatch(mine: Bio, theirs: Bio): MatchResult {
   if (!mine || !theirs) return { score: 0, reasons: [] }
   const reasons: string[] = []
   let score = 0
 
-  const sharedValues = (mine.values_list ?? []).filter(v => (theirs.values_list ?? []).includes(v))
-  if (sharedValues.length) {
-    score += Math.min(sharedValues.length * 5, 30)
-    reasons.push(`${sharedValues.length} shared value${sharedValues.length > 1 ? 's' : ''}`)
-  }
-
   const sharedSkills = (mine.skills ?? []).filter(s => (theirs.skills ?? []).includes(s))
   if (sharedSkills.length) {
-    score += Math.min(sharedSkills.length * 4, 16)
+    score += Math.min(sharedSkills.length * 5, 30)
     reasons.push(`${sharedSkills.length} shared skill${sharedSkills.length > 1 ? 's' : ''}`)
   }
 
   const sharedInterests = (mine.interests ?? []).filter(i => (theirs.interests ?? []).includes(i))
   if (sharedInterests.length) {
-    score += Math.min(sharedInterests.length * 2, 14)
+    score += Math.min(sharedInterests.length * 4, 20)
     reasons.push(`${sharedInterests.length} shared interest${sharedInterests.length > 1 ? 's' : ''}`)
   }
 
-  const oceanKeys = [
-    'ocean_openness', 'ocean_conscientiousness', 'ocean_extraversion',
-    'ocean_agreeableness', 'ocean_neuroticism',
-  ] as const
-  const avgDiff = oceanKeys.reduce((sum, k) => sum + Math.abs((mine[k] ?? 5) - (theirs[k] ?? 5)), 0) / 5
-  score += Math.round((1 - avgDiff / 9) * 18)
-  if (avgDiff <= 2) reasons.push('Similar personality')
+  const mOcean = mine.personality_details?.ocean
+  const tOcean = theirs.personality_details?.ocean
+  if (mOcean && tOcean) {
+    const keys = ['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism'] as const
+    const avgDiff = keys.reduce((sum, k) => sum + Math.abs((mOcean[k] ?? 50) - (tOcean[k] ?? 50)), 0) / 5
+    const oceanPts = Math.round((1 - avgDiff / 100) * 25)
+    score += oceanPts
+    if (avgDiff <= 15) reasons.push('Similar personality traits')
+  }
 
-  const { points: mbtiPts, label: mbtiLabel } = mbtiCompat(mine.mbti, theirs.mbti)
+  const { points: mbtiPts, label: mbtiLabel } = mbtiCompat(
+    mine.personality_details?.myersBriggs,
+    theirs.personality_details?.myersBriggs
+  )
   score += mbtiPts
   if (mbtiLabel) reasons.push(mbtiLabel)
 
