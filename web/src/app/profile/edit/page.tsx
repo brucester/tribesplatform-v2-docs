@@ -13,7 +13,7 @@ import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   ArrowLeft, ArrowRight, Save, Loader2, User, Heart, Brain,
-  Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Sparkles,
+  Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Camera,
 } from 'lucide-react'
 
 const STEPS = [
@@ -184,6 +184,8 @@ export default function ProfileWizard() {
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -199,6 +201,7 @@ export default function ProfileWizard() {
       ])
 
       const p = profileRes.data
+      if (p?.avatar_url) setAvatarUrl(p.avatar_url)
       const b = bioRes.data
       const pd = b?.personality_details as any
       const arc = b?.archetypes as any
@@ -255,6 +258,26 @@ export default function ProfileWizard() {
     update('user_types', form.user_types.includes(id)
       ? form.user_types.filter(t => t !== id)
       : [...form.user_types, id])
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+    setAvatarUploading(true)
+    try {
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `${userId}.${ext}`
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', userId)
+      setAvatarUrl(publicUrl)
+    } catch (err) {
+      console.error('Avatar upload failed:', err)
+    } finally {
+      setAvatarUploading(false)
+      e.target.value = ''
+    }
+  }
 
   async function save() {
     if (!userId) return
@@ -390,6 +413,27 @@ export default function ProfileWizard() {
           {/* ── Step 1: Basic Info ── */}
           {step === 1 && (
             <>
+              {/* Avatar upload */}
+              <div className="flex flex-col items-center gap-2 pb-2">
+                <label htmlFor="avatar-upload" className="cursor-pointer group relative">
+                  <div style={{ width: 88, height: 88, borderRadius: '50%', overflow: 'hidden', background: 'var(--accent-soft)', border: '2px solid var(--rule)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: 'var(--accent)', position: 'relative' }}>
+                    {avatarUrl
+                      ? <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span>{(form.first_name?.[0] ?? '?').toUpperCase()}</span>
+                    }
+                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 150ms' }}
+                      className="group-hover:opacity-100">
+                      {avatarUploading
+                        ? <Loader2 style={{ width: 22, height: 22, color: '#fff' }} className="animate-spin" />
+                        : <Camera style={{ width: 22, height: 22, color: '#fff' }} />
+                      }
+                    </div>
+                  </div>
+                </label>
+                <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>Click photo to change</span>
+              </div>
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>First Name</Label>
