@@ -175,6 +175,7 @@ function ImportModal({ onClose, onApply, currentValues, scope }: {
   const [errorMsg, setErrorMsg] = useState('')
   const [acceptedKeys, setAcceptedKeys] = useState<Record<string, boolean>>({})
   const [wasTruncated, setWasTruncated] = useState(false)
+  const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({})
 
   const handleFile = async (file: File) => {
     setFileName(file.name)
@@ -306,8 +307,14 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
       setExtracted(merged)
       setWasTruncated(truncated)
       const accepted: Record<string, boolean> = {}
-      Object.keys(merged).forEach(k => { if (!k.startsWith('_')) accepted[k] = true })
+      // Default: accept new fields; for conflicts (existing answer present) default to keeping current
+      Object.keys(merged).forEach(k => {
+        if (k.startsWith('_')) return
+        const hasExisting = currentValues[k] != null && currentValues[k] !== ''
+        accepted[k] = !hasExisting
+      })
       setAcceptedKeys(accepted)
+      setExpandedKeys({})
       setStage('review')
     } catch (e) {
       setErrorMsg((e as Error).message ?? 'Scan failed.')
@@ -420,14 +427,77 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
               <div style={{ fontFamily: 'var(--display)', fontSize: 18 }}>Proposed answers</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{Object.values(acceptedKeys).filter(Boolean).length} accepted</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{Object.values(acceptedKeys).filter(Boolean).length} will apply</div>
             </div>
 
-            <div style={{ maxHeight: 360, overflowY: 'auto', marginBottom: 20, paddingRight: 4 }}>
+            <div style={{ maxHeight: 420, overflowY: 'auto', marginBottom: 20, paddingRight: 4 }}>
               {Object.entries(extracted).filter(([k]) => !k.startsWith('_') && k !== 'project_name').map(([key, val]) => {
                 const meta = fieldMeta(key)
                 const accepted = acceptedKeys[key]
-                const conflict = currentValues[key] != null && currentValues[key] !== ''
+                const existingVal = currentValues[key]
+                const conflict = existingVal != null && existingVal !== ''
+                const expanded = expandedKeys[key] ?? false
+
+                const renderVal = (v: unknown) =>
+                  meta.kind === 'slider' ? `${v}/10`
+                  : meta.kind === 'check' ? (v ? '☑ Yes' : '☐ No')
+                  : String(v)
+
+                if (conflict) {
+                  // Conflict card — expandable comparison
+                  return (
+                    <div key={key} style={{ marginBottom: 8, border: '1px solid #f59e0b60', borderLeft: '3px solid #f59e0b', borderRadius: 4, overflow: 'hidden', background: 'var(--bg-2)' }}>
+                      {/* Header row — click to expand */}
+                      <button onClick={() => setExpandedKeys(e => ({ ...e, [key]: !e[key] }))}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: '#f59e0b', letterSpacing: '0.1em', marginBottom: 2 }}>
+                            {meta.step.toUpperCase()} · HAS EXISTING ANSWER
+                          </div>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>{meta.label}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                            color: accepted ? 'var(--accent)' : 'var(--ink-4)',
+                            background: accepted ? 'var(--accent-soft)' : 'var(--bg-2)',
+                            border: `1px solid ${accepted ? 'var(--accent)' : 'var(--rule)'}`,
+                            padding: '2px 8px', borderRadius: 20 }}>
+                            {accepted ? 'Use new' : 'Keep current'}
+                          </span>
+                          <span style={{ fontSize: 12, color: 'var(--ink-4)', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>▾</span>
+                        </div>
+                      </button>
+
+                      {/* Expanded comparison */}
+                      {expanded && (
+                        <div style={{ borderTop: '1px solid var(--rule)', padding: '12px 12px 14px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                            <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
+                              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>Current answer</div>
+                              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>{renderVal(existingVal)}</div>
+                            </div>
+                            <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '10px 12px' }}>
+                              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>AI proposed</div>
+                              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>{renderVal(val)}</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => setAcceptedKeys(a => ({ ...a, [key]: false }))}
+                              style={{ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, borderRadius: 'var(--radius)', border: `1.5px solid ${!accepted ? 'var(--ink)' : 'var(--rule)'}`, background: !accepted ? 'var(--ink)' : 'var(--surface)', color: !accepted ? 'var(--bg)' : 'var(--ink-3)', cursor: 'pointer' }}>
+                              Keep current
+                            </button>
+                            <button onClick={() => setAcceptedKeys(a => ({ ...a, [key]: true }))}
+                              style={{ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, borderRadius: 'var(--radius)', border: `1.5px solid ${accepted ? 'var(--accent)' : 'var(--rule)'}`, background: accepted ? 'var(--accent)' : 'var(--surface)', color: accepted ? '#fff' : 'var(--ink-3)', cursor: 'pointer' }}>
+                              Use new answer
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+
+                // No conflict — simple accept/reject card
                 return (
                   <div key={key} style={{ padding: 12, marginBottom: 8, background: accepted ? 'var(--accent-soft)' : 'var(--bg-2)', border: `1px solid ${accepted ? 'var(--accent)' : 'var(--rule-soft)'}`, borderRadius: 4, cursor: 'pointer', opacity: accepted ? 1 : 0.6 }}
                     onClick={() => setAcceptedKeys(a => ({ ...a, [key]: !a[key] }))}>
@@ -436,15 +506,9 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
                         {accepted && <span style={{ color: '#fff', fontSize: 10, lineHeight: 1 }}>✓</span>}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-3)', letterSpacing: '0.1em', marginBottom: 3 }}>
-                          {meta.step.toUpperCase()}{conflict && <span style={{ color: 'var(--warn)', marginLeft: 8 }}>· OVERWRITES EXISTING</span>}
-                        </div>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-3)', letterSpacing: '0.1em', marginBottom: 3 }}>{meta.step.toUpperCase()}</div>
                         <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 4 }}>{meta.label}</div>
-                        <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>
-                          {meta.kind === 'slider' ? <span><strong>{val as number}/10</strong></span>
-                            : meta.kind === 'check' ? <span>{val ? '☑ Yes' : '☐ No'}</span>
-                            : <span>{String(val)}</span>}
-                        </div>
+                        <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>{renderVal(val)}</div>
                       </div>
                     </div>
                   </div>
@@ -455,7 +519,12 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
             <div className="nav-row" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
               <button className="btn btn-ghost" onClick={() => setStage('upload')}>← Back</button>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn" onClick={() => { const all: Record<string, boolean> = {}; Object.keys(extracted).forEach(k => { if (!k.startsWith('_')) all[k] = !Object.values(acceptedKeys).every(Boolean) }); setAcceptedKeys(all) }}>Toggle all</button>
+                <button className="btn" onClick={() => {
+                  const allNew = !Object.entries(acceptedKeys).every(([k, v]) => v || (currentValues[k] != null && currentValues[k] !== ''))
+                  const all: Record<string, boolean> = {}
+                  Object.keys(extracted).forEach(k => { if (!k.startsWith('_')) all[k] = allNew })
+                  setAcceptedKeys(all)
+                }}>Toggle all</button>
                 <button className="btn btn-primary" onClick={handleApply}>Apply {Object.values(acceptedKeys).filter(Boolean).length} answers →</button>
               </div>
             </div>

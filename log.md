@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-05-14 — Conflict-aware AI review panel
+
+### Blueprint — AI import conflict resolution
+- When AI proposes an answer for a field that already has content, both values are now shown side by side in the review panel
+- Conflict fields default to "Keep current" (not auto-accept) to prevent silent overwrites
+- Each conflict card shows a status badge while collapsed; click to expand, compare, and choose
+- Non-conflict fields (AI-only answers) retain the existing accept/reject toggle behavior
+
+---
+
 ## 2026-05-14 — PDF upload, nav links, admin review panels
 
 ### Blueprint — PDF upload (large file support)

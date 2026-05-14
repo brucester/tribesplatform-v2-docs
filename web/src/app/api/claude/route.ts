@@ -45,26 +45,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing prompt' }, { status: 400 })
   }
 
+  const callMiniMax = async () => fetch('https://api.minimax.io/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'MiniMax-M2.7',
+      messages: [{ role: 'user', content: prompt }],
+      max_completion_tokens: 8192,
+      temperature: 0.3,
+    }),
+  })
+
   let minimaxRes: Response
   try {
-    minimaxRes = await fetch('https://api.minimax.io/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'MiniMax-M2.7',
-        messages: [{ role: 'user', content: prompt }],
-        max_completion_tokens: 4096,
-        temperature: 0.3,
-      }),
-    })
+    minimaxRes = await callMiniMax()
+    // MiniMax 524 = their gateway timed out — wait 3s and retry once
+    if (minimaxRes.status === 524) {
+      await new Promise(r => setTimeout(r, 3000))
+      minimaxRes = await callMiniMax()
+    }
   } catch (e) {
     return NextResponse.json({ error: `Network error: ${(e as Error).message}` }, { status: 502 })
   }
 
   const rawText = await minimaxRes.text()
+
+  if (minimaxRes.status === 524) {
+    return NextResponse.json({ error: 'MiniMax is taking too long to respond. Try a smaller document or try again in a moment.' }, { status: 504 })
+  }
 
   if (minimaxRes.status === 429) {
     return NextResponse.json({ error: 'MiniMax rate limit reached. Please try again in a few hours.' }, { status: 429 })
@@ -88,8 +96,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Empty response from MiniMax. Keys: ${JSON.stringify(Object.keys(data))}` }, { status: 502 })
   }
 
+  console.log('[claude] content length:', content.length)
+  console.log('[claude] content preview:', content.slice(0, 500))
+  console.log('[claude] content tail:', content.slice(-300))
+
   const result = extractJSON(content)
   if (!result) {
+    console.log('[claude] extractJSON failed. Full content:', content.slice(0, 2000))
     return NextResponse.json(
       { error: "We're working on our scanning process, thanks for the patience. Try again later please." },
       { status: 502 }

@@ -103,9 +103,6 @@ export default function Nav() {
           {user ? (
             <>
               <Link href="/dashboard" style={{ fontSize: 13, color: 'var(--ink-2)', padding: '5px 10px', borderRadius: 'var(--radius)', fontWeight: 500 }}>Dashboard</Link>
-              <Link href="/ops" style={{ fontSize: 13, color: 'var(--ink-2)', padding: '5px 10px', borderRadius: 'var(--radius)', fontWeight: 500 }}>Operations</Link>
-              <Link href="/agreements" style={{ fontSize: 13, color: 'var(--ink-2)', padding: '5px 10px', borderRadius: 'var(--radius)', fontWeight: 500 }}>Agreements</Link>
-              <Link href="/join" style={{ fontSize: 13, color: 'var(--ink-2)', padding: '5px 10px', borderRadius: 'var(--radius)', fontWeight: 500 }}>Join</Link>
               {username && (
                 <Link href={`/u/${username}`} style={{ display: 'flex', alignItems: 'center', padding: '4px 6px', borderRadius: 'var(--radius)' }}>
                   <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--accent-soft)', border: '1.5px solid var(--rule)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--accent)' }}>
