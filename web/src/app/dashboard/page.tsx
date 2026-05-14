@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/app/blueprint/blueprint-compute'
 
 const ROLE_LABELS: Record<string, string> = {
   explorer: 'Explorer',
@@ -18,29 +19,7 @@ function atLeast(userRole: string, minRole: string) {
   return roleRank(userRole) >= roleRank(minRole)
 }
 
-const PHASES = [
-  { id: 'p1', name: 'Spark', color: '#22c55e' },
-  { id: 'p2', name: 'Prove', color: '#3b82f6' },
-  { id: 'p3', name: 'Build', color: '#f59e0b' },
-  { id: 'p4', name: 'Live',  color: '#8b5cf6' },
-]
-
-function countAnswers(answers: Record<string, unknown>) {
-  return Object.values(answers).filter(v =>
-    v !== null && v !== undefined && v !== '' &&
-    !(Array.isArray(v) && v.length === 0)
-  ).length
-}
-
-function activePhaseFromAnswers(answers: Record<string, unknown>, flags: Record<string, boolean>) {
-  // Gate flags look like: gate_1_pass, gate_2_pass, etc.
-  for (let i = 4; i >= 1; i--) {
-    if (flags[`gate_${i}_pass`]) return i
-  }
-  // If any answers exist, at least SPARK is started
-  if (Object.keys(answers).length > 0) return 1
-  return 0
-}
+const PHASE_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6']
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -79,14 +58,16 @@ export default async function DashboardPage() {
   const role = (profile as any)?.role ?? 'explorer'
   const displayName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || 'Explorer'
 
-  // Blueprint stats
-  const answers = (blueprint?.answers ?? {}) as Record<string, unknown>
-  const flags = (blueprint?.flags ?? {}) as Record<string, boolean>
-  const answerCount = countAnswers(answers)
-  const activePhase = activePhaseFromAnswers(answers, flags)
+  // Blueprint stats — same logic as the blueprint's own DashboardView
+  const bpAnswers = (blueprint?.answers ?? {}) as Values
+  const overall = computeOverallReadiness(bpAnswers)
+  const gatesPassed = computeGatesPassed(bpAnswers)
+  const phaseProgress = computePhaseProgress(bpAnswers)
+  const projectName = (bpAnswers.project_name as string) || null
   const blueprintUpdated = blueprint?.updated_at
     ? new Date(blueprint.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null
+  const hasBlueprint = blueprint !== null
 
   // Profile completeness
   const pd = (bio?.personality_details ?? {}) as any
@@ -180,32 +161,45 @@ export default async function DashboardPage() {
           {/* M04 — Blueprint */}
           <Link href="/blueprint" style={{ textDecoration: 'none' }}>
             <div className="dash-card" style={{ borderTop: '3px solid #ca8a04' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ca8a04', fontWeight: 700, marginBottom: 3 }}>M04</div>
                   <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)' }}>Blueprint</div>
+                  {projectName && <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{projectName}</div>}
                 </div>
-                {answerCount > 0 && (
-                  <span style={{ fontSize: 11, color: 'var(--ink-3)', background: 'var(--bg-2)', padding: '3px 8px', borderRadius: 20, border: '1px solid var(--rule)', whiteSpace: 'nowrap' }}>
-                    {answerCount} fields
+                {hasBlueprint && (
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#ca8a04', background: '#ca8a0415', padding: '3px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                    {overall.toFixed(1)} / 10
                   </span>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 14 }}>
-                {PHASES.map((p, i) => {
-                  const done = activePhase >= i + 1
-                  return (
-                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: done ? p.color : 'var(--rule)', flexShrink: 0, boxShadow: done ? `0 0 0 2px ${p.color}30` : 'none' }} />
-                      <span style={{ fontSize: 11, color: done ? 'var(--ink-2)' : 'var(--ink-4)', fontWeight: done ? 500 : 400 }}>{p.name}</span>
-                    </div>
-                  )
-                })}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{answerCount === 0 ? 'Not started yet' : blueprintUpdated ? `Updated ${blueprintUpdated}` : 'In progress'}</span>
-                <span style={{ fontSize: 12, color: '#ca8a04', fontWeight: 500 }}>Open →</span>
-              </div>
+              {hasBlueprint ? (
+                <>
+                  {/* Phase progress bars */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
+                    {phaseProgress.map((p, i) => (
+                      <div key={p.id}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 10, color: 'var(--ink-3)', fontWeight: 500 }}>{p.name}</span>
+                          <span style={{ fontSize: 10, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>{p.answered}/{p.total}</span>
+                        </div>
+                        <div style={{ height: 4, borderRadius: 2, background: 'var(--rule)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${p.ratio * 100}%`, background: PHASE_COLORS[i], borderRadius: 2, transition: 'width 400ms ease' }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>{gatesPassed}/4 gates · {blueprintUpdated ? `Updated ${blueprintUpdated}` : 'In progress'}</span>
+                    <span style={{ fontSize: 12, color: '#ca8a04', fontWeight: 500 }}>Open →</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Not started yet</span>
+                  <span style={{ fontSize: 12, color: '#ca8a04', fontWeight: 500 }}>Open →</span>
+                </div>
+              )}
             </div>
           </Link>
 

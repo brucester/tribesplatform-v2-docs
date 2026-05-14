@@ -298,7 +298,7 @@ export default function ProfileWizard() {
     setAvatarUploading(true)
     try {
       const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${userId}.${ext}`
+      const path = `${userId}/avatar.${ext}`
       const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)

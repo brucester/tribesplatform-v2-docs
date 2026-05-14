@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { FW_DATA, PILLAR_STEPS, type StepDef, type PhaseDef, type GuideContent } from './wizard-data'
+import { computePillarScores, computeGatesPassed, computePhaseProgress, type Values as SharedValues } from './blueprint-compute'
 import './wizard.css'
 
 async function extractPdfText(file: File, onProgress?: (page: number, total: number) => void): Promise<string> {
@@ -58,44 +59,6 @@ function gateStatus(step: StepDef, values: Values) {
   return 'not-ready'
 }
 
-function computePillarScores(values: Values) {
-  const map: Record<string, string[]> = {
-    ecology: ['site_water', 'site_climate', 'eco_assessment', 'c_water', 'c_waste', 'c_energy', 'metrics'],
-    social: ['team_trust', 'team_diversity', 'culture_strength', 'rituals', 'onboarding', 'culture_carriers'],
-    economy: ['biz_resilience', 'biz_clarity', 'fund_realism', 'fund_alignment', 'cap_close', 'revenue_streams'],
-    hardware: ['site_access', 'c_buildings', 'c_roads', 'c_connectivity', 'mp_integration', 'practice_ready'],
-    governance: ['intention_clarity', 'vision_alignment', 'structure_explicit', 'self_clarity', 'ops_smooth', 'gov_health', 'evo_capacity'],
-  }
-  const result: Record<string, number> = {}
-  Object.entries(map).forEach(([pillar, ids]) => {
-    let sum = 0, count = 0
-    ids.forEach(id => {
-      const v = values[id]
-      if (typeof v === 'number') { sum += v; count++ }
-      else if (typeof v === 'boolean' && v) { sum += 8; count++ }
-    })
-    result[pillar] = count > 0 ? sum / count : 0
-  })
-  return result
-}
-
-function computeGatesPassed(values: Values) {
-  let passed = 0
-  FW_DATA.phases.forEach(p => {
-    p.steps.forEach(s => {
-      if (s.kind === 'gate' && s.criteria) {
-        const met = s.criteria.filter(c => {
-          const v = values[c.metric]
-          if (typeof v === 'boolean') return v
-          if (typeof v === 'number') return v >= 6
-          return false
-        }).length
-        if (met / s.criteria.length >= 0.8) passed++
-      }
-    })
-  })
-  return passed
-}
 
 function debounce<T extends (...args: Parameters<T>) => void>(fn: T, ms: number) {
   let timer: ReturnType<typeof setTimeout>

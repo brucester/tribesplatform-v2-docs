@@ -86,7 +86,7 @@ export default function NetworkProfilePage() {
     setAvatarUploading(true)
     try {
       const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${profile.id}.${ext}`
+      const path = `${profile.id}/avatar.${ext}`
       const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
