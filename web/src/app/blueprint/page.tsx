@@ -15,19 +15,14 @@ export default async function BlueprintPage() {
     isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(profile?.role ?? '')
   }
 
-  // Everyone reads the same community blueprint — the most recently updated one with content.
-  // Admins can edit it; everyone else sees it read-only.
-  const { data: blueprints } = await supabase
+  // Fetch the single community blueprint
+  const { data: communityBlueprint } = await supabase
     .from('blueprints')
     .select('*')
-    .order('updated_at', { ascending: false })
-    .limit(10)
+    .eq('is_community', true)
+    .maybeSingle()
 
-  const communityBlueprint =
-    blueprints?.find(b => Object.keys((b.answers as Record<string, unknown>) ?? {}).length > 0) ??
-    blueprints?.[0]
-
-  // If no blueprint exists yet, admins can create one; others wait.
+  // No community blueprint yet — only admins can create it
   if (!communityBlueprint) {
     if (!isAdmin) {
       return (
@@ -37,10 +32,10 @@ export default async function BlueprintPage() {
       )
     }
 
-    // Create the first community blueprint owned by this admin
+    // Admin creates the one community blueprint
     const { data: created } = await supabase
       .from('blueprints')
-      .insert({ user_id: user!.id, answers: {}, flags: {} })
+      .insert({ user_id: user!.id, answers: {}, flags: {}, is_community: true })
       .select()
       .single()
 
