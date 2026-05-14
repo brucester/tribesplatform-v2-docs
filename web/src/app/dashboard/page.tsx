@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/app/blueprint/blueprint-compute'
 
@@ -24,7 +23,136 @@ const PHASE_COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6']
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+
+  // Guest view — community overview without personal data
+  if (!user) {
+    const [blueprintRes, memberCountRes, projectsRes, recentMembersRes] = await Promise.all([
+      supabase.from('blueprints').select('answers, updated_at').eq('is_community', true).maybeSingle(),
+      supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
+      supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+      supabase.from('user_profiles')
+        .select('id, username, first_name, last_name, avatar_url, user_types, city, country')
+        .order('created_at', { ascending: false }).limit(4),
+    ])
+    const bp = blueprintRes.data as { answers: unknown; updated_at: string } | null
+    const bpAnswers = (bp?.answers ?? {}) as Values
+    const overall = bp ? computeOverallReadiness(bpAnswers) : null
+    const gatesPassed = bp ? computeGatesPassed(bpAnswers) : null
+    const phaseProgress = bp ? computePhaseProgress(bpAnswers) : null
+    const projectName = (bpAnswers.project_name as string) || null
+    const memberCount = memberCountRes.count ?? 0
+    const activeProjectCount = projectsRes.count ?? 0
+    const recentMembers = recentMembersRes.data ?? []
+
+    return (
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px 80px' }}>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.08em', marginBottom: 8 }}>v2.05</div>
+
+        {/* Guest banner */}
+        <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '14px 20px', marginBottom: 36, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', margin: '0 0 3px' }}>You're viewing a community preview</p>
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>Create a free account to see your personal dashboard, post offers, apply to join, and collaborate.</p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+            <Link href="/auth/signup" style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--accent)', padding: '8px 18px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
+              Join free
+            </Link>
+            <Link href="/auth/login" style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', padding: '8px 4px', textDecoration: 'none' }}>
+              Sign in
+            </Link>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 36 }}>
+          <h1 style={{ fontFamily: 'var(--display)', fontSize: 'clamp(22px, 4vw, 32px)', color: 'var(--ink)', lineHeight: 1.1, marginBottom: 6 }}>
+            Community Dashboard
+          </h1>
+          <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>A look at what's happening inside MyCoNet right now.</p>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 12 }}>Live modules</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+
+            {/* M01 Network */}
+            <Link href="/network" style={{ textDecoration: 'none' }}>
+              <div className="dash-card" style={{ borderTop: '3px solid #92400e' }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#92400e', fontWeight: 700, marginBottom: 3 }}>M01</div>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Network</div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{memberCount}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>community members</div>
+                {recentMembers.length > 0 && (
+                  <div style={{ display: 'flex', marginTop: 14, gap: 4 }}>
+                    {recentMembers.slice(0, 4).map((m: any) => {
+                      const init = (m.first_name?.[0] || m.username?.[0] || '?').toUpperCase()
+                      return (
+                        <div key={m.id} style={{ width: 28, height: 28, borderRadius: '50%', background: '#92400e20', border: '2px solid var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#92400e' }}>
+                          {m.avatar_url ? <img src={m.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} alt="" /> : init}
+                        </div>
+                      )
+                    })}
+                    <div style={{ fontSize: 11, color: 'var(--ink-4)', alignSelf: 'center', marginLeft: 4 }}>Recently joined</div>
+                  </div>
+                )}
+              </div>
+            </Link>
+
+            {/* M04 Blueprint */}
+            <Link href="/blueprint" style={{ textDecoration: 'none' }}>
+              <div className="dash-card" style={{ borderTop: '3px solid #ca8a04' }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ca8a04', fontWeight: 700, marginBottom: 3 }}>M04</div>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Blueprint</div>
+                {bp ? (
+                  <>
+                    {projectName && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8, fontStyle: 'italic' }}>{projectName}</div>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>{overall?.toFixed(1)}</span>
+                      <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>/ 10 readiness</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 11, color: '#ca8a04', fontWeight: 600 }}>{gatesPassed}/4 gates</span>
+                    </div>
+                    {phaseProgress?.map((ph, i) => (
+                      <div key={ph.id} style={{ marginBottom: 6 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                          <span style={{ fontSize: 10, color: 'var(--ink-4)' }}>{ph.name}</span>
+                          <span style={{ fontSize: 10, color: 'var(--ink-4)' }}>{ph.answered}/{ph.total}</span>
+                        </div>
+                        <div style={{ height: 3, borderRadius: 2, background: 'var(--rule)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${ph.ratio * 100}%`, background: PHASE_COLORS[i] ?? '#94a3b8', borderRadius: 2 }} />
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <p style={{ fontSize: 13, color: 'var(--ink-4)' }}>Blueprint not yet started.</p>
+                )}
+              </div>
+            </Link>
+
+            {/* M07 Ops */}
+            <Link href="/ops" style={{ textDecoration: 'none' }}>
+              <div className="dash-card" style={{ borderTop: '3px solid #4338ca' }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#4338ca', fontWeight: 700, marginBottom: 3 }}>M07</div>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Operations</div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{activeProjectCount}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>active community projects</div>
+              </div>
+            </Link>
+
+            {/* M06 Agreements */}
+            <Link href="/agreements" style={{ textDecoration: 'none' }}>
+              <div className="dash-card" style={{ borderTop: '3px solid #1d4ed8' }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#1d4ed8', fontWeight: 700, marginBottom: 3 }}>M06</div>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Agreements</div>
+                <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55 }}>Browse open collaboration projects and see how members contribute to the community.</p>
+              </div>
+            </Link>
+
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const [profileRes, bioRes, blueprintRes, offersRes, seeksRes, memberCountRes, recentMembersRes, applicationRes, projectsRes, myAgreementsRes] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),

@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { computeMatch } from '@/lib/match-score'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,7 +9,41 @@ import MatchesTabs from './MatchesTabs'
 export default async function MatchesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+
+  if (!user) {
+    return (
+      <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-6" style={{ paddingTop: 64 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Sparkles style={{ width: 40, height: 40, color: 'var(--accent)', margin: '0 auto 16px' }} />
+          <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', marginBottom: 12 }}>Your Matches</h1>
+          <p style={{ color: 'var(--ink-3)', fontSize: 15, lineHeight: 1.6, maxWidth: 440, margin: '0 auto 28px' }}>
+            Create a free profile to unlock match scores — we compare your values, skills, personality,
+            and goals to surface the people most aligned with your vision.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/auth/signup" style={{ background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: 14, padding: '10px 24px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
+              Join free
+            </Link>
+            <Link href="/auth/login" style={{ border: '1px solid var(--rule)', color: 'var(--ink-2)', fontSize: 14, padding: '10px 24px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
+              Sign in
+            </Link>
+          </div>
+        </div>
+        <Card className="border-card-border bg-gradient-to-br from-primary/5 to-accent/5">
+          <CardHeader><CardTitle className="text-lg">How Matching Works</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>We analyze multiple dimensions to find your best matches:</p>
+            <ul className="list-disc list-inside space-y-1 mt-2">
+              <li><strong>Shared Skills</strong> — up to 30 pts (5 each)</li>
+              <li><strong>Shared Interests</strong> — up to 20 pts (4 each)</li>
+              <li><strong>OCEAN Similarity</strong> — up to 25 pts</li>
+              <li><strong>MBTI Compatibility</strong> — up to 25 pts</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const [profilesRes, biosRes, myBioRes] = await Promise.all([
     supabase

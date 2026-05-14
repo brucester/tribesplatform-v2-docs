@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import AgreementsAdminClient from './AgreementsAdminClient'
 
@@ -14,7 +13,70 @@ const STATUS_STYLE: Record<string, { label: string; color: string }> = {
 export default async function AgreementsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+
+  // Guest view — show open projects read-only
+  if (!user) {
+    const { data: projects } = await supabase
+      .from('projects')
+      .select('id, title, description, status, open_for_collaborators, updated_at')
+      .eq('status', 'active')
+      .eq('open_for_collaborators', true)
+      .order('created_at', { ascending: false })
+
+    return (
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 20px 80px' }}>
+        <div style={{ marginBottom: 40 }}>
+          <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1d4ed8', background: '#1d4ed815', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
+            M06 · Agreements
+          </div>
+          <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', lineHeight: 1.1, marginBottom: 8 }}>
+            Collaboration agreements
+          </h1>
+          <p style={{ color: 'var(--ink-3)', fontSize: 14, maxWidth: 540 }}>
+            Projects open for collaboration. Members propose what they'll contribute and what they expect in return.
+          </p>
+        </div>
+        <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '12px 18px', marginBottom: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>
+            You're browsing as a guest. <strong>Join free</strong> to propose collaborations on open projects.
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Link href="/auth/signup" style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', background: 'var(--accent)', padding: '5px 14px', borderRadius: 20, textDecoration: 'none' }}>Join free</Link>
+            <Link href="/auth/login" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none', padding: '5px 4px' }}>Sign in</Link>
+          </div>
+        </div>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
+          Open projects
+        </div>
+        {(projects ?? []).length === 0 ? (
+          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius-lg)', padding: '40px 24px', textAlign: 'center' }}>
+            <p style={{ color: 'var(--ink-4)', fontSize: 14 }}>No projects open for collaboration right now.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {(projects ?? []).map(p => (
+              <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderLeft: '4px solid #1d4ed8', borderRadius: 'var(--radius)', padding: '20px 22px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 style={{ fontFamily: 'var(--display)', fontSize: 17, color: 'var(--ink)', marginBottom: 6 }}>{p.title}</h3>
+                    {p.description && <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55, margin: 0 }}>{p.description}</p>}
+                  </div>
+                  <Link href="/auth/signup" style={{ fontSize: 12.5, fontWeight: 600, color: '#1d4ed8', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    Sign in to collaborate →
+                  </Link>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <Link href={`/ops/${p.id}`} style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none' }}>
+                    View project in Operations →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const { data: profile } = await supabase
     .from('user_profiles')

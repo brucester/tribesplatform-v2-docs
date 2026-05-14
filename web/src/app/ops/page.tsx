@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
@@ -11,15 +10,16 @@ const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }>
 export default async function OpsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  const isAdmin = ['admin', 'project_lead'].includes(profile?.role ?? '')
+  let isAdmin = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    isAdmin = ['admin', 'project_lead'].includes(profile?.role ?? '')
+  }
 
   const { data: projects } = await supabase
     .from('projects')
@@ -31,6 +31,18 @@ export default async function OpsPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 20px 80px' }}>
+
+      {/* Guest banner */}
+      {!user && (
+        <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '12px 18px', marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>
+            You're browsing as a guest. <strong>Sign in</strong> to propose collaborations and track your work.
+          </p>
+          <Link href="/auth/signup" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--accent)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Join free →
+          </Link>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40, gap: 16, flexWrap: 'wrap' }}>
