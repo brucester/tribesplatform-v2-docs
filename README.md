@@ -48,8 +48,7 @@ Each document serves a different purpose. Read them in order.
 
 ## Links
 
-- **Live Platform (V1):** https://tribes-platform.correa-oscar11.workers.dev
-- **Landing Page (V2):** https://landing-page-one-ochre-69.vercel.app
+- **Live Platform:** https://tribes-platform.correa-oscar11.workers.dev
 
 ## Status
 
