@@ -50,7 +50,7 @@ export default async function DashboardPage() {
   const [profileRes, bioRes, blueprintRes, offersRes, seeksRes, memberCountRes, recentMembersRes, applicationRes, projectsRes, myAgreementsRes] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),
     supabase.from('user_bio').select('skills, interests, values_principles, goals, personality_details').eq('user_id', user.id).maybeSingle(),
-    supabase.from('blueprints').select('answers, flags, updated_at').eq('user_id', user.id).maybeSingle(),
+    supabase.from('blueprints').select('answers, flags, updated_at').order('updated_at', { ascending: false }).limit(10),
     supabase.from('user_offers').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_active', true),
     supabase.from('user_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_active', true),
     supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
@@ -66,7 +66,8 @@ export default async function DashboardPage() {
 
   const profile = profileRes.data
   const bio = bioRes.data
-  const blueprint = blueprintRes.data
+  const allBlueprints = (blueprintRes.data ?? []) as Array<{ answers: unknown; flags: unknown; updated_at: string }>
+  const blueprint = allBlueprints.find(b => Object.keys((b.answers as Record<string, unknown>) ?? {}).length > 0) ?? allBlueprints[0] ?? null
   const offersCount = offersRes.count ?? 0
   const seeksCount = seeksRes.count ?? 0
   const memberCount = memberCountRes.count ?? 0
