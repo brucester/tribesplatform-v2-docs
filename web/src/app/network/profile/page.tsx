@@ -85,15 +85,16 @@ export default function NetworkProfilePage() {
     if (!file || !profile?.id) return
     setAvatarUploading(true)
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg'
+      const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
       const path = `${profile.id}/avatar.${ext}`
       const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', profile.id)
-      setAvatarUrl(publicUrl)
-    } catch (err) {
-      console.error('Avatar upload failed:', err)
+      const { error: dbErr } = await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', profile.id)
+      if (dbErr) throw dbErr
+      setAvatarUrl(publicUrl + '?t=' + Date.now())
+    } catch (err: any) {
+      alert('Photo upload failed: ' + (err?.message ?? String(err)))
     } finally {
       setAvatarUploading(false)
       e.target.value = ''
