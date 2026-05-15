@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/app/blueprint/blueprint-compute'
+import ModuleHeader from '@/components/ModuleHeader'
 
 const ROLE_LABELS: Record<string, string> = {
   explorer: 'Explorer',
@@ -46,7 +47,8 @@ export default async function DashboardPage() {
 
     return (
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px 80px' }}>
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.08em', marginBottom: 8 }}>v2.05</div>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.08em', marginBottom: 16 }}>v2.05</div>
+        <ModuleHeader num="00" />
 
         {/* Guest banner */}
         <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '14px 20px', marginBottom: 36, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -218,9 +220,10 @@ export default async function DashboardPage() {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px 80px' }}>
 
       {/* Version */}
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.08em', marginBottom: 8 }}>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.08em', marginBottom: 16 }}>
         v2.05
       </div>
+      <ModuleHeader num="00" />
 
       {/* Header */}
       <div style={{ marginBottom: 36 }}>

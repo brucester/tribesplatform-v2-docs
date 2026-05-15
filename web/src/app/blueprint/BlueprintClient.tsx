@@ -1690,8 +1690,12 @@ export default function BlueprintClient({ blueprintId, initialAnswers, readOnly 
         <aside className={`sidebar${mobileTab === 'nav' ? ' mobile-open' : ''}`}>
           <div className="brand">
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="brand-name">Regen Neighborhood</div>
-              <div className="brand-sub">Framework Wizard v2</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>MyCoNet</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', background: '#92640a', padding: '1px 7px', borderRadius: 20, letterSpacing: '0.06em' }}>M04</span>
+              </div>
+              <div className="brand-name">Blueprint</div>
+              <div className="brand-sub">Regen Neighborhood Framework</div>
             </div>
             <div className="theme-toggle">
               <button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')} aria-label="Light">☀</button>
