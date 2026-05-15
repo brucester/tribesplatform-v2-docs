@@ -1,9 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { User, Gift, HelpCircle, Search, ArrowRight } from 'lucide-react'
 
 export default async function NetworkDashboard() {
@@ -94,44 +92,56 @@ export default async function NetworkDashboard() {
         ))}
       </div>
 
-      <Card className="border-card-border">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-lg">New in the Network</CardTitle>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/network/discover">View all <ArrowRight className="ml-1 h-4 w-4" /></Link>
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {recentUsers.length > 0 ? recentUsers.map((u: any) => {
-            const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username
-            const init = name[0]?.toUpperCase() ?? '?'
-            const loc = [u.city, u.country].filter(Boolean).join(', ')
-            return (
-              <Link key={u.id} href={`/u/${u.username}`}>
-                <div className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarImage src={u.avatar_url ?? undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-medium">{init}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{loc || `@${u.username}`}</p>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>New in the Network</span>
+          <Link href="/network/discover" style={{ fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
+            View all →
+          </Link>
+        </div>
+        {recentUsers.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+            {recentUsers.map((u: any) => {
+              const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username
+              const init = name[0]?.toUpperCase() ?? '?'
+              const loc = [u.city, u.country].filter(Boolean).join(', ')
+              return (
+                <Link key={u.id} href={`/u/${u.username}`} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    background: 'var(--surface)', border: '1px solid var(--rule)',
+                    borderRadius: 'var(--radius-lg)', padding: '18px 14px',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                    textAlign: 'center', transition: 'box-shadow 120ms, transform 120ms',
+                  }} className="hover-elevate">
+                    {/* Avatar */}
+                    <div style={{ width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--rule)' }}>
+                      {u.avatar_url
+                        ? <img src={u.avatar_url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--accent)' }}>{init}</span>
+                      }
+                    </div>
+                    <div style={{ minWidth: 0, width: '100%' }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+                      {loc && <p style={{ fontSize: 11, color: 'var(--ink-4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc}</p>}
+                    </div>
+                    {(u.user_types ?? []).length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center' }}>
+                        {(u.user_types ?? []).slice(0, 2).map((t: string) => (
+                          <span key={t} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--rule)' }}>{t}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-wrap gap-1 shrink-0">
-                    {(u.user_types ?? []).slice(0, 2).map((t: string) => (
-                      <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </Link>
-            )
-          }) : (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              No members yet. Be the first to complete your profile!
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </Link>
+              )
+            })}
+          </div>
+        ) : (
+          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius-lg)', padding: '40px 24px', textAlign: 'center', color: 'var(--ink-4)', fontSize: 14 }}>
+            No members yet. Be the first to complete your profile!
+          </div>
+        )}
+      </div>
     </div>
   )
 }
