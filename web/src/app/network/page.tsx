@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { User, Gift, HelpCircle, Search, ArrowRight } from 'lucide-react'
+import { User, Gift, HelpCircle, Search } from 'lucide-react'
+import MemberList from './MemberList'
 
 export default async function NetworkDashboard() {
   const supabase = await createClient()
@@ -92,56 +93,7 @@ export default async function NetworkDashboard() {
         ))}
       </div>
 
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>New in the Network</span>
-          <Link href="/network/discover" style={{ fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
-            View all →
-          </Link>
-        </div>
-        {recentUsers.length > 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
-            {recentUsers.map((u: any) => {
-              const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username
-              const init = name[0]?.toUpperCase() ?? '?'
-              const loc = [u.city, u.country].filter(Boolean).join(', ')
-              return (
-                <Link key={u.id} href={`/u/${u.username}`} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    background: 'var(--surface)', border: '1px solid var(--rule)',
-                    borderRadius: 'var(--radius-lg)', padding: '18px 14px',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                    textAlign: 'center', transition: 'box-shadow 120ms, transform 120ms',
-                  }} className="hover-elevate">
-                    {/* Avatar */}
-                    <div style={{ width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--rule)' }}>
-                      {u.avatar_url
-                        ? <img src={u.avatar_url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--accent)' }}>{init}</span>
-                      }
-                    </div>
-                    <div style={{ minWidth: 0, width: '100%' }}>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
-                      {loc && <p style={{ fontSize: 11, color: 'var(--ink-4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc}</p>}
-                    </div>
-                    {(u.user_types ?? []).length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center' }}>
-                        {(u.user_types ?? []).slice(0, 2).map((t: string) => (
-                          <span key={t} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--rule)' }}>{t}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        ) : (
-          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius-lg)', padding: '40px 24px', textAlign: 'center', color: 'var(--ink-4)', fontSize: 14 }}>
-            No members yet. Be the first to complete your profile!
-          </div>
-        )}
-      </div>
+      <MemberList members={recentUsers as any} />
     </div>
   )
 }
