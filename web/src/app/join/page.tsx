@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import JoinClient from './JoinClient'
 import JoinAdminClient from './JoinAdminClient'
+import ModuleHeader from '@/components/ModuleHeader'
 
 export default async function JoinPage() {
   const supabase = await createClient()
@@ -61,7 +62,12 @@ export default async function JoinPage() {
       username: profileMap[a.user_id]?.username ?? null,
     }))
 
-    return <JoinAdminClient applications={enriched} questions={questions} />
+    return (
+      <>
+        <ModuleHeader num="05" standalone />
+        <JoinAdminClient applications={enriched} questions={questions} />
+      </>
+    )
   }
 
   // Regular user: show own application or form
@@ -76,11 +82,14 @@ export default async function JoinPage() {
   }
 
   return (
-    <JoinClient
-      questions={questions}
-      userId={user?.id ?? null}
-      existingApplication={existingApplication}
-      hasQuestionsConfigured={questions.length > 0}
-    />
+    <>
+      <ModuleHeader num="05" standalone />
+      <JoinClient
+        questions={questions}
+        userId={user?.id ?? null}
+        existingApplication={existingApplication}
+        hasQuestionsConfigured={questions.length > 0}
+      />
+    </>
   )
 }

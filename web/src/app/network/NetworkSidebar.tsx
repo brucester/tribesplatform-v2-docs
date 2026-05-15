@@ -46,23 +46,29 @@ export default function NetworkSidebar({ user }: Props) {
         'bg-sidebar border-r border-sidebar-border'
       )} style={{ top: 52, height: 'calc(100vh - 52px)' }}>
 
-        {/* Brand header */}
-        <div className="p-4">
-          <Link href="/network">
-            <div className="flex items-center gap-3 hover-elevate rounded-md p-2 -m-2 cursor-pointer">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                <Sprout className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div>
-                <div className="text-base font-bold text-sidebar-foreground">MyCoNet</div>
-                <div className="text-[10px] text-muted-foreground">MyCommunityNetwork</div>
+        {/* Module identity band */}
+        <Link href="/network" style={{ textDecoration: 'none' }}>
+          <div style={{
+            background: '#92400e',
+            padding: '18px 16px 16px',
+            borderBottom: '1px solid rgba(0,0,0,0.15)',
+          }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginBottom: 6 }}>
+              MyCoNet · Module
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 6 }}>
+              <span style={{ fontFamily: 'var(--display)', fontSize: 44, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-0.03em' }}>01</span>
+              <div style={{ paddingBottom: 6 }}>
+                <Sprout style={{ width: 20, height: 20, color: 'rgba(255,255,255,0.6)' }} />
               </div>
             </div>
-          </Link>
-        </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: '0.01em' }}>Community Network</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>MyCommunityNetwork</div>
+          </div>
+        </Link>
 
         {/* Main nav */}
-        <div className="flex-1 px-3 pb-3">
+        <div className="flex-1 px-3 pb-3 pt-2">
           <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground px-2 mb-2 mt-1">
             Navigation
           </p>
@@ -160,10 +166,10 @@ export default function NetworkSidebar({ user }: Props) {
             : pathname.startsWith(item.href)
           return (
             <Link key={item.href} href={item.href}
-              className={cn('flex flex-col items-center gap-1 px-2 py-1 min-w-[44px]',
-                active ? 'text-primary' : 'text-muted-foreground')}>
+              className={cn('flex flex-col items-center gap-1 px-2 py-1 min-w-[44px]')}
+              style={{ color: active ? '#92400e' : undefined }}>
               <item.icon className="h-5 w-5" />
-              <span className={cn('text-[9px]', active ? 'font-bold' : 'font-normal')}>
+              <span className={cn('text-[9px]', active ? 'font-bold' : 'font-normal text-muted-foreground')}>
                 {item.title.split(' ').pop()}
               </span>
             </Link>

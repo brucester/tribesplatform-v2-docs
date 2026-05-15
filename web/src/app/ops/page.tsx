@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import ModuleHeader from '@/components/ModuleHeader'
 
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
   active:    { label: 'Active',     color: '#22c55e', bg: '#22c55e15' },
@@ -44,12 +45,11 @@ export default async function OpsPage() {
         </div>
       )}
 
+      <ModuleHeader num="07" />
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40, gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4338ca', background: '#4338ca15', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
-            M07 · Operations
-          </div>
           <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', lineHeight: 1.1, marginBottom: 8 }}>
             Community Projects
           </h1>

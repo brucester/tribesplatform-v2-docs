@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import ModuleHeader from '@/components/ModuleHeader'
 import AgreementsAdminClient from './AgreementsAdminClient'
 
 const STATUS_STYLE: Record<string, { label: string; color: string }> = {
@@ -25,10 +26,8 @@ export default async function AgreementsPage() {
 
     return (
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 20px 80px' }}>
+        <ModuleHeader num="06" />
         <div style={{ marginBottom: 40 }}>
-          <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1d4ed8', background: '#1d4ed815', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
-            M06 · Agreements
-          </div>
           <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', lineHeight: 1.1, marginBottom: 8 }}>
             Collaboration agreements
           </h1>
@@ -144,12 +143,10 @@ export default async function AgreementsPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 20px 80px' }}>
+      <ModuleHeader num="06" />
 
       {/* Header */}
       <div style={{ marginBottom: 40 }}>
-        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1d4ed8', background: '#1d4ed815', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
-          M06 · Agreements
-        </div>
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', lineHeight: 1.1, marginBottom: 8 }}>
           Collaboration agreements
         </h1>
