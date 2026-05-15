@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/app/blueprint/blueprint-compute'
 import ModuleHeader from '@/components/ModuleHeader'
+import DashCardTooltip from '@/components/DashCardTooltip'
+import { MODULE_META } from '@/lib/module-meta'
 
 const ROLE_LABELS: Record<string, string> = {
   explorer: 'Explorer',
@@ -27,13 +29,14 @@ export default async function DashboardPage() {
 
   // Guest view — community overview without personal data
   if (!user) {
-    const [blueprintRes, memberCountRes, projectsRes, recentMembersRes] = await Promise.all([
+    const [blueprintRes, memberCountRes, projectsRes, recentMembersRes, agreementsRes] = await Promise.all([
       supabase.from('blueprints').select('answers, updated_at').eq('is_community', true).maybeSingle(),
       supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
       supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'active'),
       supabase.from('user_profiles')
         .select('id, username, first_name, last_name, avatar_url, user_types, city, country')
         .order('created_at', { ascending: false }).limit(4),
+      supabase.from('collaboration_agreements').select('id', { count: 'exact', head: true }),
     ])
     const bp = blueprintRes.data as { answers: unknown; updated_at: string } | null
     const bpAnswers = (bp?.answers ?? {}) as Values
@@ -44,6 +47,7 @@ export default async function DashboardPage() {
     const memberCount = memberCountRes.count ?? 0
     const activeProjectCount = projectsRes.count ?? 0
     const recentMembers = recentMembersRes.data ?? []
+    const agreementsCount = agreementsRes.count ?? 0
 
     return (
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px 80px' }}>
@@ -78,77 +82,87 @@ export default async function DashboardPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
 
             {/* M01 Network */}
-            <Link href="/network" style={{ textDecoration: 'none' }}>
-              <div className="dash-card" style={{ borderTop: '3px solid #92400e' }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#92400e', fontWeight: 700, marginBottom: 3 }}>M01</div>
-                <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Network</div>
-                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{memberCount}</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>community members</div>
-                {recentMembers.length > 0 && (
-                  <div style={{ display: 'flex', marginTop: 14, gap: 4 }}>
-                    {recentMembers.slice(0, 4).map((m: any) => {
-                      const init = (m.first_name?.[0] || m.username?.[0] || '?').toUpperCase()
-                      return (
-                        <div key={m.id} style={{ width: 28, height: 28, borderRadius: '50%', background: '#92400e20', border: '2px solid var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#92400e' }}>
-                          {m.avatar_url ? <img src={m.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} alt="" /> : init}
-                        </div>
-                      )
-                    })}
-                    <div style={{ fontSize: 11, color: 'var(--ink-4)', alignSelf: 'center', marginLeft: 4 }}>Recently joined</div>
-                  </div>
-                )}
-              </div>
-            </Link>
+            <DashCardTooltip desc={MODULE_META['01'].desc} color="#92400e">
+              <Link href="/network" style={{ textDecoration: 'none' }}>
+                <div className="dash-card" style={{ borderTop: '3px solid #92400e' }}>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#92400e', fontWeight: 700, marginBottom: 3 }}>M01</div>
+                  <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Network</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{memberCount}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>community members</div>
+                  {recentMembers.length > 0 && (
+                    <div style={{ display: 'flex', marginTop: 14, gap: 4 }}>
+                      {recentMembers.slice(0, 4).map((m: any) => {
+                        const init = (m.first_name?.[0] || m.username?.[0] || '?').toUpperCase()
+                        return (
+                          <div key={m.id} style={{ width: 28, height: 28, borderRadius: '50%', background: '#92400e20', border: '2px solid var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#92400e' }}>
+                            {m.avatar_url ? <img src={m.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} alt="" /> : init}
+                          </div>
+                        )
+                      })}
+                      <div style={{ fontSize: 11, color: 'var(--ink-4)', alignSelf: 'center', marginLeft: 4 }}>Recently joined</div>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            </DashCardTooltip>
 
             {/* M04 Blueprint */}
-            <Link href="/blueprint" style={{ textDecoration: 'none' }}>
-              <div className="dash-card" style={{ borderTop: '3px solid #ca8a04' }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ca8a04', fontWeight: 700, marginBottom: 3 }}>M04</div>
-                <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Blueprint</div>
-                {bp ? (
-                  <>
-                    {projectName && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8, fontStyle: 'italic' }}>{projectName}</div>}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>{overall?.toFixed(1)}</span>
-                      <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>/ 10 readiness</span>
-                      <span style={{ marginLeft: 'auto', fontSize: 11, color: '#ca8a04', fontWeight: 600 }}>{gatesPassed}/4 gates</span>
-                    </div>
-                    {phaseProgress?.map((ph, i) => (
-                      <div key={ph.id} style={{ marginBottom: 6 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                          <span style={{ fontSize: 10, color: 'var(--ink-4)' }}>{ph.name}</span>
-                          <span style={{ fontSize: 10, color: 'var(--ink-4)' }}>{ph.answered}/{ph.total}</span>
-                        </div>
-                        <div style={{ height: 3, borderRadius: 2, background: 'var(--rule)', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${ph.ratio * 100}%`, background: PHASE_COLORS[i] ?? '#94a3b8', borderRadius: 2 }} />
-                        </div>
+            <DashCardTooltip desc={MODULE_META['04'].desc} color="#ca8a04">
+              <Link href="/blueprint" style={{ textDecoration: 'none' }}>
+                <div className="dash-card" style={{ borderTop: '3px solid #ca8a04' }}>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ca8a04', fontWeight: 700, marginBottom: 3 }}>M04</div>
+                  <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Blueprint</div>
+                  {bp ? (
+                    <>
+                      {projectName && <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8, fontStyle: 'italic' }}>{projectName}</div>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>{overall?.toFixed(1)}</span>
+                        <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>/ 10 readiness</span>
+                        <span style={{ marginLeft: 'auto', fontSize: 11, color: '#ca8a04', fontWeight: 600 }}>{gatesPassed}/4 gates</span>
                       </div>
-                    ))}
-                  </>
-                ) : (
-                  <p style={{ fontSize: 13, color: 'var(--ink-4)' }}>Blueprint not yet started.</p>
-                )}
-              </div>
-            </Link>
+                      {phaseProgress?.map((ph, i) => (
+                        <div key={ph.id} style={{ marginBottom: 6 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                            <span style={{ fontSize: 10, color: 'var(--ink-4)' }}>{ph.name}</span>
+                            <span style={{ fontSize: 10, color: 'var(--ink-4)' }}>{ph.answered}/{ph.total}</span>
+                          </div>
+                          <div style={{ height: 3, borderRadius: 2, background: 'var(--rule)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${ph.ratio * 100}%`, background: PHASE_COLORS[i] ?? '#94a3b8', borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <p style={{ fontSize: 13, color: 'var(--ink-4)' }}>Blueprint not yet started.</p>
+                  )}
+                </div>
+              </Link>
+            </DashCardTooltip>
 
             {/* M07 Ops */}
-            <Link href="/ops" style={{ textDecoration: 'none' }}>
-              <div className="dash-card" style={{ borderTop: '3px solid #4338ca' }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#4338ca', fontWeight: 700, marginBottom: 3 }}>M07</div>
-                <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Operations</div>
-                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{activeProjectCount}</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>active community projects</div>
-              </div>
-            </Link>
+            <DashCardTooltip desc={MODULE_META['07'].desc} color="#4338ca">
+              <Link href="/ops" style={{ textDecoration: 'none' }}>
+                <div className="dash-card" style={{ borderTop: '3px solid #4338ca' }}>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#4338ca', fontWeight: 700, marginBottom: 3 }}>M07</div>
+                  <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Operations</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{activeProjectCount}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>active community projects</div>
+                </div>
+              </Link>
+            </DashCardTooltip>
 
             {/* M06 Agreements */}
-            <Link href="/agreements" style={{ textDecoration: 'none' }}>
-              <div className="dash-card" style={{ borderTop: '3px solid #1d4ed8' }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#1d4ed8', fontWeight: 700, marginBottom: 3 }}>M06</div>
-                <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Agreements</div>
-                <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55 }}>Browse open collaboration projects and see how members contribute to the community.</p>
-              </div>
-            </Link>
+            <DashCardTooltip desc={MODULE_META['06'].desc} color="#1d4ed8">
+              <Link href="/agreements" style={{ textDecoration: 'none' }}>
+                <div className="dash-card" style={{ borderTop: '3px solid #1d4ed8' }}>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#1d4ed8', fontWeight: 700, marginBottom: 3 }}>M06</div>
+                  <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 10 }}>Agreements</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>{agreementsCount}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 14 }}>collaboration proposals</div>
+                  <span style={{ fontSize: 12, color: '#1d4ed8', fontWeight: 500 }}>Browse projects →</span>
+                </div>
+              </Link>
+            </DashCardTooltip>
 
           </div>
         </div>
@@ -252,6 +266,7 @@ export default async function DashboardPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
 
           {/* M01 — Network */}
+          <DashCardTooltip desc={MODULE_META['01'].desc} color="#92400e">
           <Link href="/network" style={{ textDecoration: 'none' }}>
             <div className="dash-card" style={{ borderTop: '3px solid #92400e' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
@@ -293,8 +308,10 @@ export default async function DashboardPage() {
               </div>
             </div>
           </Link>
+          </DashCardTooltip>
 
           {/* M04 — Blueprint */}
+          <DashCardTooltip desc={MODULE_META['04'].desc} color="#ca8a04">
           <Link href="/blueprint" style={{ textDecoration: 'none' }}>
             <div className="dash-card" style={{ borderTop: '3px solid #ca8a04' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -338,27 +355,34 @@ export default async function DashboardPage() {
               )}
             </div>
           </Link>
+          </DashCardTooltip>
 
           {/* M05 — Join */}
-          <JoinCard application={application} userRole={role} />
+          <DashCardTooltip desc={MODULE_META['05'].desc} color="#15803d">
+            <JoinCard application={application} userRole={role} />
+          </DashCardTooltip>
 
           {/* M06 — Agreements */}
-          <LiveModuleCard
-            num="M06" name="Agreements" color="#1d4ed8"
-            href="/agreements"
-            stat={myAgreements.length > 0 ? `${myAgreements.length} proposal${myAgreements.length > 1 ? 's' : ''}` : 'No proposals yet'}
-            cta={atLeast(role, 'joining') ? 'Browse projects →' : 'Join first to propose'}
-            locked={!atLeast(role, 'joining')}
-          />
+          <DashCardTooltip desc={MODULE_META['06'].desc} color="#1d4ed8">
+            <LiveModuleCard
+              num="M06" name="Agreements" color="#1d4ed8"
+              href="/agreements"
+              stat={myAgreements.length > 0 ? `${myAgreements.length} proposal${myAgreements.length > 1 ? 's' : ''}` : 'No proposals yet'}
+              cta="Browse projects →"
+              locked={false}
+            />
+          </DashCardTooltip>
 
           {/* M07 — Operations */}
-          <LiveModuleCard
-            num="M07" name="Operations" color="#4338ca"
-            href="/ops"
-            stat={activeProjectCount > 0 ? `${activeProjectCount} active project${activeProjectCount > 1 ? 's' : ''}` : 'No projects yet'}
-            cta="View projects →"
-            locked={false}
-          />
+          <DashCardTooltip desc={MODULE_META['07'].desc} color="#4338ca">
+            <LiveModuleCard
+              num="M07" name="Operations" color="#4338ca"
+              href="/ops"
+              stat={activeProjectCount > 0 ? `${activeProjectCount} active project${activeProjectCount > 1 ? 's' : ''}` : 'No projects yet'}
+              cta="View projects →"
+              locked={false}
+            />
+          </DashCardTooltip>
 
         </div>
       </div>
@@ -370,36 +394,44 @@ export default async function DashboardPage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
           {/* M02 + M03 — v1 external, v2 coming to this app */}
-          <a href="https://tribesplatform.app/neighborhoods/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-            <div className="dash-card dash-card-soon" style={{ borderTop: '3px solid #b91c1c' }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#b91c1c', fontWeight: 700, marginBottom: 4 }}>M02</div>
-              <div style={{ fontFamily: 'var(--display)', fontSize: 15, color: 'var(--ink)', marginBottom: 6 }}>Neighborhood Directory</div>
-              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 10 }}>Live map of regenerative neighborhoods.</div>
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#b91c1c', background: '#b91c1c15', padding: '2px 8px', borderRadius: 20 }}>v1 available ↗</span>
-            </div>
-          </a>
-          <a href="https://tribesplatform.app/hive/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-            <div className="dash-card dash-card-soon" style={{ borderTop: '3px solid #ea580c' }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ea580c', fontWeight: 700, marginBottom: 4 }}>M03</div>
-              <div style={{ fontFamily: 'var(--display)', fontSize: 15, color: 'var(--ink)', marginBottom: 6 }}>Resources & Tools</div>
-              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 10 }}>Curated regenerative guides, tools, and templates.</div>
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#ea580c', background: '#ea580c15', padding: '2px 8px', borderRadius: 20 }}>v1 available ↗</span>
-            </div>
-          </a>
-          <ComingSoonCard
-            num="M08" name="Contributions" color="#8b5cf6"
-            desc="Points and badges that make regenerative action visible."
-            unlockAt="Resident"
-            userRole={role}
-            minRole="resident"
-          />
-          <ComingSoonCard
-            num="M09" name="Governance" color="#db2777"
-            desc="AI-facilitated decisions — propose, discuss, vote."
-            unlockAt="Resident"
-            userRole={role}
-            minRole="resident"
-          />
+          <DashCardTooltip desc={MODULE_META['02'].desc} color="#b91c1c">
+            <a href="https://tribesplatform.app/neighborhoods/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <div className="dash-card dash-card-soon" style={{ borderTop: '3px solid #b91c1c' }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#b91c1c', fontWeight: 700, marginBottom: 4 }}>M02</div>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 15, color: 'var(--ink)', marginBottom: 6 }}>Neighborhood Directory</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 10 }}>Live map of regenerative neighborhoods.</div>
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#b91c1c', background: '#b91c1c15', padding: '2px 8px', borderRadius: 20 }}>v1 available ↗</span>
+              </div>
+            </a>
+          </DashCardTooltip>
+          <DashCardTooltip desc={MODULE_META['03'].desc} color="#ea580c">
+            <a href="https://tribesplatform.app/hive/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <div className="dash-card dash-card-soon" style={{ borderTop: '3px solid #ea580c' }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#ea580c', fontWeight: 700, marginBottom: 4 }}>M03</div>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 15, color: 'var(--ink)', marginBottom: 6 }}>Resources & Tools</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 10 }}>Curated regenerative guides, tools, and templates.</div>
+                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#ea580c', background: '#ea580c15', padding: '2px 8px', borderRadius: 20 }}>v1 available ↗</span>
+              </div>
+            </a>
+          </DashCardTooltip>
+          <DashCardTooltip desc={MODULE_META['08'].desc} color="#8b5cf6">
+            <ComingSoonCard
+              num="M08" name="Contributions" color="#8b5cf6"
+              desc="Points and badges that make regenerative action visible."
+              unlockAt="Resident"
+              userRole={role}
+              minRole="resident"
+            />
+          </DashCardTooltip>
+          <DashCardTooltip desc={MODULE_META['09'].desc} color="#db2777">
+            <ComingSoonCard
+              num="M09" name="Governance" color="#db2777"
+              desc="AI-facilitated decisions — propose, discuss, vote."
+              unlockAt="Resident"
+              userRole={role}
+              minRole="resident"
+            />
+          </DashCardTooltip>
         </div>
       </div>
 
@@ -436,11 +468,11 @@ function LiveModuleCard({ num, name, color, href, stat, cta, locked }: {
 }) {
   if (locked) {
     return (
-      <div className="dash-card dash-card-soon" style={{ borderTop: `3px solid var(--rule)`, opacity: 0.6 }}>
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', fontWeight: 700, marginBottom: 4 }}>{num}</div>
+      <div className="dash-card dash-card-soon" style={{ borderTop: `3px solid ${color}`, opacity: 0.65 }}>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color, fontWeight: 700, marginBottom: 4 }}>{num}</div>
         <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 8 }}>{name}</div>
-        <div style={{ fontSize: 12, color: 'var(--ink-4)', marginBottom: 10 }}>{stat}</div>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-4)', background: 'var(--bg-2)', padding: '2px 8px', borderRadius: 20, border: '1px solid var(--rule)' }}>
+        <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 10 }}>{stat}</div>
+        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color, background: `${color}15`, padding: '2px 8px', borderRadius: 20, border: `1px solid ${color}40` }}>
           Complete M05 to unlock
         </span>
       </div>

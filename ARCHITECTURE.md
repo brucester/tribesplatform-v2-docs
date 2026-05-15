@@ -1,6 +1,6 @@
 # MyCoNet v2 — Architecture & Database Schema
 
-> Status: PHASE 0 LIVE | Updated: 2026-05-14
+> Status: PHASE 0 LIVE | Updated: 2026-05-15
 
 ---
 
@@ -15,7 +15,7 @@ The portal lets a community:
 - Create and track collaboration agreements
 - Browse member profiles and find collaborators
 
-This is Phase 0. The platform is built to scale to multiple communities (Phase 1) and eventually an inter-community network (Phase 2 — Hive), but that is not the current concern. One community. One portal. Prove the loop first.
+This is Phase 0. The codebase is designed to be cloned for multiple communities — each gets their own isolated portal at their own URL. When M02 is built in v2, communities will be able to opt in to listing themselves in a shared public Neighborhood Directory, creating network-level visibility across all portals.
 
 ---
 
@@ -23,14 +23,14 @@ This is Phase 0. The platform is built to scale to multiple communities (Phase 1
 
 | # | Module | Status | Notes |
 |---|---|---|---|
-| 00 | MyCoNet Dashboard | ✅ Live | Personal home screen for every member. Role-scoped panels. |
-| 01 | Community Network | ✅ Live | Profiles, bio wizard, AI matching, discover, offers/seeks. |
-| 02 | Neighborhood Directory | 🔗 v1 link | Links to v1 tribesplatform.app. Building in v2 next. |
+| 00 | MyCoNet Dashboard | ✅ Live | Personal home screen. Role-scoped panels. Guest-browsable. |
+| 01 | Community Network | ✅ Live | Profiles, bio wizard, AI matching, tile/list view. Guest-browsable. |
+| 02 | Neighborhood Directory | 🔗 v1 link | Links to v1 tribesplatform.app. v2 will be a cross-portal public directory. |
 | 03 | Resources & Tools | 🔗 v1 link | Links to v1 tribesplatform.app. Building in v2 next. |
 | 04 | Blueprint | ✅ Live | Shared community document. Admin edits. All members read. AI scanning. |
-| 05 | Join | ✅ Live | Application form. Admin reviews. Accept sets role to `joining`. |
-| 06 | Agreements | ✅ Live | Collaboration proposals on open projects. Admin reviews. |
-| 07 | Operations | ✅ Live | Admin creates projects, posts updates. Projects surface in M06. |
+| 05 | Join | ✅ Live | Application form. Admin reviews. Accept sets role to `joining`. Guest-browsable. |
+| 06 | Agreements | ✅ Live | Collaboration proposals on open projects. Admin reviews. Guest-browsable. |
+| 07 | Operations | ✅ Live | Admin creates projects, posts updates. Projects surface in M06. Guest-browsable. |
 | 08 | Contribution Tracking | ⏳ Planned | Points + badges for contributions. |
 | 09 | Governance | ⏳ Planned | AI-facilitated collective decision-making. |
 | 10 | Genesis Bot | ⏳ Planned | Telegram bridge for DB change requests. |
@@ -75,6 +75,8 @@ This is Phase 0. The platform is built to scale to multiple communities (Phase 1
 **Auth:** Supabase Auth with cookie-based sessions (`@supabase/ssr`). Server components read the session via `createClient()` from `@/lib/supabase/server`.
 
 **RLS:** Every table has row-level security. A helper function `is_admin()` checks `user_profiles.role` to grant admin-level policies without exposing the service role key.
+
+**Guest access:** All main pages are publicly browsable without an account. Pages check for a session and render a guest-appropriate view (no proposal buttons, no admin panels, join/sign-in CTAs instead of gated actions).
 
 ---
 
@@ -192,7 +194,7 @@ CREATE TABLE collaboration_agreements (
 
 Access is enforced at two layers:
 
-**1. Page level (server components)** — Every protected page calls `supabase.auth.getUser()` and fetches `user_profiles.role`. If a condition isn't met, it redirects or renders a gate message.
+**1. Page level (server components)** — Every page calls `supabase.auth.getUser()`. Guests (no session) see public content; members see role-scoped panels. Redirects to `/auth/login` only for pages that have no public view.
 
 **2. Database level (RLS)** — Row-level security policies enforce the same rules at the data layer. A helper function handles admin checks:
 
@@ -207,36 +209,50 @@ RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
 $$;
 ```
 
-| Role | Dashboard | Blueprint | Join form | Submit proposal | Admin review |
-|---|---|---|---|---|---|
-| `explorer` | ✅ (limited) | ✅ read-only | ✅ apply | ✗ | ✗ |
-| `joining` | ✅ | ✅ read-only | ✅ view status | ✅ | ✗ |
-| `resident` | ✅ | ✅ read-only | ✅ view status | ✅ | ✗ |
-| `admin` | ✅ full | ✅ **edit** | ✅ review all | ✅ | ✅ |
+| Role | Dashboard | Blueprint | Network | Agreements | Join | Admin panels |
+|---|---|---|---|---|---|---|
+| guest (no account) | ✅ public view | ✅ public view | ✅ public view | ✅ public view | ✅ public view | ✗ |
+| `explorer` | ✅ | ✅ read-only | ✅ | ✅ | ✅ apply | ✗ |
+| `joining` | ✅ | ✅ read-only | ✅ | ✅ propose | ✅ view status | ✗ |
+| `resident` | ✅ | ✅ read-only | ✅ | ✅ propose | ✅ view status | ✗ |
+| `admin` | ✅ full | ✅ **edit** | ✅ | ✅ propose + review | ✅ review all | ✅ |
 
 ---
 
 ## 6. Key Pages
 
-| Route | Component | Description |
-|---|---|---|
-| `/dashboard` | Server | M00 — Personal home screen. Role-scoped modules. |
-| `/network` | Server | M01 — Member directory and discover. |
-| `/network/discover` | Server | M01 — AI-matched profiles. |
-| `/network/profile` | Server | M01 — Your own profile. |
-| `/blueprint` | Server + Client | M04 — Community Blueprint wizard. |
-| `/join` | Server + Client | M05 — Application form (members) or review panel (admin). |
-| `/agreements` | Server + Client | M06 — Open projects + proposals (members) or full review (admin). |
-| `/agreements/[id]` | Server + Client | M06 — Submit a collaboration proposal. |
-| `/ops` | Server | M07 — Projects list. |
-| `/ops/new` | Server + Client | M07 (admin) — Create a project. |
-| `/ops/[id]` | Server + Client | M07 — Project detail, updates, proposals panel (admin). |
-| `/profile/edit` | Client | Edit profile (8-step wizard). |
-| `/changelog` | Static | Release notes. |
+| Route | Component | Auth | Description |
+|---|---|---|---|
+| `/` | Server | public | Landing page — hero, module grid, join CTA |
+| `/dashboard` | Server | public / member | M00 — Community overview for guests; personal home for members |
+| `/network` | Server | public / member | M01 — Member directory, tile/list toggle |
+| `/network/discover` | Server | public / member | M01 — Profile discovery (guests see all; members see matches) |
+| `/network/matches` | Server | public / member | M01 — Guest sees teaser; logged-in sees AI matches |
+| `/network/profile` | Server | member | M01 — Your own profile |
+| `/blueprint` | Server + Client | public / admin | M04 — Read-only for all; edit mode for admin |
+| `/join` | Server + Client | public / member / admin | M05 — Guest sees teaser; member applies; admin reviews |
+| `/agreements` | Server + Client | public / member / admin | M06 — Open projects visible to all; proposals for joining+ |
+| `/agreements/[id]` | Server + Client | member | M06 — Submit a collaboration proposal |
+| `/ops` | Server | public / admin | M07 — Project list visible to all; admin controls |
+| `/ops/new` | Server + Client | admin | M07 — Create a project |
+| `/ops/[id]` | Server + Client | public / admin | M07 — Project detail, updates feed, proposals panel (admin) |
+| `/profile/edit` | Client | member | Edit profile (8-step wizard) |
+| `/changelog` | Static | public | Release notes |
 
 ---
 
-## 7. Tech Stack
+## 7. Shared Components
+
+| File | Purpose |
+|---|---|
+| `src/lib/module-meta.ts` | Single source of truth for all 14 module colors, labels, and descriptions. No `'use client'` directive — importable by both server and client components. |
+| `src/components/ModuleHeader.tsx` | Colored header band at the top of each module page. Hover/tap reveals module description. Imports from `module-meta.ts`. |
+| `src/components/DashCardTooltip.tsx` | Client wrapper for dashboard module cards. Hover shows a popup with the module description and module-color accent border. |
+| `src/app/network/MemberList.tsx` | Client component for the member grid. Holds tile/list view toggle state (server components can't hold UI state). |
+
+---
+
+## 8. Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -255,7 +271,7 @@ $$;
 
 ---
 
-## 8. Deployment
+## 9. Deployment
 
 ```bash
 # Build + deploy to Cloudflare Workers
@@ -272,32 +288,51 @@ Environment variables are set in `.dev.vars` (local) and Cloudflare dashboard (p
 - `NEXT_PUBLIC_APP_URL`
 - `MINIMAX_API_KEY` (for blueprint document scanning)
 
+**Cloning for a new community:** The codebase is designed to be cloned. Each community gets its own Supabase project and Cloudflare Workers deployment. Community-specific identity (name, colors if customized, blueprint content) lives in the database. No hardcoded community names in the codebase.
+
 ---
 
-## 9. Module Color Order
+## 10. Module Color Order
 
 All 14 modules follow a rainbow color order for consistent visual identity:
 
 | # | Module | Color |
 |---|---|---|
 | 00 | Dashboard | Black `#18181b` |
-| 01 | Community Network | Brown `#78350f` |
-| 02 | Neighborhood Directory | Red `#dc2626` |
+| 01 | Community Network | Brown `#92400e` |
+| 02 | Neighborhood Directory | Red `#b91c1c` |
 | 03 | Resources & Tools | Orange `#ea580c` |
-| 04 | Blueprint | Yellow `#ca8a04` |
+| 04 | Blueprint | Yellow `#92640a` |
 | 05 | Join | Green `#15803d` |
 | 06 | Agreements | Blue `#1d4ed8` |
 | 07 | Operations | Indigo `#4338ca` |
 | 08 | Contribution Tracking | Violet `#7c3aed` |
 | 09 | Governance | Pink `#db2777` |
-| 10 | Genesis Bot | White `#e2e8f0` |
-| 11 | Quinn | Silver `#94a3b8` |
+| 10 | Genesis Bot | Slate `#475569` |
+| 11 | Quinn | Silver `#64748b` |
 | 12 | MycoNet Agent | Gold `#b45309` |
-| 13 | Hive | (future) |
+| 13 | Hive | Brown-dark `#78350f` |
+
+Source of truth: `src/lib/module-meta.ts`
 
 ---
 
-## 10. Relationship to Other Documents
+## 11. Multi-Community Architecture (Phase 3)
+
+The platform is built to be cloned. When a second community wants a portal:
+1. Fork/clone the repo
+2. Create a new Supabase project
+3. Create a new Cloudflare Workers deployment
+4. Set environment variables pointing to the new Supabase project
+5. Run migrations — schema is identical across all portals
+
+**M02 Neighborhood Directory (v2):** When built, M02 will be a cross-portal public directory. Each community portal will have an **opt-in toggle** in their admin settings to list themselves in the public directory. The directory will show community profiles, active projects, and milestones — giving network-level visibility across all portals without merging their databases.
+
+**Community identity in M02:** Each community listing in the directory will show its Blueprint summary, open projects (from M07), and how to visit or join. This surfaces real work being done across communities without requiring any centralized infrastructure — just each community opting in to share their public data.
+
+---
+
+## 12. Relationship to Other Documents
 
 | Document | Purpose |
 |---|---|
@@ -308,5 +343,5 @@ All 14 modules follow a rainbow color order for consistent visual identity:
 
 ---
 
-*Document version: 2.0*
-*Updated: 2026-05-14 — Phase 0 live: M00, M01, M04, M05, M06, M07*
+*Document version: 2.1*
+*Updated: 2026-05-15 — Guest browsing, shared components, cloning architecture, M02 v2 opt-in directory design*

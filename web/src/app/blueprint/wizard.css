@@ -1,8 +1,8 @@
 /* Regenerative Neighborhood Wizard — scoped to .wizard-root */
 
-/* Nav bar is 52px sticky — wizard fills remaining viewport */
+/* Nav bar is 53px (52px inner div + 1px border-bottom) — wizard fills remaining viewport */
 .wizard-root {
-  --nav-h: 52px;
+  --nav-h: 53px;
   --bg: #fafafa;
   --bg-2: #f4f4f5;
   --bg-3: #e8e8ec;
@@ -45,8 +45,13 @@
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  width: 100%;
-  height: calc(100vh - var(--nav-h));
+  /* Fixed so the wizard always starts exactly at the nav's bottom edge, no matter
+     how the browser handles position:sticky inside the flex layout */
+  position: fixed;
+  top: var(--nav-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: hidden;
 }
 

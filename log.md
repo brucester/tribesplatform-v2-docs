@@ -2,6 +2,76 @@
 
 ---
 
+## 2026-05-15 — UX polish, guest access, visual identity system
+
+This session focused on making the platform feel finished and ready to show to a second community. Every module now has consistent visual identity, all main pages are browsable without an account, and the dashboard is significantly more informative.
+
+### M00 — Dashboard
+- **Version tag** `v2.05` added top-left above the welcome message (will increment with each meaningful deploy)
+- **Module tooltip cards** — hovering any module card reveals a short description popup. Works for live modules AND coming-soon modules. Tooltip uses module color as accent, smooth fade-in/out animation.
+- **Agreements card** — was just a text paragraph; now shows a live count of collaboration proposals (fetched from `collaboration_agreements` table) matching the same stat+label layout as Operations
+- **Agreements lock removed** — M06 card was locked (grayed out) for explorers; agreements page is publicly browsable so there was no reason to gate it. Now always unlocked and clickable.
+- **Locked card styling fixed** — locked module cards now use their full module color (border, number badge, unlock chip) instead of gray. Previously looked like a broken/disabled element.
+
+### Guest browsing — all main pages open
+Previously every page redirected non-logged-in users to `/auth/login`. All main pages are now publicly viewable:
+- `/dashboard` — community overview (member count, blueprint stats, active projects, recent members)
+- `/network` — member directory, tile/list toggle, member thumbnails
+- `/network/discover` — discover page shows all profiles (excludes logged-in user if signed in)
+- `/network/matches` — guest sees a teaser explaining AI matching with Sign In / Join CTAs
+- `/agreements` — open projects viewable; proposal button only for signed-in members
+- `/ops` — project list and updates viewable; admin panel only shown if admin
+- `/blueprint` — full community blueprint readable by anyone
+
+### M01 — Community Network
+- **Member thumbnails** — were silently failing because `<AvatarImage>` (shadcn) fails without throwing. Replaced with plain `<img>` tags. Thumbnails now display correctly.
+- **Thumbnail size** — increased from 40px → 72px in tile view
+- **Tile / List toggle** — new toggle button (⊞ / ☰) switches between tile view (circular 72px photo, centered name/location/tags) and list view (56px photo, horizontal row). Tiles are the default. Toggle state lives in `MemberList.tsx` (client component).
+- **New file:** `src/app/network/MemberList.tsx` — extracted as client component since server component can't hold toggle state.
+
+### Visual identity system — ModuleHeader component
+Every module page now has a consistent colored header band at the top showing the module number, name, and a "tap to learn more" description that reveals on hover/tap.
+
+- **New file:** `src/components/ModuleHeader.tsx` — client component with onMouseEnter/onMouseLeave + onClick toggle. Smooth max-height animation on description reveal.
+- **New file:** `src/lib/module-meta.ts` — single source of truth for all 14 module colors, labels, and descriptions. Imported by both `ModuleHeader.tsx` and `DashCardTooltip.tsx`.
+- **Added to:** Dashboard (M00 black), Network sidebar (M01 brown band at top of left panel), Ops (M07 indigo), Agreements (M06 blue), Join (M05 green). Blueprint uses an M04 badge embedded in its own sidebar brand section (it's a full-screen app that can't take an external header).
+
+### NetworkSidebar — M01 identity band
+The left sidebar on the network page now has a brown module identity band at the top linking back to `/network`:
+- MyCoNet · Module / `01` (large display font) / Community Network
+- Mobile nav active color updated to match (#92400e brown)
+
+### Avatar upload fix
+- **Profile page** and **edit profile page** — re-uploading an existing avatar was failing silently. Root cause: Supabase storage requires a separate DELETE policy for upsert to work on existing files.
+- **Fix applied:** Supabase migration added `avatars_delete_policy`: `CREATE POLICY "Users can delete their own avatar" ON storage.objects FOR DELETE USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1])`
+- **Code fix:** Upload now uses explicit `upsert: true`, caches a cache-busted URL (`?t=Date.now()`) after upload, and shows an `alert()` with the actual error message if anything fails.
+
+### Blueprint — nav overlap fix
+The blueprint page is a full-screen three-panel app (sidebar / main / rail) with internal scrolling. The global sticky nav was overlapping the top of all three panels.
+
+- **Root cause:** In some browsers (Safari), `position: sticky` in a flex container doesn't push siblings down in the layout, causing `<main>` to start at y=0 instead of below the nav.
+- **Fix:** Changed `.wizard-root` from `position: relative; height: calc(100vh - 52px)` to `position: fixed; top: 53px; left: 0; right: 0; bottom: 0`. The wizard now always pins to exactly the nav's bottom edge regardless of how the browser handles the flex/sticky combination.
+- Nav height corrected to 53px (52px inner div + 1px border-bottom).
+
+### Landing page rewrite
+The main landing page (`/`) was generic copy. Replaced with a storytelling flow:
+- **Hero:** "You want to live differently. We built the tools." with Join + Browse CTAs
+- **4-step journey:** Find your people → Build the plan → Apply and arrive → Work on it every day
+- **Live modules grid** — shows all live modules with their colors and a short description
+- **Coming soon** — lower-opacity section for planned modules
+- **Profile layers** — explain the offer/seek/travel dimensions
+- **Bottom CTA** — final join prompt
+
+### New shared components
+| File | Purpose |
+|---|---|
+| `src/lib/module-meta.ts` | All 14 module colors, labels, and descriptions. Single source of truth. |
+| `src/components/ModuleHeader.tsx` | Colored header band for every module page. Hover/tap reveals description. |
+| `src/components/DashCardTooltip.tsx` | Hover tooltip wrapper for dashboard module cards. Shows description below card. |
+| `src/app/network/MemberList.tsx` | Client component for member grid with tile/list view toggle. |
+
+---
+
 ## 2026-05-14 — Conflict-aware AI review panel
 
 ### Blueprint — AI import conflict resolution
