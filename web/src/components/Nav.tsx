@@ -52,6 +52,9 @@ export default function Nav() {
   // Close on route change
   useEffect(() => { setOpen(false) }, [pathname])
 
+  // Landing page has its own nav bar
+  if (pathname === '/') return null
+
   const signOut = async () => {
     await supabase.auth.signOut()
     router.push('/')

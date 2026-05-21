@@ -64,6 +64,23 @@
   --shadow-lg: 0 10px 40px rgba(0,0,0,.12);
   --tag-chip-bg: hsl(142 40% 90%);
   --tag-chip-color: hsl(142 50% 28%);
+
+  /* Module colors — source of truth is src/lib/module-meta.ts */
+  --m0: #18181b;
+  --m1: #92400e;
+  --m2: #b91c1c;
+  --m3: #ea580c;
+  --m4: #92640a;
+  --m5: #15803d;
+  --m6: #1d4ed8;
+  --m7: #4338ca;
+  --m8: #7c3aed;
+  --m9: #db2777;
+
+  /* Extra tokens used by the landing page */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04), 0 1px 1px rgba(0,0,0,.03);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.04);
+  --radius-xl: 1.125rem;
 }
 
 /* ─── Design tokens (dark) ──────────────────────────────────────── */
@@ -119,6 +136,11 @@
   --accent-soft: hsl(142 30% 10%);
   --tag-chip-bg: hsl(142 30% 12%);
   --tag-chip-color: hsl(142 60% 55%);
+
+  /* Module colors stay the same in dark mode — they're brand colors */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.12), 0 1px 1px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.20), 0 2px 4px rgba(0,0,0,.12);
+  --radius-xl: 1.125rem;
 }
 
 /* ─── Tailwind v4 theme tokens ──────────────────────────────────── */
