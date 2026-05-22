@@ -24,7 +24,7 @@ const initials = (n: string) => n.split(' ').map(s => s[0]).slice(0, 2).join('')
 
 /* ── Data ── */
 const CH_CARDS = [
-  { num: '01', name: 'Community Network',  desc: 'Meet 38 residents and explorers',         color: 'var(--m1)' },
+  { num: '01', name: 'Community Network',  desc: 'Meet 38 members and explorers',           color: 'var(--m1)' },
   { num: '04', name: 'Project Blueprint',  desc: 'Phase 2 of 4 · PROVE',                    color: 'var(--m4)' },
   { num: '05', name: 'Join the community', desc: '4 steps · Sign the values',               color: 'var(--m5)', cta: true },
   { num: '06', name: 'Active projects',    desc: '5 open · 2 need help this week',          color: 'var(--m6)' },
@@ -35,7 +35,7 @@ const CH_CARDS = [
   { num: '01', name: 'Travel & visits',    desc: '3 explorers visiting next month',         color: 'var(--m1)' },
 ]
 
-const RESIDENTS = [
+const MEMBERS = [
   { name: 'Ana Whitewater', where: 'San Cristóbal, MX',        av: 'var(--m1)', offers: ['Permaculture design', 'Mycology'],     seeks: ['Co-builders'],     match: 92 },
   { name: 'Eli Tanaka',     where: 'Visiting Tlaxcala, MAY',   av: 'var(--m4)', offers: ['Natural building', 'Cob'],             seeks: ['Land partner'],     match: 81 },
   { name: 'Priya Mahesh',   where: 'Berkeley, CA · Vision holder', av: 'var(--m9)', offers: ['NVC facilitation', 'Conflict mediation'], seeks: ['Resident circle'], match: 76 },
@@ -61,7 +61,7 @@ const VALUES = [
 const PROJECTS = [
   { name: 'Greywater wetlands install',  desc: 'Build the reed-bed wetland that handles all household greywater for Cluster A.', needs: ['Earthworks', 'Plumbing', '3 weekends'], open: true },
   { name: 'Funding circle, round 2',     desc: 'Find 4 more investor-members to close the BUILD-phase capital raise ($120k remaining).', needs: ['Network access', 'Pitch help', 'Legal review'] },
-  { name: 'Onboarding new residents (Q3)', desc: 'Run the application review, host two welcome calls, pair newcomers with mentors.', needs: ['Facilitation', 'Hospitality'] },
+  { name: 'Onboarding new members (Q3)', desc: 'Run the application review, host two welcome calls, pair newcomers with mentors.', needs: ['Facilitation', 'Hospitality'] },
 ]
 
 const DELIVERABLES = [
@@ -112,7 +112,7 @@ function TopBar({ name }: { name: string | null }) {
         </a>
         <nav className="lp-topnav">
           <a className="lp-topnav-link is-current" href="#welcome">Welcome</a>
-          <a className="lp-topnav-link" href="#meet">Meet residents</a>
+          <a className="lp-topnav-link" href="#meet">Meet members</a>
           <a className="lp-topnav-link" href="#blueprint">The project</a>
           <a className="lp-topnav-link" href="#join">Join</a>
           <a className="lp-topnav-link" href="#governance">Decide</a>
@@ -237,7 +237,7 @@ function ClubhousePreview({ name }: { name: string | null }) {
   )
 }
 
-/* ── M01 Meet residents ── */
+/* ── M01 Meet members ── */
 function MeetSection() {
   return (
     <section className="lp-section" id="meet">
@@ -246,7 +246,7 @@ function MeetSection() {
           <SectionHead
             mod="01" label="Community Network" color="var(--m1)"
             h="Meet the people gathering around this idea."
-            lead="Before anything is built, the right people have to find each other. Browse rich profiles of every resident, vision-holder, and explorer — sorted by how well your offers, seeks, values, and skills line up."
+            lead="Before anything is built, the right people have to find each other. Browse rich profiles of every member, vision-holder, and explorer — sorted by how well your offers, seeks, values, and skills line up."
           />
           <div className="lp-why">
             <div className="lp-why-row"><div className="lp-check"><Check /></div>
@@ -269,7 +269,7 @@ function MeetSection() {
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>38 members</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {RESIDENTS.map((r, i) => (
+            {MEMBERS.map((r, i) => (
               <div className="lp-neighbor-card" key={i}>
                 <div className="lp-av-48" style={{ background: r.av }}>{initials(r.name)}</div>
                 <div className="lp-neighbor-meta">
@@ -433,7 +433,7 @@ function JoinSection() {
 function AgreementsSection() {
   const [picked, setPicked] = useState(0)
   const [what, setWhat] = useState('Lead the trench-digging weekend with my excavator and 2 helpers.')
-  const [expect, setExpect] = useState('20 contribution points + lunch on site + future resident priority.')
+  const [expect, setExpect] = useState('20 contribution points + lunch on site + future member priority.')
   const [submitted, setSubmitted] = useState(false)
 
   return (
@@ -682,7 +682,7 @@ function GovernanceSection() {
       <div className="lp-proposal">
         <h4>Proposal · &ldquo;Approve $24k for reed-bed wetland materials&rdquo;</h4>
         <div className="lp-pmeta">
-          Decision mode: <strong>{LAYERS[layer].name}</strong> · Opened by @priya · 2 days left · {total} of 19 residents have voted
+          Decision mode: <strong>{LAYERS[layer].name}</strong> · Opened by @priya · 2 days left · {total} of 19 members have voted
         </div>
         <div className="lp-vote-bar">
           <div className="lp-vote-seg yes"     style={{ flex: yes }}>{yes} consent</div>
@@ -712,7 +712,7 @@ function Closing({ name }: { name: string | null }) {
       <div className="lp-closing-box">
         <h2>Ready to step into the clubhouse{name ? `, ${name}` : ''}?</h2>
         <p>
-          You don&apos;t have to decide today. Read the Blueprint. Meet a resident. Visit. Talk.
+          You don&apos;t have to decide today. Read the Blueprint. Meet a member. Visit. Talk.
           When you&apos;re ready, sign the values — and start showing up.
         </p>
         <div className="lp-cta-row" style={{ justifyContent: 'center' }}>

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { isFullMember as checkFullMember, isJoiningOrAbove } from '@/core/lib/roles'
 
 type PhaseP = { id: string; name: string; answered: number; total: number; ratio: number }
 type Member = { id: string; first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null; avatar_url: string | null; username: string | null }
@@ -161,7 +162,7 @@ export default function HomeClient({
 }: Props) {
   const name = firstName || (isLoggedIn ? 'there' : 'you')
   const roleLabel = ROLE_LABELS[role] ?? 'Explorer'
-  const isJoiningPlus = ['joining', 'member', 'circle_lead', 'project_lead', 'admin'].includes(role)
+  const isJoiningPlus = isJoiningOrAbove(role)
 
   // M05 - values
   const [checked, setChecked] = useState<boolean[]>(() => communityValues.map(() => hasApplied))
@@ -311,8 +312,8 @@ export default function HomeClient({
             const thisTierIdx = t.tier ? tierOrder.indexOf(t.tier) : -1
             const isCurrent = isLoggedIn
               ? (t.tier === null && !isJoiningPlus && role === 'explorer' && i === 1)
-                || (t.tier === 'joining' && isJoiningPlus && !['member', 'circle_lead', 'project_lead', 'admin'].includes(role ?? ''))
-                || (t.tier === 'member' && ['member', 'circle_lead', 'project_lead', 'admin'].includes(role ?? ''))
+                || (t.tier === 'joining' && isJoiningPlus && !checkFullMember(role ?? ''))
+                || (t.tier === 'member' && checkFullMember(role ?? ''))
               : i === 0
             const isActive = isCurrent || (i === 0) || (isLoggedIn && thisTierIdx !== -1 && thisTierIdx < currentTierIdx)
             return (
@@ -739,7 +740,7 @@ export default function HomeClient({
               {(projects.length > 0 ? projects : [
                 { id: 'demo1', title: 'Greywater wetlands install', description: 'Build the reed-bed wetland that handles all household greywater for Cluster A.', needs: ['Earthworks', 'Plumbing', '3 weekends'], open_for_collaborators: true },
                 { id: 'demo2', title: 'Funding circle, round 2', description: 'Find 4 more investor-members to close the BUILD-phase capital raise.', needs: ['Network access', 'Pitch help'], open_for_collaborators: false },
-                { id: 'demo3', title: 'Onboarding new residents', description: 'Run the application review, host welcome calls, pair newcomers with mentors.', needs: ['Facilitation', 'Hospitality'], open_for_collaborators: true },
+                { id: 'demo3', title: 'Onboarding new members', description: 'Run the application review, host welcome calls, pair newcomers with mentors.', needs: ['Facilitation', 'Hospitality'], open_for_collaborators: true },
               ] as Project[]).map((p, i) => (
                 <div
                   key={p.id}
@@ -1177,7 +1178,7 @@ export default function HomeClient({
             Ready to step into the clubhouse, {name}?
           </h2>
           <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.7, maxWidth: '48ch', margin: '0 auto 28px' }}>
-            You don't have to decide today. Read the Blueprint. Meet a resident. Visit. Talk.
+            You don't have to decide today. Read the Blueprint. Meet a member. Visit. Talk.
             When you're ready, sign the values — and start showing up.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 18 }}>

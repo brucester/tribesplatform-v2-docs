@@ -68,7 +68,7 @@ export const MODULES: Module[] = [
   },
   {
     num: '11', name: 'Quinn',
-    desc: 'Personal AI guide per resident — daily reminders, goal tracking, and community routing.',
+    desc: 'Personal AI guide per member — daily reminders, goal tracking, and community routing.',
     icon: '◇', color: '#94a3b8', href: null, live: false,
   },
   {
