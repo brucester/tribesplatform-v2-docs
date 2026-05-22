@@ -2,6 +2,20 @@ import Link from 'next/link'
 
 const ENTRIES = [
   {
+    version: 'v3.20',
+    date: '2026-05-22',
+    title: 'Open-source codebase reorganization — core/ + modules/',
+    items: [
+      'Introduced a three-layer source architecture: src/core/ (shared infrastructure), src/modules/mXX-name/ (one self-contained folder per feature), and src/app/ (thin Next.js route entry points that simply re-export from modules).',
+      'All feature components, utilities, and lib/ functions moved into their module folder — contributors can now work on M01 Network, M04 Blueprint, M07 Ops, etc. without touching anything outside that folder.',
+      'src/core/ centralizes Supabase clients (server + browser), all shadcn/ui primitives, the app shell (AppTopBar, AppSideNav, AppShell), shared types, and contexts.',
+      'Every module and core/ now has a README.md documenting what it does, which DB tables it touches, and how to run it locally.',
+      'New web/CONTRIBUTING.md — full open-source contributor guide with quick-start, import convention table, database migration steps, and PR checklist.',
+      'Import aliases updated across the codebase: @/core/... and @/modules/... replace the legacy @/lib/, @/components/, @/contexts/, and @/types/ paths.',
+      'Zero breaking changes — all routes, API behaviour, and UI are identical. TypeScript passes with no errors.',
+    ],
+  },
+  {
     version: 'v3.12',
     date: '2026-05-22',
     title: 'Mobile slide-in navigation panel',
