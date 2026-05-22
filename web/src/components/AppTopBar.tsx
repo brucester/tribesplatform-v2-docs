@@ -28,7 +28,10 @@ function computeCompletion(
   return Math.round(checks.filter(Boolean).length / checks.length * 100)
 }
 
-export default function AppTopBar() {
+export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
+  onMobileNavToggle?: () => void
+  mobileNavOpen?: boolean
+}) {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [displayName, setDisplayName] = useState('')
@@ -140,6 +143,29 @@ export default function AppTopBar() {
       flexShrink: 0,
     }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 22px', flex: 1 }}>
+      {/* Mobile modules toggle */}
+      <button
+        className="topbar-modules-btn"
+        onClick={onMobileNavToggle}
+        aria-label="Toggle navigation"
+        style={{
+          display: 'none', // shown via CSS on mobile
+          flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+          background: mobileNavOpen ? 'var(--bg-2)' : 'none',
+          border: '1px solid var(--rule)', borderRadius: 7,
+          cursor: 'pointer', color: 'var(--ink-2)', flexShrink: 0,
+          padding: '5px 10px', fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 600,
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="2" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.8"/>
+          <rect x="9" y="2" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.5"/>
+          <rect x="1" y="10" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.5"/>
+          <rect x="9" y="10" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.3"/>
+        </svg>
+        <span>Modules</span>
+      </button>
+
       {/* Brand */}
       <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
         <div style={{

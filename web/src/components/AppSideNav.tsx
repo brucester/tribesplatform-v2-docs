@@ -16,13 +16,13 @@ const RESIDENT = [
   { num: '09', name: 'Governance',    color: 'var(--m9)', href: '/governance' as string | null },
 ]
 
-function NavItem({ num, name, color, href, active }: {
-  num: string; name: string; color: string; href: string | null; active: boolean
+function NavItem({ num, name, color, href, active, onClick }: {
+  num: string; name: string; color: string; href: string | null; active: boolean; onClick?: () => void
 }) {
   const inner = (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
-      padding: '8px 10px', borderRadius: 7,
+      padding: '10px 10px', borderRadius: 7,
       fontSize: 13,
       color: active ? 'var(--ink)' : 'var(--ink-2)',
       fontWeight: active ? 600 : 400,
@@ -43,7 +43,7 @@ function NavItem({ num, name, color, href, active }: {
   if (!href) return <div style={{ cursor: 'default' }}>{inner}</div>
 
   return (
-    <Link href={href} style={{ textDecoration: 'none', display: 'block' }} className="sh-nav-item">
+    <Link href={href} onClick={onClick} style={{ textDecoration: 'none', display: 'block' }} className="sh-nav-item">
       {inner}
     </Link>
   )
@@ -61,7 +61,12 @@ function SectionLabel({ label }: { label: string }) {
   )
 }
 
-export default function AppSideNav() {
+interface Props {
+  mobileOpen?: boolean
+  onClose?: () => void
+}
+
+export default function AppSideNav({ mobileOpen, onClose }: Props) {
   const pathname = usePathname()
 
   const isActive = (href: string | null) => {
@@ -71,28 +76,42 @@ export default function AppSideNav() {
   }
 
   return (
-    <nav className="app-shell-sidenav" style={{
-      borderRight: '1px solid var(--rule)',
-      background: 'var(--bg-2)',
-      padding: '14px 10px',
-      overflowY: 'auto',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 1,
-    }}>
+    <nav
+      className={`app-shell-sidenav${mobileOpen ? ' mobile-open' : ''}`}
+      style={{
+        borderRight: '1px solid var(--rule)',
+        background: 'var(--bg-2)',
+        padding: '14px 10px',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+      }}
+    >
+      {/* Mobile close row */}
+      <div className="mobile-nav-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Modules</span>
+        <button
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 18, lineHeight: 1, padding: '2px 6px' }}
+          aria-label="Close navigation"
+        >
+          ✕
+        </button>
+      </div>
+
       <SectionLabel label="Clubhouse" />
       {CLUBHOUSE.map(m => (
-        <NavItem key={m.num} {...m} active={isActive(m.href)} />
+        <NavItem key={m.num} {...m} active={isActive(m.href)} onClick={onClose} />
       ))}
 
       <SectionLabel label="Once you're in" />
       {RESIDENT.map(m => (
-        <NavItem key={m.num} {...m} active={isActive(m.href)} />
+        <NavItem key={m.num} {...m} active={isActive(m.href)} onClick={onClose} />
       ))}
 
       <div style={{ flex: 1 }} />
 
-      {/* Explorer callout */}
       <div style={{
         padding: 12, marginTop: 8, borderRadius: 8,
         background: 'color-mix(in srgb, var(--accent-color) 8%, transparent)',
