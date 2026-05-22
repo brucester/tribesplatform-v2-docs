@@ -2,6 +2,35 @@ import Link from 'next/link'
 
 const ENTRIES = [
   {
+    version: 'v3.10',
+    date: '2026-05-21',
+    title: 'Match scoring, AppTopBar dropdown, Home access tiers, Governance 4-layer demo',
+    items: [
+      'New match scoring engine (lib/match-score.ts) — scores two member bios across shared skills (up to 30 pts), shared interests (up to 20 pts), OCEAN personality similarity (up to 25 pts), and MBTI compatibility (up to 25 pts). Max score 100.',
+      'Network dashboard shows a "Your Matches" section with top 4 ranked matches, with score badge and reasons. MemberList cards and tiles show a match % badge when a score is available.',
+      'Public profile pages show a match score pill (score + reason) when viewing another member.',
+      'AppTopBar avatar pill now opens a hover/click dropdown: View profile, Edit profile, Dashboard, Network, Contributions, Governance, theme toggle (light/dark), and Sign out.',
+      'Home portal /home — new access tiers strip showing Browse → Create Account → Join → Resident with "YOU ARE HERE" highlight based on actual role.',
+      'Joining reward banner on /home shown to joining+ roles with Community Joiner badge callout.',
+      'Governance demo on /home upgraded to full 4-layer panel (Consent, Democracy, Meritocracy, AI Facilitation) with live progress bar and LIVE/Evaluating status.',
+      'GovernanceClient now uses evalLayers() against real votes, with StatusPill component and role-gated "New proposal" button.',
+      'Version tag in top bar now links to this changelog page.',
+    ],
+  },
+  {
+    version: 'v3.01',
+    date: '2026-05-21',
+    title: 'AppShell, M08 Contributions, M09 Governance, /home portal',
+    items: [
+      'New AppShell.tsx wraps all non-auth pages with AppTopBar + AppSideNav + ProfileCompletionProvider.',
+      'Profile completion bar — 22px strip under nav showing % complete across 11 fields. Disappears at 100%.',
+      'M08 Contributions page — achievement catalog with unlocked/locked states. Profile Pioneer badge awarded automatically at 100% profile completion.',
+      'M09 Governance page — full proposal list with 4 decision-mode filters, vote breakdown bars, comment threads, and new proposal modal.',
+      'New /home portal explainer — live data from all modules. Member cards, Blueprint phases, values checkboxes, project proposals, deliverables feed.',
+      'New tables: user_achievements (with RLS), proposals, proposal_votes, proposal_comments.',
+    ],
+  },
+  {
     version: 'v3.09',
     date: '2026-05-14',
     title: 'Conflict-aware AI review panel',

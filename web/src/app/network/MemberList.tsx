@@ -30,7 +30,7 @@ function Avatar({ member, size }: { member: Member; size: number }) {
   )
 }
 
-export default function MemberList({ members }: { members: Member[] }) {
+export default function MemberList({ members, matchScores = {} }: { members: Member[]; matchScores?: Record<string, { score: number; reasons: string[] }> }) {
   const [view, setView] = useState<'tiles' | 'list'>('tiles')
 
   if (members.length === 0) {
@@ -87,6 +87,8 @@ export default function MemberList({ members }: { members: Member[] }) {
           {members.map(u => {
             const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username
             const loc = [u.city, u.country].filter(Boolean).join(', ')
+            const ms = matchScores[u.id]
+            const scoreColor = ms && ms.score >= 70 ? 'var(--m5)' : ms && ms.score >= 40 ? '#f59e0b' : 'var(--ink-4)'
             return (
               <Link key={u.id} href={`/u/${u.username}`} style={{ textDecoration: 'none' }}>
                 <div style={{
@@ -94,7 +96,18 @@ export default function MemberList({ members }: { members: Member[] }) {
                   borderRadius: 'var(--radius-lg)', padding: '18px 14px',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
                   textAlign: 'center', transition: 'box-shadow 120ms, transform 120ms',
+                  position: 'relative',
                 }} className="hover-elevate">
+                  {ms && (
+                    <span style={{
+                      position: 'absolute', top: 8, right: 8,
+                      fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
+                      color: scoreColor,
+                      background: 'var(--surface)',
+                      border: `1px solid ${scoreColor}`,
+                      padding: '1px 6px', borderRadius: 20,
+                    }}>{ms.score}%</span>
+                  )}
                   <Avatar member={u} size={72} />
                   <div style={{ minWidth: 0, width: '100%' }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
@@ -120,6 +133,8 @@ export default function MemberList({ members }: { members: Member[] }) {
           {members.map(u => {
             const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username
             const loc = [u.city, u.country].filter(Boolean).join(', ')
+            const ms = matchScores[u.id]
+            const scoreColor = ms && ms.score >= 70 ? 'var(--m5)' : ms && ms.score >= 40 ? '#f59e0b' : 'var(--ink-4)'
             return (
               <Link key={u.id} href={`/u/${u.username}`} style={{ textDecoration: 'none' }}>
                 <div style={{
@@ -140,7 +155,14 @@ export default function MemberList({ members }: { members: Member[] }) {
                       </div>
                     )}
                   </div>
-                  <span style={{ fontSize: 12, color: 'var(--ink-4)', flexShrink: 0 }}>→</span>
+                  {ms ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: scoreColor, lineHeight: 1 }}>{ms.score}%</span>
+                      <span style={{ fontSize: 9, fontFamily: 'var(--mono)', color: 'var(--ink-4)', letterSpacing: '0.04em' }}>match</span>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 12, color: 'var(--ink-4)', flexShrink: 0 }}>→</span>
+                  )}
                 </div>
               </Link>
             )

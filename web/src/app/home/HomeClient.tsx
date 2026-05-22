@@ -24,6 +24,10 @@ interface Props {
   isLoggedIn: boolean
   hasApplied: boolean
   isFullMember: boolean
+  role?: string
+  applicationStatus?: string | null
+  joiningRewardNew?: boolean
+  matchScores?: Record<string, { score: number; reasons: string[] }>
 }
 
 const CHECK_ICON = (
@@ -137,17 +141,30 @@ function Split({ children, reverse = false }: { children: React.ReactNode; rever
   )
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  explorer: 'Explorer',
+  joining: 'Joining Member',
+  resident: 'Resident',
+  circle_lead: 'Circle Lead',
+  project_lead: 'Project Lead',
+  admin: 'Admin',
+}
+
 export default function HomeClient({
   firstName, communityName, communityPurpose,
   phaseProgress, overall, gatesPassed,
   memberCount, members, communityValues,
   projects, activeProjectCount, deliverables,
   isLoggedIn, hasApplied, isFullMember,
+  role = 'explorer', applicationStatus, joiningRewardNew = false,
+  matchScores = {},
 }: Props) {
   const name = firstName || (isLoggedIn ? 'there' : 'you')
+  const roleLabel = ROLE_LABELS[role] ?? 'Explorer'
+  const isJoiningPlus = ['joining', 'resident', 'circle_lead', 'project_lead', 'admin'].includes(role)
 
   // M05 - values
-  const [checked, setChecked] = useState<boolean[]>(() => communityValues.map(() => false))
+  const [checked, setChecked] = useState<boolean[]>(() => communityValues.map(() => hasApplied))
   const toggle = (i: number) => setChecked(c => c.map((v, j) => j === i ? !v : v))
   const signedCount = checked.filter(Boolean).length
   const allSigned = communityValues.length > 0 && signedCount === communityValues.length
@@ -159,11 +176,15 @@ export default function HomeClient({
   const [agreementSubmitted, setAgreementSubmitted] = useState(false)
 
   // M09 - governance
-  const [govLayer, setGovLayer] = useState(0)
-  const [vote, setVote] = useState<null | 'yes' | 'concern' | 'no'>(null)
-  const yesV = 14 + (vote === 'yes' ? 1 : 0)
-  const conV = 3 + (vote === 'concern' ? 1 : 0)
-  const noV  = 2 + (vote === 'no' ? 1 : 0)
+  const [consentVote, setConsentVote] = useState<null | 'consent' | 'concern' | 'object'>(null)
+  const [democVote, setDemocVote] = useState<null | 'yes' | 'concern' | 'no'>(null)
+  const consentPassed = consentVote !== null && consentVote !== 'object'
+  const democYes = 9 + (democVote === 'yes' ? 1 : 0)
+  const democConcern = 3 + (democVote === 'concern' ? 1 : 0)
+  const democNo = 2 + (democVote === 'no' ? 1 : 0)
+  const democPassed = democYes >= 10
+  const layersPassed = [consentPassed, democPassed, true, true].filter(Boolean).length
+  const proposalLive = layersPassed >= 3
 
   // M04 - animate bars on scroll into view
   const bpRef = useRef<HTMLDivElement>(null)
@@ -199,8 +220,8 @@ export default function HomeClient({
         </span>
         <h1 style={{
           fontFamily: 'var(--display)',
-          fontSize: 'clamp(32px, 5.5vw, 60px)',
-          lineHeight: 1.05, letterSpacing: '-0.025em',
+          fontSize: 'clamp(40px, 6vw, 68px)',
+          lineHeight: 1.02, letterSpacing: '-0.025em', fontWeight: 700,
           color: 'var(--ink)', marginBottom: 22, maxWidth: '18ch',
         }}>
           Welcome, {name}.<br />
@@ -242,6 +263,123 @@ export default function HomeClient({
         </div>
       </section>
 
+      {/* ── Access tiers explainer ──────────────────────────── */}
+      <div style={{ maxWidth: 1100, margin: '52px auto 0', padding: '0 28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>
+            How your access grows
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--rule)' }}>
+          {([
+            {
+              step: '01', icon: '👁', label: 'Browse',
+              sublabel: 'No account needed',
+              color: 'var(--ink-4)',
+              items: ['Read all proposals', 'View member profiles', 'See the Blueprint', 'Explore projects'],
+              cta: null, ctaHref: null,
+              tier: null,
+            },
+            {
+              step: '02', icon: '✦', label: 'Create an account',
+              sublabel: 'Free · Takes 2 minutes',
+              color: 'var(--m1)',
+              items: ['Your own profile', 'AI match scores', 'Apply to join', 'Save your place'],
+              cta: 'Sign up free', ctaHref: '/auth/signup',
+              tier: 'explorer',
+            },
+            {
+              step: '03', icon: '🏡', label: 'Join the community',
+              sublabel: 'Sign the values · M05',
+              color: 'var(--m5)',
+              items: ['Vote on proposals', 'Submit proposals', 'Collaborate on projects', 'Earn badges'],
+              cta: 'Apply to join', ctaHref: '/join',
+              tier: 'joining',
+            },
+            {
+              step: '04', icon: '⊕', label: 'Resident',
+              sublabel: 'Full member',
+              color: 'var(--m9)',
+              items: ['All modules active', 'Lead projects', 'Governance rights', 'Build together'],
+              cta: null, ctaHref: null,
+              tier: 'resident',
+            },
+          ] as const).map((t, i) => {
+            const tierOrder = ['explorer', 'joining', 'resident']
+            const currentTierIdx = tierOrder.indexOf(role ?? 'explorer')
+            const thisTierIdx = t.tier ? tierOrder.indexOf(t.tier) : -1
+            const isCurrent = isLoggedIn
+              ? (t.tier === null && !isJoiningPlus && role === 'explorer' && i === 1)
+                || (t.tier === 'joining' && isJoiningPlus && !['resident', 'circle_lead', 'project_lead', 'admin'].includes(role ?? ''))
+                || (t.tier === 'resident' && ['resident', 'circle_lead', 'project_lead', 'admin'].includes(role ?? ''))
+              : i === 0
+            const isActive = isCurrent || (i === 0) || (isLoggedIn && thisTierIdx !== -1 && thisTierIdx < currentTierIdx)
+            return (
+              <div key={i} style={{
+                padding: '22px 20px',
+                background: isCurrent ? 'var(--ink)' : 'var(--surface)',
+                borderRight: i < 3 ? '1px solid var(--rule)' : 'none',
+                position: 'relative',
+              }}>
+                {isCurrent && (
+                  <div style={{ position: 'absolute', top: 10, right: 10, fontFamily: 'var(--mono)', fontSize: 8.5, fontWeight: 700, letterSpacing: '0.08em', color: '#fff', background: 'rgba(255,255,255,.2)', padding: '2px 7px', borderRadius: 20 }}>
+                    YOU ARE HERE
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: 22 }}>{t.icon}</span>
+                  <div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, color: isCurrent ? 'rgba(255,255,255,.5)' : 'var(--ink-4)', letterSpacing: '0.08em' }}>STEP {t.step}</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: isCurrent ? '#fff' : 'var(--ink)', lineHeight: 1.2 }}>{t.label}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: isCurrent ? 'rgba(255,255,255,.6)' : 'var(--ink-4)', fontFamily: 'var(--mono)', marginBottom: 12 }}>{t.sublabel}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: t.cta && !isCurrent ? 14 : 0 }}>
+                  {t.items.map(item => (
+                    <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: isCurrent ? 'rgba(255,255,255,.8)' : isActive ? 'var(--ink-2)' : 'var(--ink-4)' }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: isCurrent ? 'rgba(255,255,255,.5)' : isActive ? t.color : 'var(--rule)', flexShrink: 0 }} />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+                {t.cta && !isCurrent && (
+                  <a href={t.ctaHref!} style={{
+                    display: 'inline-block', marginTop: 14,
+                    fontSize: 12, fontWeight: 700, color: '#fff',
+                    background: t.color, padding: '6px 14px', borderRadius: 7, textDecoration: 'none',
+                  }}>{t.cta} →</a>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Joining reward banner ───────────────────────────── */}
+      {isJoiningPlus && (
+        <div style={{ maxWidth: 1100, margin: '28px auto 0', padding: '0 28px' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, #f59e0b 12%, var(--surface)), color-mix(in srgb, var(--m5) 8%, var(--surface)))',
+            border: '1px solid color-mix(in srgb, #f59e0b 35%, var(--rule))',
+            borderRadius: 14, padding: '18px 24px',
+            display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
+          }}>
+            <div style={{ fontSize: 32, flexShrink: 0 }}>🎉</div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 3 }}>
+                Welcome to {communityName}, {firstName || 'Member'}! You're now a <span style={{ color: '#d97706' }}>{roleLabel}</span>.
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                You've earned the <strong>Community Joiner</strong> badge 🏡 — Agreements, Operations, Contributions, and Governance are now unlocked.
+              </div>
+            </div>
+            <Link href="/dashboard" style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'var(--ink)', padding: '9px 18px', borderRadius: 8, textDecoration: 'none', flexShrink: 0 }}>
+              Go to Dashboard →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ── Clubhouse Preview ───────────────────────────────── */}
       <div style={{ maxWidth: 1100, margin: '60px auto 0', padding: '0 28px' }} id="clubhouse">
         <div style={{
@@ -279,7 +417,7 @@ export default function HomeClient({
                 </div>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>{firstName || 'Explorer'}</div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)' }}>Explorer</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)' }}>{roleLabel}</div>
                 </div>
               </div>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', padding: '8px 6px 4px' }}>Clubhouse</div>
@@ -324,7 +462,10 @@ export default function HomeClient({
                 Good morning, {firstName || 'Explorer'}.
               </div>
               <p style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 16 }}>
-                You're an <strong style={{ color: 'var(--ink-2)' }}>Explorer</strong> at {communityName}. Browse and meet people — sign the values to unlock the full community.
+                You're a <strong style={{ color: 'var(--ink-2)' }}>{roleLabel}</strong> at {communityName}.{' '}
+                {isJoiningPlus
+                  ? 'Welcome — your full community access is active.'
+                  : 'Browse and meet people — sign the values to unlock the full community.'}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                 {[
@@ -381,6 +522,7 @@ export default function HomeClient({
                 const fullName = [m.first_name, m.last_name].filter(Boolean).join(' ') || m.username || 'Member'
                 const location = [m.city, m.country].filter(Boolean).join(', ')
                 const avatarColors = ['var(--m1)', 'var(--m4)', 'var(--m9)', 'var(--m5)']
+                const matchData = matchScores[m.id]
                 const card = (
                   <div style={{
                     display: 'flex', gap: 10, padding: '10px 12px',
@@ -398,11 +540,19 @@ export default function HomeClient({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{fullName}</span>
-                        <span style={{
-                          fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600,
-                          background: 'color-mix(in srgb, var(--m1) 12%, transparent)',
-                          color: 'var(--m1)', padding: '2px 7px', borderRadius: 20, flexShrink: 0,
-                        }}>{82 - i * 8}% match</span>
+                        {isLoggedIn && matchData ? (
+                          <span style={{
+                            fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600,
+                            background: 'color-mix(in srgb, var(--m1) 12%, transparent)',
+                            color: 'var(--m1)', padding: '2px 7px', borderRadius: 20, flexShrink: 0,
+                          }}>{matchData.score}% match</span>
+                        ) : isLoggedIn ? (
+                          <span style={{
+                            fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600,
+                            background: 'var(--bg-2)', color: 'var(--ink-4)',
+                            padding: '2px 7px', borderRadius: 20, flexShrink: 0,
+                          }}>no overlap yet</span>
+                        ) : null}
                       </div>
                       {m.headline && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginBottom: 2 }}>{m.headline}</div>}
                       {location && <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>📍 {location}</div>}
@@ -751,14 +901,27 @@ export default function HomeClient({
               <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,.07)' }} />
               <div style={{ fontFamily: 'var(--mono)', fontSize: 36, fontWeight: 700, color: '#fff', lineHeight: 1 }}>275</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', marginTop: 3, marginBottom: 10 }}>Points this sprint</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', marginBottom: 8 }}>3 badges earned · Builder · Welcomer · Funder</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {['🪨', '🤝', '💰', '🌿', '⚖️', '✦'].map((b, i) => (
-                  <span key={i} style={{
-                    width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,.15)',
-                    display: 'grid', placeItems: 'center', fontSize: 14, opacity: i < 3 ? 1 : 0.3,
-                  }}>{b}</span>
-                ))}
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', marginBottom: 8 }}>
+                {isJoiningPlus ? '1 badge earned · Community Joiner' : '3 badges earned · Builder · Welcomer · Funder'}
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                {isJoiningPlus ? (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'rgba(255,255,255,.18)', borderRadius: 20,
+                    padding: '4px 12px 4px 6px',
+                  }}>
+                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,.25)', display: 'grid', placeItems: 'center', fontSize: 13, flexShrink: 0 }}>🏡</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff' }}>Community Joiner</span>
+                  </span>
+                ) : (
+                  ['🪨', '🤝', '💰', '🌿', '⚖️', '✦'].map((b, i) => (
+                    <span key={i} style={{
+                      width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,.15)',
+                      display: 'grid', placeItems: 'center', fontSize: 14, opacity: i < 3 ? 1 : 0.3,
+                    }}>{b}</span>
+                  ))
+                )}
               </div>
             </div>
             <div style={{ fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>Recent log</div>
@@ -801,69 +964,197 @@ export default function HomeClient({
           <SectionHead
             mod="09" label="Governance" color="var(--m9)"
             h="Decide together. Four layers, one community."
-            lead="Big questions, small calls, technical judgments, and impossible deadlocks — each deserves a different decision tool. The Governance module gives you four layered modes and one AI facilitator that knows when to use which."
+            lead="Every proposal runs through all four governance layers simultaneously. Once 3 of 4 layers approve, the proposal is live — work can begin, agreements are created automatically."
             href="/dashboard"
             why={[
-              '<strong>Sociocracy</strong> for everyday decisions — no objections means go.',
-              '<strong>Democracy</strong> for big shared choices — open vote, public results.',
-              '<strong>AI-mediated facilitation</strong> — when things stall, surfaces the next move.',
+              '<strong>All four layers run in parallel</strong> — no waiting for one mode to finish before the next starts.',
+              '<strong>3 of 4 threshold</strong> — consent, majority, expert, and AI must collectively approve.',
+              '<strong>AI facilitator</strong> flags blockers and summarizes concerns in real time.',
             ]}
           />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginTop: 28 }}>
-            {GOV_LAYERS.map((l, i) => (
-              <div
-                key={i}
-                onClick={() => setGovLayer(i)}
-                style={{
-                  padding: '16px', borderRadius: 10, cursor: 'pointer',
-                  border: `1px solid ${govLayer === i ? 'var(--m9)' : 'var(--rule)'}`,
-                  background: 'var(--surface)',
-                  boxShadow: govLayer === i ? '0 0 0 3px color-mix(in srgb, var(--m9) 12%, transparent)' : 'none',
-                  transition: 'border-color 120ms, box-shadow 120ms',
-                }}>
-                <div style={{ fontSize: 22, marginBottom: 6 }}>{l.mark}</div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, fontWeight: 700, color: 'var(--ink-4)', marginBottom: 4 }}>LAYER {l.num}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>{l.name}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>{l.desc}</div>
+
+          {/* Proposal evaluation card */}
+          <div style={{ marginTop: 28, background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 14, overflow: 'hidden' }}>
+
+            {/* Proposal header */}
+            <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--rule)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--m9)', marginBottom: 5 }}>Active Proposal</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 3 }}>
+                  "Approve $24k for reed-bed wetland materials"
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Opened by @priya · 2 days left · 17 of 19 members notified</div>
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 20, background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '20px 22px' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>
-              Proposal · "Approve $24k for reed-bed wetland materials"
+              {proposalLive ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, #22c55e 10%, var(--surface))', border: '1px solid color-mix(in srgb, #22c55e 35%, var(--rule))', borderRadius: 20, padding: '5px 14px', flexShrink: 0 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', flexShrink: 0, animation: 'ping 1.6s ease-out infinite' }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a' }}>PROPOSAL LIVE</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'color-mix(in srgb, var(--m9) 8%, var(--surface))', border: '1px solid color-mix(in srgb, var(--m9) 25%, var(--rule))', borderRadius: 20, padding: '5px 14px', flexShrink: 0 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--m9)', flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--m9)' }}>Evaluating</span>
+                </div>
+              )}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 14 }}>
-              Decision mode: <strong style={{ color: 'var(--ink-2)' }}>{GOV_LAYERS[govLayer].name}</strong> · Opened by @priya · 2 days left · {yesV + conV + noV} of 19 residents have voted
+
+            {/* Progress bar */}
+            <div style={{ padding: '12px 22px', background: 'var(--bg-2)', borderBottom: '1px solid var(--rule)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, color: proposalLive ? '#16a34a' : 'var(--ink-3)' }}>
+                  {layersPassed} / 4 layers approved
+                </span>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
+                  {proposalLive ? '✓ threshold reached — proposal is live' : 'needs 3 of 4 to go live'}
+                </span>
+              </div>
+              <div style={{ position: 'relative', height: 8, background: 'var(--rule)', borderRadius: 4, overflow: 'visible' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4, transition: 'width 600ms ease, background 400ms',
+                  background: proposalLive ? '#22c55e' : 'var(--m9)',
+                  width: `${(layersPassed / 4) * 100}%`,
+                }} />
+                <div style={{ position: 'absolute', top: -3, left: 'calc(75% - 1px)', width: 2, height: 14, background: '#22c55e', borderRadius: 1, opacity: 0.7 }} />
+                <div style={{ position: 'absolute', top: 14, left: 'calc(75% - 18px)', fontFamily: 'var(--mono)', fontSize: 9, color: '#16a34a', whiteSpace: 'nowrap' }}>3/4 live ↑</div>
+              </div>
             </div>
-            <div style={{ display: 'flex', height: 30, borderRadius: 6, overflow: 'hidden', marginBottom: 12, gap: 2 }}>
-              <div style={{ flex: yesV, background: '#22c55e', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700, color: '#fff', transition: 'flex 800ms cubic-bezier(.4,1,.4,1)' }}>{yesV} consent</div>
-              <div style={{ flex: conV, background: '#f59e0b', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700, color: '#fff', transition: 'flex 800ms cubic-bezier(.4,1,.4,1)' }}>{conV}</div>
-              <div style={{ flex: noV,  background: '#ef4444', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700, color: '#fff', transition: 'flex 800ms cubic-bezier(.4,1,.4,1)' }}>{noV}</div>
+
+            {/* 4 layer evaluation panels */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
+
+              {/* L1 — Consent */}
+              <div style={{ padding: '16px 18px', borderRight: '1px solid var(--rule)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 20, marginBottom: 3 }}>☉</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Layer 01</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Consent</div>
+                  </div>
+                  {consentPassed
+                    ? <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Passed</span>
+                    : <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--m9)', background: 'color-mix(in srgb, var(--m9) 10%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Voting</span>
+                  }
+                </div>
+                {!consentPassed ? (
+                  <>
+                    <p style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 8, lineHeight: 1.4 }}>No principled objections = passes. Cast your vote:</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {([['consent', '✓ I consent', '#22c55e'], ['concern', '⚠ Concern', '#f59e0b'], ['object', '✗ I object', '#ef4444']] as const).map(([v, label, c]) => (
+                        <button key={v} onClick={() => setConsentVote(prev => prev === v ? null : v)}
+                          style={{
+                            padding: '6px 10px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+                            cursor: 'pointer', transition: 'all 100ms', textAlign: 'left',
+                            border: `1px solid ${consentVote === v ? c : 'var(--rule)'}`,
+                            background: consentVote === v ? c : 'var(--surface)',
+                            color: consentVote === v ? '#fff' : 'var(--ink-2)',
+                          }}>{label}</button>
+                      ))}
+                    </div>
+                    {consentVote === 'object' && (
+                      <div style={{ marginTop: 8, fontSize: 11.5, color: '#ef4444', fontWeight: 600 }}>Objection logged — circle review auto-scheduled.</div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.55 }}>
+                    14 consents · {consentVote === 'concern' ? '4' : '3'} concerns<br />
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#16a34a' }}>No blocking objections → passed</span>
+                  </div>
+                )}
+              </div>
+
+              {/* L2 — Democracy */}
+              <div style={{ padding: '16px 18px', borderRight: '1px solid var(--rule)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 20, marginBottom: 3 }}>☑</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Layer 02</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Democracy</div>
+                  </div>
+                  {democPassed
+                    ? <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Passed</span>
+                    : <span style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', background: 'color-mix(in srgb, #f59e0b 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>Voting</span>
+                  }
+                </div>
+                <div style={{ display: 'flex', height: 18, borderRadius: 4, overflow: 'hidden', gap: 1, marginBottom: 8 }}>
+                  <div style={{ flex: democYes, background: '#22c55e', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democYes}</div>
+                  <div style={{ flex: democConcern, background: '#f59e0b', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democConcern}</div>
+                  <div style={{ flex: democNo, background: '#ef4444', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, color: '#fff', transition: 'flex 500ms ease' }}>{democNo}</div>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.4, marginBottom: 8 }}>
+                  {democYes} yes · {democConcern} concern · {democNo} no<br />
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: democPassed ? '#16a34a' : 'var(--ink-4)' }}>
+                    {democPassed ? `Majority reached (${Math.round(democYes / 19 * 100)}%)` : `${10 - democYes} more yes vote${10 - democYes !== 1 ? 's' : ''} needed`}
+                  </span>
+                </div>
+                {!democVote && (
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {([['yes', '✓', '#22c55e'], ['concern', '⚠', '#f59e0b'], ['no', '✗', '#ef4444']] as const).map(([v, label, c]) => (
+                      <button key={v} onClick={() => setDemocVote(v)}
+                        style={{ flex: 1, padding: '5px 0', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: `1px solid ${c}`, background: 'var(--surface)', color: c }}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {democVote && <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink-4)' }}>Your vote: {democVote}</div>}
+              </div>
+
+              {/* L3 — Meritocracy */}
+              <div style={{ padding: '16px 18px', borderRight: '1px solid var(--rule)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 20, marginBottom: 3 }}>△</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Layer 03</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>Meritocracy</div>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Approved</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--m4)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>EG</div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>@eli_green</div>
+                    <div style={{ fontSize: 10, color: 'var(--ink-4)' }}>Land + Water domain</div>
+                  </div>
+                </div>
+                <p style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.5, margin: 0 }}>
+                  "Specs are solid. Budget aligns with similar wetland installs."
+                </p>
+              </div>
+
+              {/* L4 — AI Facilitation */}
+              <div style={{ padding: '16px 18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 20, marginBottom: 3 }}>◇</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Layer 04</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginTop: 1 }}>AI Facilitation</div>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a', background: 'color-mix(in srgb, #22c55e 12%, transparent)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>✓ Cleared</span>
+                </div>
+                <p style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.55, margin: '0 0 8px' }}>
+                  No blockers detected. Proposal is well-scoped and consistent with Blueprint Phase 2 goals.
+                </p>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>Confidence: 91%</div>
+              </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {([['yes', '✓ I consent', '#22c55e'], ['concern', '⚠ I have a concern', '#f59e0b'], ['no', '✗ I object', '#ef4444']] as const).map(([v, label, c]) => (
-                <button
-                  key={v}
-                  onClick={() => setVote(vote === v ? null : v)}
-                  style={{
-                    padding: '9px 0', borderRadius: 8, fontSize: 12.5, fontWeight: 600,
-                    cursor: 'pointer', transition: 'background 150ms, color 150ms',
-                    border: `1px solid ${vote === v ? c : 'var(--rule)'}`,
-                    background: vote === v ? c : 'var(--surface)',
-                    color: vote === v ? '#fff' : 'var(--ink-2)',
-                  }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-            {vote === 'concern' && (
+
+            {/* Live banner */}
+            {proposalLive && (
               <div style={{
-                marginTop: 12, padding: '10px 12px', borderRadius: 8, fontSize: 12,
-                background: 'color-mix(in srgb, var(--m9) 6%, transparent)',
-                border: '1px dashed color-mix(in srgb, var(--m9) 30%, var(--rule))',
-                color: 'var(--ink-2)', lineHeight: 1.55,
+                padding: '13px 22px',
+                background: 'color-mix(in srgb, #22c55e 7%, var(--surface))',
+                borderTop: '1px solid color-mix(in srgb, #22c55e 25%, var(--rule))',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
               }}>
-                <strong>Concerns block nothing</strong> — they go on the record and trigger a 24h check-in before final tally. The AI facilitator will summarize concerns to the proposer.
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'block', animation: 'ping 1.6s ease-out infinite' }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>
+                    Proposal approved — work can begin. Agreement auto-created in M06.
+                  </span>
+                </div>
+                <Link href="/dashboard" style={{ fontSize: 12, fontWeight: 600, color: '#15803d', textDecoration: 'none' }}>
+                  View in Governance →
+                </Link>
               </div>
             )}
           </div>

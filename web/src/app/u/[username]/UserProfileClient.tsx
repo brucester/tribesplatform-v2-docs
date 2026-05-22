@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { MapPin, Heart, Brain, Star, Target, Gift, HelpCircle, Plane, Briefcase, Pencil } from 'lucide-react'
+import { MapPin, Heart, Brain, Star, Target, Gift, HelpCircle, Plane, Briefcase, Pencil, Sparkles } from 'lucide-react'
 
 interface ProfileData {
   id: string; username: string; first_name: string | null; last_name: string | null
@@ -28,6 +28,7 @@ interface Props {
   profile: ProfileData; bio: BioData | null
   offers: OfferData[]; requests: RequestData[]
   isOwn: boolean
+  match?: { score: number; reasons: string[] } | null
 }
 
 const OCEAN_TRAITS = [
@@ -233,7 +234,7 @@ function TravelTab({ travels }: { travels: BioData['places_traveling'] }) {
   )
 }
 
-export default function UserProfileClient({ profile: p, bio, offers, requests, isOwn }: Props) {
+export default function UserProfileClient({ profile: p, bio, offers, requests, isOwn, match }: Props) {
   const displayName = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username
   const initial = displayName[0]?.toUpperCase() ?? '?'
   const location = [p.city, p.country].filter(Boolean).join(', ')
@@ -253,11 +254,44 @@ export default function UserProfileClient({ profile: p, bio, offers, requests, i
                   <h1 className="text-2xl font-bold">{displayName}</h1>
                   <p className="text-muted-foreground text-sm">@{p.username}</p>
                 </div>
-                {isOwn && (
-                  <Button variant="outline" size="sm" asChild className="flex-shrink-0">
-                    <Link href="/profile/edit"><Pencil className="h-4 w-4 mr-1" />Edit profile</Link>
-                  </Button>
-                )}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {!isOwn && match && (
+                    <div style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      background: match.score >= 70
+                        ? 'color-mix(in srgb, var(--m5) 10%, var(--surface))'
+                        : match.score >= 40
+                        ? 'color-mix(in srgb, #f59e0b 10%, var(--surface))'
+                        : 'var(--bg-2)',
+                      border: `1px solid ${match.score >= 70 ? 'color-mix(in srgb, var(--m5) 35%, var(--rule))' : match.score >= 40 ? 'color-mix(in srgb, #f59e0b 35%, var(--rule))' : 'var(--rule)'}`,
+                      borderRadius: 12, padding: '10px 16px', minWidth: 90, gap: 4,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <Sparkles style={{
+                          width: 13, height: 13,
+                          color: match.score >= 70 ? 'var(--m5)' : match.score >= 40 ? '#f59e0b' : 'var(--ink-4)',
+                        }} />
+                        <span style={{
+                          fontSize: 22, fontWeight: 800, lineHeight: 1,
+                          color: match.score >= 70 ? 'var(--m5)' : match.score >= 40 ? '#f59e0b' : 'var(--ink-3)',
+                        }}>{match.score}%</span>
+                      </div>
+                      <span style={{ fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 600, color: 'var(--ink-4)', letterSpacing: '0.04em' }}>
+                        match
+                      </span>
+                      {match.reasons.length > 0 && (
+                        <span style={{ fontSize: 10, color: 'var(--ink-3)', textAlign: 'center', lineHeight: 1.4, marginTop: 2 }}>
+                          {match.reasons[0]}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {isOwn && (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/profile/edit"><Pencil className="h-4 w-4 mr-1" />Edit profile</Link>
+                    </Button>
+                  )}
+                </div>
               </div>
               {p.headline && <p className="text-sm mt-1 font-medium">{p.headline}</p>}
               {location && (

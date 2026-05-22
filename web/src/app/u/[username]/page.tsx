@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { computeMatch } from '@/lib/match-score'
 import UserProfileClient from './UserProfileClient'
 import NetworkSidebar from '@/app/network/NetworkSidebar'
 import NetworkRightPanel from '@/app/network/NetworkRightPanel'
@@ -14,7 +15,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const [profileRes, viewerProfileRes, viewerBioRes, viewerOffersRes, viewerRequestsRes] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('username', username).single(),
     user ? supabase.from('user_profiles').select('username, avatar_url, first_name, headline').eq('id', user.id).single() : Promise.resolve({ data: null }),
-    user ? supabase.from('user_bio').select('values_principles, skills, goals, personality_details').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
+    user ? supabase.from('user_bio').select('values_principles, skills, interests, goals, personality_details').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
     user ? supabase.from('user_offers').select('id').eq('user_id', user.id) : Promise.resolve({ data: null }),
     user ? supabase.from('user_requests').select('id').eq('user_id', user.id) : Promise.resolve({ data: null }),
   ])
@@ -27,6 +28,12 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     supabase.from('user_offers').select('*').eq('user_id', profile.id).eq('is_active', true),
     supabase.from('user_requests').select('*').eq('user_id', profile.id).eq('is_active', true),
   ])
+
+  // Compute match score between viewer and profile being viewed
+  const isOwn = user?.id === profile.id
+  const match = (!isOwn && user && viewerBioRes.data && bioRes.data)
+    ? computeMatch(viewerBioRes.data as any, bioRes.data as any)
+    : null
 
   // Build sidebar + right panel data from the viewer's own profile
   const vp = viewerProfileRes.data
@@ -58,7 +65,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           bio={bioRes.data ?? null}
           offers={offersRes.data ?? []}
           requests={requestsRes.data ?? []}
-          isOwn={user?.id === profile.id}
+          isOwn={isOwn}
+          match={match}
         />
       </main>
       <NetworkRightPanel data={rightPanelData} />

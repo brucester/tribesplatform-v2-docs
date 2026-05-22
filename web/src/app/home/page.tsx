@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/app/blueprint/blueprint-compute'
+import { computeMatch } from '@/lib/match-score'
 import HomeClient from './HomeClient'
 
 export default async function HomePage() {
@@ -47,16 +48,40 @@ export default async function HomePage() {
   let firstName: string | null = null
   let hasApplied = false
   let isFullMember = false
+  let role = 'explorer'
+  let applicationStatus: string | null = null
+  let joiningRewardNew = false
+  let matchScores: Record<string, { score: number; reasons: string[] }> = {}
 
   if (user) {
-    const [profileRes, appRes] = await Promise.all([
+    const memberIds = (membersRes.data ?? []).map((m: any) => m.id)
+    const [profileRes, appRes, myBioRes, memberBiosRes] = await Promise.all([
       supabase.from('user_profiles').select('first_name, role').eq('id', user.id).maybeSingle(),
       supabase.from('applications').select('status').eq('user_id', user.id).maybeSingle(),
+      supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
+      memberIds.length > 0
+        ? supabase.from('user_bio').select('*').in('user_id', memberIds)
+        : Promise.resolve({ data: [] }),
     ])
     firstName = profileRes.data?.first_name ?? null
     hasApplied = !!appRes.data
-    const role = profileRes.data?.role ?? 'explorer'
+    role = profileRes.data?.role ?? 'explorer'
+    applicationStatus = appRes.data?.status ?? null
     isFullMember = ['resident', 'circle_lead', 'project_lead', 'admin'].includes(role)
+
+    // Award "Community Joiner" badge the first time we see a joining+ role
+    if (['joining', 'resident', 'circle_lead', 'project_lead', 'admin'].includes(role)) {
+      const { error } = await supabase.from('user_achievements').upsert(
+        { user_id: user.id, achievement_key: 'community_joiner', achievement_name: 'Community Joiner' },
+        { onConflict: 'user_id,achievement_key', ignoreDuplicates: true }
+      )
+      joiningRewardNew = !error
+    }
+
+    const myBio = myBioRes.data ?? null
+    for (const b of (memberBiosRes as any).data ?? []) {
+      matchScores[b.user_id] = computeMatch(myBio, b)
+    }
   }
 
   return (
@@ -76,6 +101,10 @@ export default async function HomePage() {
       isLoggedIn={!!user}
       hasApplied={hasApplied}
       isFullMember={isFullMember}
+      role={role}
+      applicationStatus={applicationStatus}
+      joiningRewardNew={joiningRewardNew}
+      matchScores={matchScores}
     />
   )
 }

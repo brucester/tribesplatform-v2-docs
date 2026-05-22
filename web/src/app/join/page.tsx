@@ -72,12 +72,25 @@ export default async function JoinPage() {
   // Regular user: fetch all data needed for the multi-step flow
   let existingApplication: { status: string; answers: Record<string, string>; created_at: string } | null = null
   let userProfile: { first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null } | null = null
-  let communityValues: { id: string; title: string; description: string; sort_order: number }[] = []
   let signedValueIds: string[] = []
   let buddyProfiles: { id: string; first_name: string | null; headline: string | null; city: string | null }[] = []
 
+  // Values are public — fetch for everyone
+  const { data: valuesData } = await supabase
+    .from('community_values')
+    .select('id, title, description, sort_order')
+    .order('sort_order')
+  const communityValues = (valuesData ?? []) as { id: string; title: string; description: string; sort_order: number }[]
+
+  // Fetch a few public member profiles for buddy preview (guests see this read-only)
+  const buddiesQuery = user
+    ? supabase.from('user_profiles').select('id, first_name, headline, city').neq('id', user.id).limit(3)
+    : supabase.from('user_profiles').select('id, first_name, headline, city').limit(3)
+  const { data: buddiesData } = await buddiesQuery
+  buddyProfiles = (buddiesData ?? []) as any
+
   if (user) {
-    const [appRes, profileRes, valuesRes, signaturesRes, buddiesRes] = await Promise.all([
+    const [appRes, profileRes, signaturesRes] = await Promise.all([
       supabase
         .from('applications')
         .select('status, answers, created_at')
@@ -89,25 +102,14 @@ export default async function JoinPage() {
         .eq('id', user.id)
         .maybeSingle(),
       supabase
-        .from('community_values')
-        .select('id, title, description, sort_order')
-        .order('sort_order'),
-      supabase
         .from('value_signatures')
         .select('value_id')
         .eq('user_id', user.id),
-      supabase
-        .from('user_profiles')
-        .select('id, first_name, headline, city')
-        .neq('id', user.id)
-        .limit(3),
     ])
 
     existingApplication = appRes.data as any
     userProfile = profileRes.data as any
-    communityValues = (valuesRes.data ?? []) as any
     signedValueIds = (signaturesRes.data ?? []).map((s: any) => s.value_id)
-    buddyProfiles = (buddiesRes.data ?? []) as any
   }
 
   return (

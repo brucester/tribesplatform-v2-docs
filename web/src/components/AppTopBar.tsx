@@ -1,7 +1,8 @@
 'use client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { useProfileCompletion } from '@/contexts/ProfileCompletion'
 
@@ -28,10 +29,22 @@ function computeCompletion(
 }
 
 export default function AppTopBar() {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [username, setUsername] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [isDark, setIsDark] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { pct: profilePct, setPct: setProfilePct } = useProfileCompletion()
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme')
+    const dark = stored === 'dark' || (!stored && document.documentElement.getAttribute('data-theme') === 'dark')
+    setIsDark(dark)
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -40,7 +53,7 @@ export default function AppTopBar() {
       if (data.user) {
         Promise.all([
           supabase.from('user_profiles')
-            .select('first_name, last_name, avatar_url, headline, city, user_types')
+            .select('first_name, last_name, avatar_url, headline, city, user_types, username')
             .eq('id', data.user.id).single(),
           supabase.from('user_bio')
             .select('values_principles, skills, goals, places_traveling')
@@ -56,6 +69,7 @@ export default function AppTopBar() {
           if (p) {
             setDisplayName([p.first_name, p.last_name].filter(Boolean).join(' ') || 'Member')
             setAvatarUrl(p.avatar_url ?? null)
+            setUsername(p.username ?? null)
           }
           const pct = computeCompletion(
             p,
@@ -69,14 +83,51 @@ export default function AppTopBar() {
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
-      if (!session?.user) { setDisplayName(''); setAvatarUrl(null); setProfilePct(null) }
+      if (!session?.user) { setDisplayName(''); setAvatarUrl(null); setUsername(null); setProfilePct(null) }
     })
     return () => subscription.unsubscribe()
   }, [])
 
+  function toggleTheme() {
+    const next = isDark ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', next)
+    localStorage.setItem('theme', next)
+    setIsDark(!isDark)
+  }
+
+  async function signOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setMenuOpen(false)
+    router.push('/')
+    router.refresh()
+  }
+
+  function openMenu() {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
+    setMenuOpen(true)
+  }
+
+  function scheduleClose() {
+    closeTimer.current = setTimeout(() => setMenuOpen(false), 120)
+  }
+
   const initials = displayName.split(' ').map(s => s[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'
 
   const showBar = user && profilePct !== null && profilePct < 100
+
+  const menuItems = [
+    username ? { label: 'View my profile', href: `/u/${username}`, icon: '👤' } : null,
+    { label: 'Edit profile', href: '/profile/edit', icon: '✏️' },
+    { label: 'Dashboard', href: '/dashboard', icon: '⊞' },
+    { label: 'Network', href: '/network', icon: '🌐' },
+    { label: 'Contributions', href: '/contributions', icon: '✦' },
+    { label: 'Governance', href: '/governance', icon: '☉' },
+    'divider',
+    { label: isDark ? 'Light mode' : 'Dark mode', action: toggleTheme, icon: isDark ? '☀' : '◑' },
+    'divider',
+    { label: 'Sign out', action: signOut, icon: '→', danger: true },
+  ].filter(Boolean) as (string | { label: string; href?: string; action?: () => void; icon: string; danger?: boolean })[]
 
   return (
     <header style={{
@@ -104,9 +155,11 @@ export default function AppTopBar() {
               MyCommunityNetwork
             </span>
           </div>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 600, color: 'var(--ink-4)', letterSpacing: '0.06em' }}>
-            v3.01
-          </span>
+          <Link href="/changelog" style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 600, color: 'var(--ink-4)', letterSpacing: '0.06em', textDecoration: 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink-2)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-4)')}>
+            v3.10
+          </Link>
         </div>
       </Link>
 
@@ -153,25 +206,98 @@ export default function AppTopBar() {
           <div style={{ position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: '50%', background: 'var(--m9)', border: '2px solid var(--surface)' }} />
         </div>
 
-        {/* User pill */}
+        {/* User pill + dropdown */}
         {user ? (
-          <Link href="/profile/edit" style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '4px 10px 4px 4px', borderRadius: 999, background: 'var(--bg-2)',
-            fontSize: 12, fontWeight: 600, color: 'var(--ink)', textDecoration: 'none', flexShrink: 0,
-          }}>
-            <div style={{
-              width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-              background: avatarUrl ? 'transparent' : 'linear-gradient(135deg, var(--m1), var(--m4))',
-              display: 'grid', placeItems: 'center',
-              color: '#fff', fontSize: 10.5, fontWeight: 700, overflow: 'hidden',
-            }}>
-              {avatarUrl
-                ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : initials}
-            </div>
-            <span>{displayName || 'Member'}</span>
-          </Link>
+          <div
+            ref={menuRef}
+            onMouseEnter={openMenu}
+            onMouseLeave={scheduleClose}
+            style={{ position: 'relative', flexShrink: 0 }}
+          >
+            {/* Pill */}
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '4px 10px 4px 4px', borderRadius: 999, background: 'var(--bg-2)',
+                fontSize: 12, fontWeight: 600, color: 'var(--ink)',
+                border: menuOpen ? '1px solid var(--rule)' : '1px solid transparent',
+                cursor: 'pointer', flexShrink: 0,
+              }}
+            >
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                background: avatarUrl ? 'transparent' : 'linear-gradient(135deg, var(--m1), var(--m4))',
+                display: 'grid', placeItems: 'center',
+                color: '#fff', fontSize: 10.5, fontWeight: 700, overflow: 'hidden',
+              }}>
+                {avatarUrl
+                  ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : initials}
+              </div>
+              <span>{displayName || 'Member'}</span>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 2, opacity: 0.5, transition: 'transform 150ms', transform: menuOpen ? 'rotate(180deg)' : 'none' }}>
+                <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {/* Dropdown */}
+            {menuOpen && (
+              <div
+                onMouseEnter={openMenu}
+                onMouseLeave={scheduleClose}
+                style={{
+                  position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                  background: 'var(--surface)', border: '1px solid var(--rule)',
+                  borderRadius: 12, padding: '6px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06)',
+                  minWidth: 200, zIndex: 100,
+                }}
+              >
+                {/* Profile summary */}
+                <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--rule)', marginBottom: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{displayName || 'Member'}</div>
+                  {profilePct !== null && (
+                    <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)', marginTop: 2 }}>
+                      {profilePct}% profile complete
+                    </div>
+                  )}
+                </div>
+
+                {menuItems.map((item, i) => {
+                  if (item === 'divider') return <div key={i} style={{ height: 1, background: 'var(--rule)', margin: '4px 0' }} />
+                  const it = item as { label: string; href?: string; action?: () => void; icon: string; danger?: boolean }
+                  const style: React.CSSProperties = {
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+                    fontSize: 13, fontWeight: 500, width: '100%', textAlign: 'left',
+                    color: it.danger ? '#ef4444' : 'var(--ink)',
+                    background: 'none', border: 'none', textDecoration: 'none',
+                    transition: 'background 100ms',
+                  }
+                  const iconEl = <span style={{ fontSize: 13, width: 18, textAlign: 'center', flexShrink: 0 }}>{it.icon}</span>
+                  const labelEl = <span>{it.label}</span>
+
+                  if (it.action) {
+                    return (
+                      <button key={i} onClick={it.action} style={style}
+                        onMouseEnter={e => (e.currentTarget.style.background = it.danger ? '#fef2f2' : 'var(--bg-2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                        {iconEl}{labelEl}
+                      </button>
+                    )
+                  }
+                  return (
+                    <Link key={i} href={it.href!} onClick={() => setMenuOpen(false)} style={style}
+                      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--bg-2)')}
+                      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'none')}>
+                      {iconEl}{labelEl}
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         ) : (
           <Link href="/auth/login" style={{
             fontSize: 13, color: 'var(--ink-2)', padding: '5px 12px',

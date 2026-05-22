@@ -2,14 +2,15 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { User, Gift, HelpCircle, Search } from 'lucide-react'
+import { User, Gift, HelpCircle, Search, Sparkles } from 'lucide-react'
 import MemberList from './MemberList'
+import { computeMatch } from '@/lib/match-score'
 
 export default async function NetworkDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [memberCountRes, recentRes, offersRes, seeksRes, profileRes] = await Promise.all([
+  const [memberCountRes, recentRes, offersRes, seeksRes, profileRes, allProfilesRes, allBiosRes, myBioRes] = await Promise.all([
     supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
     supabase.from('user_profiles')
       .select('id, username, first_name, last_name, avatar_url, user_types, city, country')
@@ -18,6 +19,9 @@ export default async function NetworkDashboard() {
     user ? supabase.from('user_offers').select('id').eq('user_id', user.id) : Promise.resolve({ data: [] }),
     user ? supabase.from('user_requests').select('id').eq('user_id', user.id) : Promise.resolve({ data: [] }),
     user ? supabase.from('user_profiles').select('first_name, last_name').eq('id', user.id).single() : Promise.resolve({ data: null }),
+    user ? supabase.from('user_profiles').select('id, username, first_name, last_name, avatar_url, city, country, user_types').neq('id', user.id) : Promise.resolve({ data: [] }),
+    user ? supabase.from('user_bio').select('*') : Promise.resolve({ data: [] }),
+    user ? supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
   ])
 
   const memberCount = memberCountRes.count ?? 0
@@ -26,6 +30,28 @@ export default async function NetworkDashboard() {
   const seeksCount = (seeksRes as any).data?.length ?? 0
   const profile = (profileRes as any).data
   const displayName = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Explorer' : null
+
+  // Compute top matches
+  const myBio = (myBioRes as any).data ?? null
+  const bioMap: Record<string, any> = {}
+  for (const b of (allBiosRes as any).data ?? []) bioMap[b.user_id] = b
+  const topMatches = (allProfilesRes as any).data
+    ? ((allProfilesRes as any).data as any[])
+        .map((p: any) => {
+          const { score, reasons } = computeMatch(myBio, bioMap[p.id] ?? null)
+          return { profile: p, score, reasons }
+        })
+        .sort((a: any, b: any) => b.score - a.score)
+        .slice(0, 4)
+    : []
+
+  // Scores for "New in the Network" cards
+  const recentMatchScores: Record<string, { score: number; reasons: string[] }> = {}
+  if (myBio) {
+    for (const u of recentUsers) {
+      recentMatchScores[u.id] = computeMatch(myBio, bioMap[u.id] ?? null)
+    }
+  }
 
   const stats = user
     ? [
@@ -93,7 +119,99 @@ export default async function NetworkDashboard() {
         ))}
       </div>
 
-      <MemberList members={recentUsers as any} />
+      {/* Matches section — only for logged-in users */}
+      {user && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Sparkles style={{ width: 16, height: 16, color: 'var(--m1)' }} />
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
+                Your Matches
+              </span>
+            </div>
+            <Link href="/network/matches" style={{ fontSize: 12.5, color: 'var(--m1)', fontWeight: 600, textDecoration: 'none' }}>
+              See all →
+            </Link>
+          </div>
+
+          {!myBio ? (
+            <div style={{
+              background: 'color-mix(in srgb, var(--m1) 6%, var(--surface))',
+              border: '1px solid color-mix(in srgb, var(--m1) 25%, var(--rule))',
+              borderRadius: 12, padding: '16px 20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+            }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', marginBottom: 3 }}>Complete your profile to unlock matches</p>
+                <p style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>Add your skills, values, and personality to find the people most aligned with you.</p>
+              </div>
+              <Link href="/profile/edit" style={{
+                background: 'var(--m1)', color: '#fff', fontSize: 13, fontWeight: 600,
+                padding: '8px 18px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+              }}>
+                Complete profile →
+              </Link>
+            </div>
+          ) : topMatches.length === 0 ? (
+            <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 12, padding: '20px', textAlign: 'center', color: 'var(--ink-4)', fontSize: 13 }}>
+              No other members yet — you'll be first when they join.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+              {topMatches.map(({ profile: p, score, reasons }: any) => {
+                const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username
+                const init = name[0]?.toUpperCase() ?? '?'
+                const loc = [p.city, p.country].filter(Boolean).join(', ')
+                const scoreColor = score >= 70 ? 'var(--m5)' : score >= 40 ? '#f59e0b' : 'var(--ink-4)'
+                return (
+                  <Link key={p.id} href={`/u/${p.username}`} style={{ textDecoration: 'none' }}>
+                    <div style={{
+                      background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 12,
+                      padding: '16px', display: 'flex', flexDirection: 'column', gap: 10,
+                      transition: 'box-shadow 120ms, transform 120ms',
+                    }} className="hover-elevate">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                          width: 44, height: 44, borderRadius: '50%', flexShrink: 0, overflow: 'hidden',
+                          background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          border: '2px solid var(--rule)',
+                        }}>
+                          {p.avatar_url
+                            ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>{init}</span>
+                          }
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+                          {loc && <p style={{ fontSize: 11, color: 'var(--ink-4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loc}</p>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                          <Sparkles style={{ width: 11, height: 11, color: scoreColor }} />
+                          <span style={{ fontSize: 15, fontWeight: 700, color: scoreColor }}>{score}%</span>
+                        </div>
+                      </div>
+                      {reasons.length > 0 && (
+                        <p style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.4 }}>
+                          {reasons.slice(0, 2).join(' · ')}
+                        </p>
+                      )}
+                      {(p.user_types ?? []).length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {(p.user_types as string[]).slice(0, 2).map((t: string) => (
+                            <span key={t} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--ink-3)', border: '1px solid var(--rule)' }}>{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      <MemberList members={recentUsers as any} matchScores={recentMatchScores} />
     </div>
   )
 }
