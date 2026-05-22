@@ -37,6 +37,7 @@ export default async function DashboardPage() {
   const [
     profileRes, blueprintRes, memberCountRes, projectsRes,
     recentMembersRes, recentProjectsRes, applicationRes,
+    openProposalsRes, recentProposalsRes,
   ] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),
     supabase.from('blueprints').select('answers, flags, updated_at').eq('is_community', true).maybeSingle(),
@@ -52,6 +53,11 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(2),
     supabase.from('applications').select('status, created_at').eq('user_id', user.id).maybeSingle(),
+    supabase.from('proposals').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    supabase.from('proposals')
+      .select('id, title, decision_mode, created_at')
+      .order('created_at', { ascending: false })
+      .limit(2),
   ])
 
   const profile = profileRes.data
@@ -61,6 +67,8 @@ export default async function DashboardPage() {
   const recentMembers = recentMembersRes.data ?? []
   const recentProjects = recentProjectsRes.data ?? []
   const application = applicationRes.data
+  const openProposals = openProposalsRes.count ?? 0
+  const recentProposals = recentProposalsRes.data ?? []
 
   const role = (profile as any)?.role ?? 'explorer'
   const displayName = profile?.first_name || 'Explorer'
@@ -116,7 +124,9 @@ export default async function DashboardPage() {
     },
     {
       num: '09', name: 'Governance',
-      desc: 'Proposals, consent rounds, and decisions',
+      desc: openProposals > 0
+        ? `${openProposals} open proposal${openProposals !== 1 ? 's' : ''} · vote or comment`
+        : 'No open proposals · submit one',
       color: 'var(--m9)', href: '/governance', locked: locked('resident'),
     },
   ]
@@ -131,6 +141,10 @@ export default async function DashboardPage() {
   for (const p of recentProjects) {
     const ago = timeAgo(new Date(p.created_at))
     feed.push({ who: 'A member', act: `created project "${p.title}"`, when: ago, color: 'var(--m7)' })
+  }
+  for (const p of recentProposals) {
+    const ago = timeAgo(new Date(p.created_at))
+    feed.push({ who: 'Governance', act: `new proposal — "${p.title}"`, when: ago, color: 'var(--m9)' })
   }
 
   const showNextStep = !atLeast(role, 'joining')
@@ -176,7 +190,12 @@ export default async function DashboardPage() {
           deltaColor="var(--m4)"
         />
         <StatCard label="Open projects" value={String(activeProjects)} delta={activeProjects > 0 ? `${Math.min(activeProjects, 2)} need help` : 'None yet'} />
-        <StatCard label="Open proposals" value="—" delta="Governance coming soon" deltaColor="var(--m9)" />
+        <StatCard
+          label="Open proposals"
+          value={String(openProposals)}
+          delta={openProposals > 0 ? 'awaiting votes' : 'none open'}
+          deltaColor="var(--m9)"
+        />
       </div>
 
       <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 18, alignItems: 'start' }}>
