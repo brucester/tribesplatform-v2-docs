@@ -275,14 +275,7 @@ function StatCard({ label, value, suffix, delta, deltaColor, href }: {
   label: string; value: string; suffix?: string; delta: string; deltaColor?: string; href?: string
 }) {
   const inner = (
-    <div style={{
-      background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '14px 16px',
-      transition: href ? 'box-shadow 140ms, transform 140ms' : undefined,
-      cursor: href ? 'pointer' : undefined,
-    }}
-    onMouseEnter={href ? e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-md)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)' } : undefined}
-    onMouseLeave={href ? e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.transform = '' } : undefined}
-    >
+    <div className={href ? 'dash-stat-card dash-stat-card--link' : 'dash-stat-card'}>
       <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-4)', marginBottom: 6 }}>
         {label}
       </div>
