@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/core/lib/supabase/client'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -424,11 +425,29 @@ export default function OpsClient({
   sprintName,
 }: OpsClientProps) {
   const [activeTab, setActiveTab] = useState<'board' | 'deliverables' | 'updates'>('board')
+  const [pendingProjects, setPendingProjects] = useState(projects.filter(p => p.status === 'pending'))
+  const [activating, setActivating] = useState<string | null>(null)
+
+  async function handleActivate(projectId: string) {
+    setActivating(projectId)
+    const supabase = createClient()
+    await supabase.from('projects').update({ status: 'active' }).eq('id', projectId)
+    setPendingProjects(prev => prev.filter(p => p.id !== projectId))
+    setActivating(null)
+  }
+
+  async function handleDecline(projectId: string) {
+    setActivating(projectId)
+    const supabase = createClient()
+    await supabase.from('projects').update({ status: 'paused' }).eq('id', projectId)
+    setPendingProjects(prev => prev.filter(p => p.id !== projectId))
+    setActivating(null)
+  }
 
   // Sprint info
   const sprintLabel = sprintName ?? 'Community Projects'
   const onTrackCount = deliverables.filter(d => d.status === 'in_progress').length
-  const totalProjects = projects.length
+  const totalProjects = projects.filter(p => p.status === 'active').length
 
   // Kanban: group deliverables by status
   const grouped = Object.fromEntries(
@@ -592,6 +611,62 @@ export default function OpsClient({
           delta={`${totalProjects} total`}
         />
       </div>
+
+      {/* ── Pending Proposals (admin only) ───────────────────────────────── */}
+      {isAdmin && pendingProjects.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: 'var(--m7)', marginBottom: 10,
+          }}>
+            Pending proposals · {pendingProjects.length}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {pendingProjects.map(p => (
+              <div key={p.id} style={{
+                display: 'flex', alignItems: 'center', gap: 16,
+                padding: '14px 18px', borderRadius: 10,
+                border: '1px solid color-mix(in srgb, var(--m7) 25%, var(--rule))',
+                background: 'color-mix(in srgb, var(--m7) 4%, var(--surface))',
+                flexWrap: 'wrap',
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', marginBottom: 2 }}>{p.title}</div>
+                  {p.description && (
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.4 }}>{p.description}</div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <button
+                    onClick={() => handleDecline(p.id)}
+                    disabled={activating === p.id}
+                    style={{
+                      fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 7,
+                      border: '1px solid var(--rule)', background: 'var(--surface)',
+                      color: 'var(--ink-3)', cursor: 'pointer',
+                    }}
+                  >
+                    Decline
+                  </button>
+                  <button
+                    onClick={() => handleActivate(p.id)}
+                    disabled={activating === p.id}
+                    style={{
+                      fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 7,
+                      border: 'none', background: 'var(--m7)',
+                      color: '#fff', cursor: 'pointer',
+                      opacity: activating === p.id ? 0.6 : 1,
+                    }}
+                  >
+                    {activating === p.id ? 'Activating…' : 'Activate'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Tab Row ───────────────────────────────────────────────────────── */}
       <div style={{

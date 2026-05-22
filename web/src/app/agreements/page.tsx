@@ -42,31 +42,25 @@ export default async function AgreementsPage() {
   if (isAdmin) {
     const { data: allAgreements } = await supabase
       .from('collaboration_agreements')
-      .select('id, user_id, project_id, work_description, expected_reward, status, admin_notes, created_at')
+      .select(`
+        id, user_id, project_id, work_description, expected_reward, status, admin_notes, created_at,
+        user_profiles!collaboration_agreements_user_id_fkey(first_name, username),
+        projects!collaboration_agreements_project_id_fkey(title)
+      `)
       .order('created_at', { ascending: false })
 
-    const agreements = allAgreements ?? []
-    const userIds = [...new Set(agreements.map(a => a.user_id))]
-    const projectIds = [...new Set(agreements.map(a => a.project_id))]
-
-    const [profilesRes, projectsRes] = await Promise.all([
-      userIds.length > 0
-        ? supabase.from('user_profiles').select('id, first_name, username').in('id', userIds)
-        : Promise.resolve({ data: [] }),
-      projectIds.length > 0
-        ? supabase.from('projects').select('id, title').in('id', projectIds)
-        : Promise.resolve({ data: [] }),
-    ])
-
-    const profileMap = Object.fromEntries((profilesRes.data ?? []).map(p => [p.id, p]))
-    const projectMap = Object.fromEntries((projectsRes.data ?? []).map(p => [p.id, p]))
-
-    const enriched = agreements.map(a => ({
-      ...a,
-      admin_notes: a.admin_notes ?? null,
-      first_name: profileMap[a.user_id]?.first_name ?? null,
-      username: profileMap[a.user_id]?.username ?? null,
-      project_title: projectMap[a.project_id]?.title ?? null,
+    const enriched = (allAgreements ?? []).map((a: any) => ({
+      id: a.id as string,
+      user_id: a.user_id as string,
+      project_id: a.project_id as string,
+      work_description: a.work_description as string,
+      expected_reward: a.expected_reward as string,
+      status: a.status as string,
+      admin_notes: (a.admin_notes ?? null) as string | null,
+      created_at: a.created_at as string,
+      first_name: a.user_profiles?.first_name ?? null,
+      username: a.user_profiles?.username ?? null,
+      project_title: a.projects?.title ?? null,
     }))
 
     return <AgreementsAdminClient agreements={enriched} />

@@ -363,14 +363,18 @@ export default function AgreementsClient({
     setSubmitting(true)
     setSubmitError(null)
 
-    const { error } = await supabase.from('collaboration_agreements').insert({
-      user_id: userId,
-      project_id: selectedId,
-      work_description: workDescription.trim(),
-      expected_reward: expectedReward.trim(),
-      conditions: conditions.trim() || null,
-      status: 'pending',
-    })
+    const { data: inserted, error } = await supabase
+      .from('collaboration_agreements')
+      .insert({
+        user_id: userId,
+        project_id: selectedId,
+        work_description: workDescription.trim(),
+        expected_reward: expectedReward.trim(),
+        conditions: conditions.trim() || null,
+        status: 'pending',
+      })
+      .select('id, created_at')
+      .single()
 
     if (error) {
       setSubmitError(error.message)
@@ -378,15 +382,14 @@ export default function AgreementsClient({
       return
     }
 
-    // Optimistically add to my agreements
     setMyAgreements(prev => [
       {
-        id: crypto.randomUUID(),
+        id: inserted.id,
         project_id: selectedId,
         work_description: workDescription.trim(),
         expected_reward: expectedReward.trim(),
         status: 'pending',
-        created_at: new Date().toISOString(),
+        created_at: inserted.created_at,
       },
       ...prev,
     ])
