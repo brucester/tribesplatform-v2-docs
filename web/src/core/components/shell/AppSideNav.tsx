@@ -22,19 +22,19 @@ function NavItem({ num, name, color, href, active, onClick }: {
   const inner = (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
-      padding: '10px 10px', borderRadius: 7,
+      padding: '9px 10px', borderRadius: 7,
       fontSize: 13,
       color: active ? 'var(--ink)' : 'var(--ink-2)',
       fontWeight: active ? 600 : 400,
-      background: active ? 'var(--surface)' : 'transparent',
-      boxShadow: active ? 'var(--shadow-sm)' : 'none',
+      background: active ? `color-mix(in srgb, ${color} 10%, var(--surface))` : 'transparent',
+      border: active ? `1px solid color-mix(in srgb, ${color} 25%, var(--rule))` : '1px solid transparent',
       opacity: href ? 1 : 0.45,
-      transition: 'background 80ms',
+      transition: 'background 80ms, border-color 80ms',
     }}>
-      <span style={{ width: 3, height: 16, borderRadius: 2, background: color, flexShrink: 0 }} />
+      <span style={{ width: active ? 3 : 2, height: 16, borderRadius: 2, background: color, flexShrink: 0, opacity: active ? 1 : 0.5 }} />
       <span style={{
         fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600, width: 22,
-        color: active ? 'var(--ink-2)' : 'var(--ink-4)',
+        color: active ? color : 'var(--ink-4)',
       }}>M{num}</span>
       <span>{name}</span>
     </div>

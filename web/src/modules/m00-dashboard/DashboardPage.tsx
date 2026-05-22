@@ -181,20 +181,22 @@ export default async function DashboardPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Members" value={String(memberCount)} delta="+4 this week" />
+        <StatCard label="Members" value={String(memberCount)} delta="+4 this week" href="/network" />
         <StatCard
           label="Blueprint readiness"
           value={overall !== null ? `${overall.toFixed(1)}` : '—'}
           suffix={overall !== null ? '/10' : ''}
           delta={currentPhase + ' phase'}
           deltaColor="var(--m4)"
+          href="/blueprint"
         />
-        <StatCard label="Open projects" value={String(activeProjects)} delta={activeProjects > 0 ? `${Math.min(activeProjects, 2)} need help` : 'None yet'} />
+        <StatCard label="Open projects" value={String(activeProjects)} delta={activeProjects > 0 ? `${Math.min(activeProjects, 2)} need help` : 'None yet'} href="/ops" />
         <StatCard
           label="Open proposals"
           value={String(openProposals)}
           delta={openProposals > 0 ? 'awaiting votes' : 'none open'}
           deltaColor="var(--m9)"
+          href="/governance"
         />
       </div>
 
@@ -269,11 +271,18 @@ export default async function DashboardPage() {
   )
 }
 
-function StatCard({ label, value, suffix, delta, deltaColor }: {
-  label: string; value: string; suffix?: string; delta: string; deltaColor?: string
+function StatCard({ label, value, suffix, delta, deltaColor, href }: {
+  label: string; value: string; suffix?: string; delta: string; deltaColor?: string; href?: string
 }) {
-  return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '14px 16px' }}>
+  const inner = (
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--rule)', borderRadius: 10, padding: '14px 16px',
+      transition: href ? 'box-shadow 140ms, transform 140ms' : undefined,
+      cursor: href ? 'pointer' : undefined,
+    }}
+    onMouseEnter={href ? e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-md)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)' } : undefined}
+    onMouseLeave={href ? e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.transform = '' } : undefined}
+    >
       <div style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-4)', marginBottom: 6 }}>
         {label}
       </div>
@@ -286,6 +295,8 @@ function StatCard({ label, value, suffix, delta, deltaColor }: {
       </div>
     </div>
   )
+  if (href) return <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>{inner}</Link>
+  return inner
 }
 
 function ModCard({ num, name, desc, color, href, locked, cta }: ModuleCard) {
