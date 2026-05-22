@@ -205,7 +205,7 @@ export default function HomeClient({
     <div style={{ paddingBottom: 80, overflowX: 'hidden' }}>
 
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '52px 28px 0' }} id="welcome">
+      <section className={sectionCls} style={{ maxWidth: 1100, margin: '0 auto', padding: '52px 28px 0' }} id="welcome">
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 600,
@@ -265,7 +265,7 @@ export default function HomeClient({
       </section>
 
       {/* ── Access tiers explainer ──────────────────────────── */}
-      <div style={{ maxWidth: 1100, margin: '52px auto 0', padding: '0 28px' }}>
+      <div className="home-clubhouse-section" style={{ maxWidth: 1100, margin: '52px auto 0', padding: '0 28px' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>
             How your access grows
@@ -358,7 +358,7 @@ export default function HomeClient({
 
       {/* ── Joining reward banner ───────────────────────────── */}
       {isJoiningPlus && (
-        <div style={{ maxWidth: 1100, margin: '28px auto 0', padding: '0 28px' }}>
+        <div className="home-clubhouse-section" style={{ maxWidth: 1100, margin: '28px auto 0', padding: '0 28px' }}>
           <div style={{
             background: 'linear-gradient(135deg, color-mix(in srgb, #f59e0b 12%, var(--surface)), color-mix(in srgb, var(--m5) 8%, var(--surface)))',
             border: '1px solid color-mix(in srgb, #f59e0b 35%, var(--rule))',
