@@ -1,5 +1,7 @@
 import { createClient } from '@/core/lib/supabase/server'
 import OpsClient from '@/modules/m07-ops/OpsClient'
+import { isOpsAdmin } from '@/core/lib/roles'
+import { promoteToMemberIfEligible } from '@/core/lib/promotions'
 
 export default async function OpsPage() {
   const supabase = await createClient()
@@ -14,26 +16,9 @@ export default async function OpsPage() {
       .eq('id', user.id)
       .single()
     userRole = profile?.role ?? 'explorer'
-    isAdmin = ['admin', 'project_lead'].includes(userRole)
+    isAdmin = isOpsAdmin(userRole)
 
-    // Promotion: joining user who created an active project becomes member
-    if (userRole === 'joining') {
-      const { data: myProject } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('created_by', user.id)
-        .eq('status', 'active')
-        .limit(1)
-      if ((myProject ?? []).length > 0) {
-        await Promise.all([
-          supabase.from('user_profiles').update({ role: 'member' }).eq('id', user.id),
-          supabase.from('user_achievements').upsert(
-            { user_id: user.id, achievement_key: 'community_member' },
-            { onConflict: 'user_id,achievement_key', ignoreDuplicates: true }
-          ),
-        ])
-      }
-    }
+    userRole = await promoteToMemberIfEligible(supabase, user.id, userRole)
   }
 
   const { data: projects } = await supabase

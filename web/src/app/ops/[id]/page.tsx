@@ -1,6 +1,7 @@
 import { createClient } from '@/core/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import ProjectDetailClient from '@/modules/m07-ops/ProjectDetailClient'
+import { isOpsAdmin } from '@/core/lib/roles'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -23,7 +24,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   if (!projectRes.data) notFound()
 
-  const isAdmin = ['admin', 'project_lead'].includes(profileRes.data?.role ?? '')
+  const isAdmin = isOpsAdmin(profileRes.data?.role ?? '')
 
   const agreements = isAdmin
     ? (agreementsRes.data ?? [])

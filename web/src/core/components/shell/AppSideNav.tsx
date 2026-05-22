@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { createClient } from '@/core/lib/supabase/client'
+import { useState } from 'react'
+import { isFullMember } from '@/core/lib/roles'
 
 const CLUBHOUSE = [
   { num: '00', name: 'Dashboard',   color: 'var(--ink)', href: '/dashboard' },
@@ -11,7 +11,7 @@ const CLUBHOUSE = [
   { num: '05', name: 'Join',        color: 'var(--m5)',  href: '/join' },
 ] as const
 
-const RESIDENT = [
+const MEMBER_MODULES = [
   { num: '06', name: 'Agreements',    color: 'var(--m6)', href: '/agreements' as string | null },
   { num: '07', name: 'Operations',    color: 'var(--m7)', href: '/ops' as string | null },
   { num: '08', name: 'Contributions', color: 'var(--m8)', href: '/contributions' as string | null },
@@ -91,7 +91,7 @@ const JOURNEY = [
 ]
 
 function JourneyBox({ role }: { role: string }) {
-  const isMemberPlus = ['member', 'circle_lead', 'project_lead', 'admin'].includes(role)
+  const isMemberPlus = isFullMember(role)
   const effectiveRole = isMemberPlus ? 'member' : role
   const current = JOURNEY.find(s => s.role === effectiveRole) ?? JOURNEY[0]
 
@@ -171,20 +171,12 @@ function JourneyBox({ role }: { role: string }) {
 interface Props {
   mobileOpen?: boolean
   onClose?: () => void
+  initialRole?: string
 }
 
-export default function AppSideNav({ mobileOpen, onClose }: Props) {
+export default function AppSideNav({ mobileOpen, onClose, initialRole = 'explorer' }: Props) {
   const pathname = usePathname()
-  const [role, setRole] = useState<string>('explorer')
-
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
-      supabase.from('user_profiles').select('role').eq('id', user.id).single()
-        .then(({ data }) => { if (data?.role) setRole(data.role) })
-    })
-  }, [])
+  const [role] = useState<string>(initialRole)
 
   const isActive = (href: string | null) => {
     if (!href) return false
@@ -222,8 +214,8 @@ export default function AppSideNav({ mobileOpen, onClose }: Props) {
         <NavItem key={m.num} {...m} active={isActive(m.href)} onClick={onClose} />
       ))}
 
-      <SectionLabel label="Once you're in" />
-      {RESIDENT.map(m => (
+      <SectionLabel label="Welcome Home" />
+      {MEMBER_MODULES.map(m => (
         <NavItem key={m.num} {...m} active={isActive(m.href)} onClick={onClose} />
       ))}
 
