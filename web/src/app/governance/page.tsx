@@ -34,30 +34,6 @@ export default async function GovernancePage() {
       myVotes[v.proposal_id] = v.vote
     }
     role = profileRes.data?.role ?? 'explorer'
-
-    // Promotion check: joining users whose closed proposal has no objections become member
-    if (role === 'joining') {
-      const { data: closed } = await supabase
-        .from('proposals')
-        .select('id, proposal_votes(vote)')
-        .eq('proposer_id', user.id)
-        .eq('status', 'closed')
-      const passed = (closed ?? []).some(p => {
-        const votes = (p as any).proposal_votes as { vote: string }[]
-        return votes.length > 0 && votes.every(v => v.vote !== 'object')
-      })
-      if (passed) {
-        await Promise.all([
-          supabase.from('user_profiles').update({ role: 'member' }).eq('id', user.id),
-          supabase.from('user_achievements').upsert(
-            { user_id: user.id, achievement_key: 'community_member' },
-            { onConflict: 'user_id,achievement_key', ignoreDuplicates: true }
-          ),
-        ])
-        role = 'member'
-      }
-    }
-
     isFullMember = ['member', 'circle_lead', 'project_lead', 'admin'].includes(role)
   }
 

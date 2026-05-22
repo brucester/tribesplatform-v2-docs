@@ -31,6 +31,26 @@ export default async function AgreementsPage() {
       .eq('id', user.id)
       .single()
     role = profile?.role ?? 'explorer'
+
+    // Promotion: joining user with an accepted agreement becomes member
+    if (role === 'joining') {
+      const { data: accepted } = await supabase
+        .from('collaboration_agreements')
+        .select('id')
+        .eq('user_id', user.id)
+        .in('status', ['accepted', 'active', 'completed'])
+        .limit(1)
+      if ((accepted ?? []).length > 0) {
+        await Promise.all([
+          supabase.from('user_profiles').update({ role: 'member' }).eq('id', user.id),
+          supabase.from('user_achievements').upsert(
+            { user_id: user.id, achievement_key: 'community_member' },
+            { onConflict: 'user_id,achievement_key', ignoreDuplicates: true }
+          ),
+        ])
+        role = 'member'
+      }
+    }
   }
 
   const isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(role)

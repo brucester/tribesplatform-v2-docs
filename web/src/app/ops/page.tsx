@@ -6,13 +6,34 @@ export default async function OpsPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   let isAdmin = false
+  let userRole = 'explorer'
   if (user) {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('role')
       .eq('id', user.id)
       .single()
-    isAdmin = ['admin', 'project_lead'].includes(profile?.role ?? '')
+    userRole = profile?.role ?? 'explorer'
+    isAdmin = ['admin', 'project_lead'].includes(userRole)
+
+    // Promotion: joining user who created an active project becomes member
+    if (userRole === 'joining') {
+      const { data: myProject } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('created_by', user.id)
+        .eq('status', 'active')
+        .limit(1)
+      if ((myProject ?? []).length > 0) {
+        await Promise.all([
+          supabase.from('user_profiles').update({ role: 'member' }).eq('id', user.id),
+          supabase.from('user_achievements').upsert(
+            { user_id: user.id, achievement_key: 'community_member' },
+            { onConflict: 'user_id,achievement_key', ignoreDuplicates: true }
+          ),
+        ])
+      }
+    }
   }
 
   const { data: projects } = await supabase

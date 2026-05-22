@@ -76,9 +76,9 @@ const JOURNEY = [
     role: 'joining',
     label: 'Joining',
     color: 'var(--m5)',
-    next: 'Submit a proposal in Governance that gets accepted — no one objects — to become a Member.',
-    cta: 'Go to Governance →',
-    href: '/governance',
+    next: 'Support a project in Agreements, or propose a new project in Operations. Once accepted, you become a Member.',
+    cta: 'Go to Agreements →',
+    href: '/agreements',
   },
   {
     role: 'member',
