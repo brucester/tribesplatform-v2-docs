@@ -157,7 +157,7 @@ export default async function NetworkDashboard() {
               No other members yet — you'll be first when they join.
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
               {topMatches.map(({ profile: p, score, reasons }: any) => {
                 const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username
                 const init = name[0]?.toUpperCase() ?? '?'

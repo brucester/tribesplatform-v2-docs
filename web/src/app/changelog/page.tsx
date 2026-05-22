@@ -248,14 +248,14 @@ export default function ChangelogPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {ENTRIES.map((entry, i) => (
-          <div key={entry.version} style={{
+          <div key={entry.version} className="changelog-timeline" style={{
             display: 'grid',
             gridTemplateColumns: '100px 1fr',
             gap: '0 28px',
             paddingBottom: 40,
           }}>
             {/* Left column — version + date */}
-            <div style={{ paddingTop: 3 }}>
+            <div className="changelog-meta" style={{ paddingTop: 3 }}>
               <div style={{
                 fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700,
                 color: 'var(--accent)', letterSpacing: '0.04em',

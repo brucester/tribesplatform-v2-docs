@@ -83,7 +83,7 @@ export default function MemberList({ members, matchScores = {} }: { members: Mem
 
       {/* Tiles */}
       {view === 'tiles' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12 }}>
           {members.map(u => {
             const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username
             const loc = [u.city, u.country].filter(Boolean).join(', ')

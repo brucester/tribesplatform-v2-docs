@@ -269,10 +269,10 @@ export default function GovernanceClient({ proposals: initial, memberCount, curr
       )}
 
       {/* Body: list + detail */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div className="gov-body" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
         {/* Proposal list */}
-        <div style={{ width: 300, flexShrink: 0, borderRight: '1px solid var(--rule)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div className="gov-sidebar" style={{ width: 300, flexShrink: 0, borderRight: '1px solid var(--rule)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           {proposals.length === 0 ? (
             <div style={{ padding: 20, fontSize: 12.5, color: 'var(--ink-4)', textAlign: 'center' }}>
               No open proposals yet.
@@ -381,7 +381,7 @@ export default function GovernanceClient({ proposals: initial, memberCount, curr
                 </div>
 
                 {/* 4 Layer evaluation panels */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
 
                   {/* L1 — Consent */}
                   <div style={{ padding: '14px 16px', borderRadius: 10, border: `1px solid ${consentPassed ? 'color-mix(in srgb, #22c55e 30%, var(--rule))' : 'var(--rule)'}`, background: consentPassed ? 'color-mix(in srgb, #22c55e 4%, var(--surface))' : 'var(--surface)' }}>

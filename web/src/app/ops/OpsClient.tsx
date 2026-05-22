@@ -560,7 +560,7 @@ export default function OpsClient({
       {/* ── Stat Cards ────────────────────────────────────────────────────── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
         gap: 10,
         marginBottom: 18,
       }}>
@@ -615,7 +615,7 @@ export default function OpsClient({
       {activeTab === 'board' && (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
           gap: 12,
         }}>
           {KANBAN_COLUMNS.map(col => {

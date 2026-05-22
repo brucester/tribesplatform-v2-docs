@@ -577,6 +577,7 @@ export default function AgreementsClient({
 
       {/* Two-column grid */}
       <div
+        className="agreements-split"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1.05fr',

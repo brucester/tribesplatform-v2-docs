@@ -270,7 +270,7 @@ export default function HomeClient({
             How your access grows
           </span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--rule)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--rule)' }}>
           {([
             {
               step: '01', icon: '👁', label: 'Browse',
@@ -404,9 +404,9 @@ export default function HomeClient({
             </div>
           </div>
           {/* Body: sidebar + main */}
-          <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', background: 'var(--bg)' }}>
+          <div className="home-clubhouse-body" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', background: 'var(--bg)' }}>
             {/* Sidebar */}
-            <div style={{ background: 'var(--bg-2)', borderRight: '1px solid var(--rule)', padding: '18px 12px', fontSize: 12 }}>
+            <div className="home-clubhouse-sidenav" style={{ background: 'var(--bg-2)', borderRight: '1px solid var(--rule)', padding: '18px 12px', fontSize: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 16, padding: '0 4px' }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
@@ -467,7 +467,7 @@ export default function HomeClient({
                   ? 'Welcome — your full community access is active.'
                   : 'Browse and meet people — sign the values to unlock the full community.'}
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
                 {[
                   { num: '01', name: 'Community Network', desc: `${memberCount} residents and explorers`, color: 'var(--m1)', href: '/network' },
                   { num: '04', name: 'Project Blueprint', desc: overall !== null ? `${overall.toFixed(1)}/10 readiness · ${currentPhaseIdx >= 0 ? phaseProgress[currentPhaseIdx].name : 'In progress'}` : 'Blueprint in progress', color: 'var(--m4)', href: '/blueprint' },
@@ -584,7 +584,7 @@ export default function HomeClient({
               {/* Phase tracker */}
               {phaseProgress.length > 0 ? (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 6, marginBottom: 16 }}>
                     {phaseProgress.map((ph, i) => {
                       const isDone = ph.ratio >= 1
                       const isActive = !isDone && ph.ratio > 0
@@ -834,7 +834,7 @@ export default function HomeClient({
           />
           <DemoCard>
             <DemoHead color="var(--m7)" modLabel="M07" title={`${communityName} · This sprint`} meta="Operations" href="/ops" />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 10, marginBottom: 16 }}>
               {[
                 { n: activeProjectCount, l: 'Active projects' },
                 { n: deliverables.length, l: 'Deliverables' },
@@ -1020,7 +1020,7 @@ export default function HomeClient({
             </div>
 
             {/* 4 layer evaluation panels */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
 
               {/* L1 — Consent */}
               <div style={{ padding: '16px 18px', borderRight: '1px solid var(--rule)' }}>

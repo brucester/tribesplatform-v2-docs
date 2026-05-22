@@ -317,6 +317,30 @@ a { color: inherit; text-decoration: none; }
   .app-shell-sidenav { display: none !important; }
 }
 
+/* ─── Mobile layout utilities ───────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Governance master-detail → stacked */
+  .gov-body { flex-direction: column !important; overflow: visible !important; max-height: none !important; }
+  .gov-sidebar { width: 100% !important; max-height: 260px !important; border-right: none !important; border-bottom: 1px solid var(--rule) !important; flex-shrink: 1 !important; }
+
+  /* Dashboard two-column → single */
+  .dash-two-col { grid-template-columns: 1fr !important; }
+
+  /* Changelog timeline → single col, meta above content */
+  .changelog-timeline { grid-template-columns: 1fr !important; }
+  .changelog-meta { padding-top: 0 !important; }
+
+  /* Home clubhouse mock browser sidebar → hidden on mobile */
+  .home-clubhouse-body { grid-template-columns: 1fr !important; }
+  .home-clubhouse-sidenav { display: none !important; }
+
+  /* Agreements two-column split → stack */
+  .agreements-split { grid-template-columns: 1fr !important; }
+
+  /* Section padding reduction */
+  .section-pad { padding-left: 16px !important; padding-right: 16px !important; }
+}
+
 /* ─── Dashboard cards ───────────────────────────────────────────── */
 .dash-card {
   background: var(--surface);
