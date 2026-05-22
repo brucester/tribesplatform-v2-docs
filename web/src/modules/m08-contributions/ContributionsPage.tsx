@@ -18,6 +18,14 @@ const CATALOG = [
     color: 'var(--m5)',
     hint: 'Complete M05 Join and get accepted to earn this badge.',
   },
+  {
+    key: 'community_member',
+    title: 'Community Member',
+    description: 'Had a proposal accepted in Governance — a full contributing member of the community.',
+    icon: '⊕',
+    color: 'var(--m9)',
+    hint: 'Submit a proposal in Governance. When it closes with no objections, you become a Member and earn this badge.',
+  },
 ]
 
 export default async function ContributionsPage() {
@@ -120,8 +128,8 @@ export default async function ContributionsPage() {
 
               {!unlocked && (
                 user
-                  ? <Link href={a.key === 'community_joiner' ? '/join' : '/profile/edit'} style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textDecoration: 'none', whiteSpace: 'nowrap', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--rule)' }}>
-                      {a.key === 'community_joiner' ? 'Go to Join →' : 'Complete profile →'}
+                  ? <Link href={a.key === 'community_joiner' ? '/join' : a.key === 'community_member' ? '/governance' : '/profile/edit'} style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textDecoration: 'none', whiteSpace: 'nowrap', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--rule)' }}>
+                      {a.key === 'community_joiner' ? 'Go to Join →' : a.key === 'community_member' ? 'Go to Governance →' : 'Complete profile →'}
                     </Link>
                   : <Link href="/auth/signup" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', textDecoration: 'none', whiteSpace: 'nowrap', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--rule)' }}>
                       Sign up to earn →

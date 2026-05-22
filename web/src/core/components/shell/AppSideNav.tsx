@@ -1,6 +1,8 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/core/lib/supabase/client'
 
 const CLUBHOUSE = [
   { num: '00', name: 'Dashboard',   color: 'var(--ink)', href: '/dashboard' },
@@ -61,6 +63,111 @@ function SectionLabel({ label }: { label: string }) {
   )
 }
 
+const JOURNEY = [
+  {
+    role: 'explorer',
+    label: 'Explorer',
+    color: 'var(--ink-3)',
+    next: 'Complete M05 Join and get accepted.',
+    cta: 'Go to Join →',
+    href: '/join',
+  },
+  {
+    role: 'joining',
+    label: 'Joining',
+    color: 'var(--m5)',
+    next: 'Submit a proposal in Governance that gets accepted — no one objects — to become a Member.',
+    cta: 'Go to Governance →',
+    href: '/governance',
+  },
+  {
+    role: 'member',
+    label: 'Member',
+    color: 'var(--m9)',
+    next: null,
+    cta: null,
+    href: null,
+  },
+]
+
+function JourneyBox({ role }: { role: string }) {
+  const isMemberPlus = ['member', 'circle_lead', 'project_lead', 'admin'].includes(role)
+  const effectiveRole = isMemberPlus ? 'member' : role
+  const current = JOURNEY.find(s => s.role === effectiveRole) ?? JOURNEY[0]
+
+  return (
+    <div style={{
+      padding: '12px 12px 10px', marginTop: 8, borderRadius: 8,
+      background: `color-mix(in srgb, ${current.color} 8%, var(--surface))`,
+      border: `1px solid color-mix(in srgb, ${current.color} 22%, var(--rule))`,
+    }}>
+      {/* Step indicators */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 10 }}>
+        {JOURNEY.map((step, i) => {
+          const done = JOURNEY.indexOf(current) > i
+          const active = step.role === effectiveRole
+          const stepColor = done || active ? step.color : 'var(--rule)'
+          return (
+            <div key={step.role} style={{ display: 'flex', alignItems: 'center', flex: i < JOURNEY.length - 1 ? 1 : 'unset' }}>
+              <div style={{
+                width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                background: done ? step.color : active ? step.color : 'var(--bg-2)',
+                border: `2px solid ${stepColor}`,
+                display: 'grid', placeItems: 'center',
+                fontSize: 8, color: '#fff', fontWeight: 700,
+              }}>
+                {done ? '✓' : active ? '●' : ''}
+              </div>
+              {i < JOURNEY.length - 1 && (
+                <div style={{ flex: 1, height: 1.5, background: done ? 'var(--ink-3)' : 'var(--rule)', margin: '0 3px' }} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Step labels */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        {JOURNEY.map((step, i) => {
+          const done = JOURNEY.indexOf(current) > i
+          const active = step.role === effectiveRole
+          return (
+            <span key={step.role} style={{
+              fontFamily: 'var(--mono)', fontSize: 9, fontWeight: active ? 700 : 500,
+              color: active ? step.color : done ? 'var(--ink-3)' : 'var(--ink-4)',
+              textTransform: 'uppercase', letterSpacing: '0.04em',
+              flex: i < JOURNEY.length - 1 ? 1 : 'unset',
+            }}>
+              {step.label}
+            </span>
+          )
+        })}
+      </div>
+
+      {/* Current state message */}
+      {isMemberPlus ? (
+        <div style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+          You have full access to all modules.
+        </div>
+      ) : (
+        <>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: current.cta ? 8 : 0 }}>
+            {current.next}
+          </div>
+          {current.cta && current.href && (
+            <Link href={current.href} style={{
+              display: 'inline-block', fontSize: 11, fontWeight: 700,
+              color: current.color, textDecoration: 'none',
+            }}>
+              {current.cta}
+            </Link>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 interface Props {
   mobileOpen?: boolean
   onClose?: () => void
@@ -68,6 +175,16 @@ interface Props {
 
 export default function AppSideNav({ mobileOpen, onClose }: Props) {
   const pathname = usePathname()
+  const [role, setRole] = useState<string>('explorer')
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase.from('user_profiles').select('role').eq('id', user.id).single()
+        .then(({ data }) => { if (data?.role) setRole(data.role) })
+    })
+  }, [])
 
   const isActive = (href: string | null) => {
     if (!href) return false
@@ -112,17 +229,7 @@ export default function AppSideNav({ mobileOpen, onClose }: Props) {
 
       <div style={{ flex: 1 }} />
 
-      <div style={{
-        padding: 12, marginTop: 8, borderRadius: 8,
-        background: 'color-mix(in srgb, var(--accent-color) 8%, transparent)',
-        border: '1px dashed color-mix(in srgb, var(--accent-color) 25%, var(--rule))',
-        fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.5,
-      }}>
-        <div style={{ fontWeight: 600, marginBottom: 2 }}>You're an Explorer</div>
-        <div style={{ color: 'var(--ink-3)', fontSize: 11 }}>
-          Sign the values to unlock Agreements, Operations, Contributions & Governance.
-        </div>
-      </div>
+      <JourneyBox role={role} />
     </nav>
   )
 }
