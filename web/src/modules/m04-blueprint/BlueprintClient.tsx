@@ -220,7 +220,7 @@ Return ONLY valid JSON, no markdown fences, no commentary.`
 
     const scanChunk = async (chunkText: string, chunkNum: number, totalChunks: number): Promise<Record<string, unknown>> => {
       const prompt = buildPrompt(chunkText, chunkNum, totalChunks)
-      const aiUrl = process.env.NEXT_PUBLIC_AI_WORKER_URL || '/api/claude'
+      const aiUrl = process.env.NEXT_PUBLIC_AI_WORKER_URL || '/api/scan'
       const resp = await fetch(aiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({})) as { error?: string }

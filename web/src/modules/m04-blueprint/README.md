@@ -43,7 +43,7 @@ These functions are also imported by `m00-dashboard` and `modules/home` to displ
 
 ## AI scanning
 
-The blueprint integrates with `/api/claude` to scan uploaded documents and suggest answers. The API route calls MiniMax M2.7 via the Cloudflare Worker.
+The blueprint integrates with `/api/scan` to scan uploaded documents and suggest answers. The API route calls MiniMax M2.7 via the Cloudflare Worker.
 
 ## How to work on this module
 
