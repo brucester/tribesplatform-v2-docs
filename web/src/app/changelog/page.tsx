@@ -2,6 +2,30 @@ import Link from 'next/link'
 
 const ENTRIES = [
   {
+    version: 'v3.12',
+    date: '2026-05-22',
+    title: 'Mobile slide-in navigation panel',
+    items: [
+      'Mobile left navigation drawer — collapsed by default, opened via a "Modules" button in the top bar with a 4-grid icon.',
+      'Nav slides in from the left with a 200ms cubic-bezier transition; a blurred backdrop appears behind it.',
+      'Tapping any module link, the ✕ close button, or the backdrop closes the drawer.',
+      'Desktop layout unchanged — sidenav remains a static column.',
+      'AppTopBar hides the verbose "/ MyCommunityNetwork" sub-text and search bar on mobile to prevent overflow at narrow viewports.',
+    ],
+  },
+  {
+    version: 'v3.11',
+    date: '2026-05-22',
+    title: 'Mobile optimization pass across all pages',
+    items: [
+      'Fixed home page content cut-off for logged-in users on mobile — all sections get responsive padding and no-overflow root.',
+      'Switched fixed repeat(N, 1fr) grids to auto-fit minmax() across Dashboard, Network, Governance, Ops, Agreements, and Home.',
+      'Governance master-detail layout stacks vertically on small screens; sidebar collapses to a 260px-tall scrollable strip.',
+      'Community Joiner achievement badge awarded automatically when a join applicant is accepted.',
+      'Fixed upsert error: removed non-existent achievement_name column from user_achievements insert.',
+    ],
+  },
+  {
     version: 'v3.10',
     date: '2026-05-21',
     title: 'Match scoring, AppTopBar dropdown, Home access tiers, Governance 4-layer demo',
