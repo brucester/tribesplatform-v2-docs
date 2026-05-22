@@ -72,7 +72,7 @@ export default async function HomePage() {
     // Award "Community Joiner" badge the first time we see a joining+ role
     if (['joining', 'resident', 'circle_lead', 'project_lead', 'admin'].includes(role)) {
       const { error } = await supabase.from('user_achievements').upsert(
-        { user_id: user.id, achievement_key: 'community_joiner', achievement_name: 'Community Joiner' },
+        { user_id: user.id, achievement_key: 'community_joiner' },
         { onConflict: 'user_id,achievement_key', ignoreDuplicates: true }
       )
       joiningRewardNew = !error
