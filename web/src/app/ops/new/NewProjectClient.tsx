@@ -24,7 +24,7 @@ export default function NewProjectClient({ userId }: { userId: string }) {
       .select('id')
       .single()
     if (err) { setError(err.message); setSaving(false); return }
-    router.push(`/ops/${data.id}`)
+    router.push('/ops')
   }
 
   const inputStyle: React.CSSProperties = {

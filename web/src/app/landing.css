@@ -95,8 +95,8 @@
   padding: 12px 22px; border-radius: 10px; font-weight: 600; font-size: 14.5px;
   border: 1px solid transparent; transition: all 140ms; cursor: pointer;
 }
-.lp-btn-primary { background: var(--ink); color: var(--bg); }
-.lp-btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.lp-btn-primary { background: var(--accent-color); color: #fff; }
+.lp-btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: var(--shadow-md); }
 .lp-btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--rule); }
 .lp-btn-secondary:hover { background: var(--bg-2); }
 

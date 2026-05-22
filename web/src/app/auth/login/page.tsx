@@ -44,7 +44,7 @@ export default function AuthPage() {
     if (error) {
       setLoginError(error.message)
     } else {
-      router.push('/dashboard')
+      router.push('/home')
       router.refresh()
     }
     setLoginLoading(false)
@@ -69,7 +69,7 @@ export default function AuthPage() {
     } else if (data.user && !data.session) {
       setRegSent(true)
     } else {
-      router.push('/dashboard')
+      router.push('/home')
       router.refresh()
     }
     setRegLoading(false)

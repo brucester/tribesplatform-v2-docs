@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import JoinClient from './JoinClient'
 import JoinAdminClient from './JoinAdminClient'
 import ModuleHeader from '@/components/ModuleHeader'
@@ -70,26 +69,55 @@ export default async function JoinPage() {
     )
   }
 
-  // Regular user: show own application or form
+  // Regular user: fetch all data needed for the multi-step flow
   let existingApplication: { status: string; answers: Record<string, string>; created_at: string } | null = null
+  let userProfile: { first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null } | null = null
+  let communityValues: { id: string; title: string; description: string; sort_order: number }[] = []
+  let signedValueIds: string[] = []
+  let buddyProfiles: { id: string; first_name: string | null; headline: string | null; city: string | null }[] = []
+
   if (user) {
-    const { data } = await supabase
-      .from('applications')
-      .select('status, answers, created_at')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    existingApplication = data as any
+    const [appRes, profileRes, valuesRes, signaturesRes, buddiesRes] = await Promise.all([
+      supabase
+        .from('applications')
+        .select('status, answers, created_at')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('user_profiles')
+        .select('first_name, last_name, headline, city, country')
+        .eq('id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('community_values')
+        .select('id, title, description, sort_order')
+        .order('sort_order'),
+      supabase
+        .from('value_signatures')
+        .select('value_id')
+        .eq('user_id', user.id),
+      supabase
+        .from('user_profiles')
+        .select('id, first_name, headline, city')
+        .neq('id', user.id)
+        .limit(3),
+    ])
+
+    existingApplication = appRes.data as any
+    userProfile = profileRes.data as any
+    communityValues = (valuesRes.data ?? []) as any
+    signedValueIds = (signaturesRes.data ?? []).map((s: any) => s.value_id)
+    buddyProfiles = (buddiesRes.data ?? []) as any
   }
 
   return (
-    <>
-      <ModuleHeader num="05" standalone />
-      <JoinClient
-        questions={questions}
-        userId={user?.id ?? null}
-        existingApplication={existingApplication}
-        hasQuestionsConfigured={questions.length > 0}
-      />
-    </>
+    <JoinClient
+      userId={user?.id ?? null}
+      existingApplication={existingApplication}
+      userProfile={userProfile}
+      communityValues={communityValues}
+      initialSignedValueIds={signedValueIds}
+      buddyProfiles={buddyProfiles}
+    />
   )
 }

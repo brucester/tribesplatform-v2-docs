@@ -70,7 +70,7 @@
   --m1: #92400e;
   --m2: #b91c1c;
   --m3: #ea580c;
-  --m4: #92640a;
+  --m4: #ca8a04;
   --m5: #15803d;
   --m6: #1d4ed8;
   --m7: #4338ca;
@@ -299,6 +299,23 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(-2px);
 }
 .module-card-link { transition: none; }
+
+/* ─── App shell layout ──────────────────────────────────────────── */
+.app-shell-layout {
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  grid-template-rows: 56px 1fr;
+}
+.sh-nav-item > div:hover {
+  background: var(--bg-3) !important;
+  box-shadow: none !important;
+}
+@media (max-width: 768px) {
+  .app-shell-layout { grid-template-columns: 1fr; }
+  .app-shell-sidenav { display: none !important; }
+}
 
 /* ─── Dashboard cards ───────────────────────────────────────────── */
 .dash-card {
