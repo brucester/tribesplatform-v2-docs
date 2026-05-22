@@ -2,6 +2,7 @@ import { createClient } from '@/core/lib/supabase/server'
 import JoinClient from '@/modules/m05-join/JoinClient'
 import JoinAdminClient from '@/modules/m05-join/JoinAdminClient'
 import ModuleHeader from '@/core/components/ModuleHeader'
+import { isCircleAdmin } from '@/core/lib/roles'
 
 export default async function JoinPage() {
   const supabase = await createClient()
@@ -31,7 +32,7 @@ export default async function JoinPage() {
     role = profile?.role ?? 'explorer'
   }
 
-  const isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(role)
+  const isAdmin = isCircleAdmin(role)
 
   if (isAdmin) {
     const { data: apps } = await supabase

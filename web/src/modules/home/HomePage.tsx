@@ -2,6 +2,7 @@ import { createClient } from '@/core/lib/supabase/server'
 import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type Values } from '@/modules/m04-blueprint/lib/blueprint-compute'
 import { computeMatch } from '@/modules/m01-network/lib/match-score'
 import HomeClient from '@/modules/home/HomeClient'
+import { isFullMember as checkFullMember } from '@/core/lib/roles'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -66,7 +67,7 @@ export default async function HomePage() {
     hasApplied = !!appRes.data
     role = profileRes.data?.role ?? 'explorer'
     applicationStatus = appRes.data?.status ?? null
-    isFullMember = ['member', 'circle_lead', 'project_lead', 'admin'].includes(role)
+    isFullMember = checkFullMember(role)
 
     if (['joining', 'member', 'circle_lead', 'project_lead', 'admin'].includes(role)) {
       const { error } = await supabase.from('user_achievements').upsert(

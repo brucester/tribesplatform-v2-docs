@@ -1,5 +1,6 @@
 import { createClient } from '@/core/lib/supabase/server'
 import BlueprintClient from '@/modules/m04-blueprint/BlueprintClient'
+import { isCircleAdmin } from '@/core/lib/roles'
 
 export default async function BlueprintPage() {
   const supabase = await createClient()
@@ -12,7 +13,7 @@ export default async function BlueprintPage() {
       .select('role')
       .eq('id', user.id)
       .single()
-    isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(profile?.role ?? '')
+    isAdmin = isCircleAdmin(profile?.role ?? '')
   }
 
   const { data: communityBlueprint } = await supabase

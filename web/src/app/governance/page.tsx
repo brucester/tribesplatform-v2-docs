@@ -1,5 +1,6 @@
 import { createClient } from '@/core/lib/supabase/server'
 import GovernanceClient from '@/modules/m09-governance/GovernanceClient'
+import { isFullMember as checkFullMember, MEMBER_ROLES } from '@/core/lib/roles'
 
 export default async function GovernancePage() {
   const supabase = await createClient()
@@ -18,7 +19,7 @@ export default async function GovernancePage() {
     supabase
       .from('user_profiles')
       .select('id', { count: 'exact', head: true })
-      .in('role', ['member', 'circle_lead', 'project_lead', 'admin']),
+      .in('role', [...MEMBER_ROLES]),
   ])
 
   let myVotes: Record<string, string> = {}
@@ -34,7 +35,7 @@ export default async function GovernancePage() {
       myVotes[v.proposal_id] = v.vote
     }
     role = profileRes.data?.role ?? 'explorer'
-    isFullMember = ['member', 'circle_lead', 'project_lead', 'admin'].includes(role)
+    isFullMember = checkFullMember(role)
   }
 
   return (
