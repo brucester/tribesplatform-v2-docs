@@ -150,8 +150,8 @@ export default function AppTopBar() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>MyCoNet</span>
-            <span style={{ color: 'var(--ink-4)', fontWeight: 400, fontSize: 14 }}>/</span>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11.5, fontWeight: 500, color: 'var(--ink-3)' }}>
+            <span className="topbar-brand-sub" style={{ color: 'var(--ink-4)', fontWeight: 400, fontSize: 14 }}>/</span>
+            <span className="topbar-brand-sub" style={{ fontFamily: 'var(--mono)', fontSize: 11.5, fontWeight: 500, color: 'var(--ink-3)' }}>
               MyCommunityNetwork
             </span>
           </div>
@@ -164,7 +164,7 @@ export default function AppTopBar() {
       </Link>
 
       {/* Search */}
-      <div style={{
+      <div className="topbar-search" style={{
         flex: 1,
         maxWidth: 360,
         marginLeft: 16,

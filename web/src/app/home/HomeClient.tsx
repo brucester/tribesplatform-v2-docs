@@ -127,7 +127,7 @@ function SectionHead({ color, mod, label, h, lead, why, href }: {
 
 function Split({ children, reverse = false }: { children: React.ReactNode; reverse?: boolean }) {
   return (
-    <div style={{
+    <div className="home-split" style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
       gap: 52,
@@ -199,9 +199,10 @@ export default function HomeClient({
 
   const currentPhaseIdx = phaseProgress.findIndex(p => p.ratio < 1)
   const sectionW: React.CSSProperties = { maxWidth: 1100, margin: '0 auto', padding: '72px 28px 0' }
+  const sectionCls = 'home-section'
 
   return (
-    <div style={{ paddingBottom: 80 }}>
+    <div style={{ paddingBottom: 80, overflowX: 'hidden' }}>
 
       {/* ── Hero ──────────────────────────────────────────────── */}
       <section style={{ maxWidth: 1100, margin: '0 auto', padding: '52px 28px 0' }} id="welcome">
@@ -365,7 +366,7 @@ export default function HomeClient({
             display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
           }}>
             <div style={{ fontSize: 32, flexShrink: 0 }}>🎉</div>
-            <div style={{ flex: 1, minWidth: 200 }}>
+            <div className="joining-banner-text" style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 3 }}>
                 Welcome to {communityName}, {firstName || 'Member'}! You're now a <span style={{ color: '#d97706' }}>{roleLabel}</span>.
               </div>
@@ -381,7 +382,7 @@ export default function HomeClient({
       )}
 
       {/* ── Clubhouse Preview ───────────────────────────────── */}
-      <div style={{ maxWidth: 1100, margin: '60px auto 0', padding: '0 28px' }} id="clubhouse">
+      <div className="home-clubhouse-section" style={{ maxWidth: 1100, margin: '60px auto 0', padding: '0 28px' }} id="clubhouse">
         <div style={{
           borderRadius: 18, overflow: 'hidden',
           boxShadow: '0 12px 36px rgba(0,0,0,.09), 0 4px 10px rgba(0,0,0,.05)',
@@ -502,7 +503,7 @@ export default function HomeClient({
       </div>
 
       {/* ── M01 — Community Network ──────────────────────────── */}
-      <section style={sectionW} id="meet">
+      <section className={sectionCls} style={sectionW} id="meet">
         <Split>
           <SectionHead
             mod="01" label="Community Network" color="var(--m1)"
@@ -576,7 +577,7 @@ export default function HomeClient({
       </section>
 
       {/* ── M04 — Blueprint ─────────────────────────────────── */}
-      <section style={sectionW} id="blueprint">
+      <section className={sectionCls} style={sectionW} id="blueprint">
         <Split reverse>
           <DemoCard>
             <div ref={bpRef}>
@@ -658,7 +659,7 @@ export default function HomeClient({
       </section>
 
       {/* ── M05 — Join + values ─────────────────────────────── */}
-      <section style={sectionW} id="join">
+      <section className={sectionCls} style={sectionW} id="join">
         <Split>
           <SectionHead
             mod="05" label="Join" color="var(--m5)"
@@ -730,7 +731,7 @@ export default function HomeClient({
       </section>
 
       {/* ── M06 — Agreements ────────────────────────────────── */}
-      <section style={sectionW} id="agreements">
+      <section className={sectionCls} style={sectionW} id="agreements">
         <Split reverse>
           <DemoCard>
             <DemoHead color="var(--m6)" modLabel="M06" title="Open projects · Propose help" meta={`${projects.length || 3} open`} href="/agreements" />
@@ -819,7 +820,7 @@ export default function HomeClient({
       </section>
 
       {/* ── M07 — Operations ────────────────────────────────── */}
-      <section style={sectionW} id="ops">
+      <section className={sectionCls} style={sectionW} id="ops">
         <Split>
           <SectionHead
             mod="07" label="Operations" color="var(--m7)"
@@ -890,7 +891,7 @@ export default function HomeClient({
       </section>
 
       {/* ── M08 — Contributions ─────────────────────────────── */}
-      <section style={sectionW} id="contributions">
+      <section className={sectionCls} style={sectionW} id="contributions">
         <Split reverse>
           <DemoCard>
             <DemoHead color="var(--m8)" modLabel="M08" title="Your contribution log" meta="Top 25% · Sprint" href="/dashboard" />
@@ -959,7 +960,7 @@ export default function HomeClient({
       </section>
 
       {/* ── M09 — Governance ────────────────────────────────── */}
-      <section style={sectionW} id="governance">
+      <section className={sectionCls} style={sectionW} id="governance">
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <SectionHead
             mod="09" label="Governance" color="var(--m9)"
