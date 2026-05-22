@@ -1,6 +1,6 @@
 # MyCoNet v2 — Architecture & Database Schema
 
-> Status: PHASE 0 LIVE | Updated: 2026-05-15
+> Status: v3.12 LIVE | Updated: 2026-05-22
 
 ---
 
@@ -31,8 +31,8 @@ This is Phase 0. The codebase is designed to be cloned for multiple communities 
 | 05 | Join | ✅ Live | Application form. Admin reviews. Accept sets role to `joining`. Guest-browsable. |
 | 06 | Agreements | ✅ Live | Collaboration proposals on open projects. Admin reviews. Guest-browsable. |
 | 07 | Operations | ✅ Live | Admin creates projects, posts updates. Projects surface in M06. Guest-browsable. |
-| 08 | Contribution Tracking | ⏳ Planned | Points + badges for contributions. |
-| 09 | Governance | ⏳ Planned | AI-facilitated collective decision-making. |
+| 08 | Contribution Tracking | ✅ Live | Achievements catalog. Profile Pioneer badge at 100% profile. |
+| 09 | Governance | ✅ Live | Proposals, consent/concern/object voting, discussion threads. |
 | 10 | Genesis Bot | ⏳ Planned | Telegram bridge for DB change requests. |
 | 11 | Quinn | ⏳ Planned | Personal AI per member. |
 | 12 | MycoNet Agent | ⏳ Planned | Community brain. Coordinates all agents. |
@@ -72,7 +72,14 @@ This is Phase 0. The codebase is designed to be cloned for multiple communities 
 
 **Routing:** All pages are Next.js App Router server components. Client components used only where interactivity is required (forms, wizards, real-time actions).
 
-**Auth:** Supabase Auth with cookie-based sessions (`@supabase/ssr`). Server components read the session via `createClient()` from `@/lib/supabase/server`.
+**Code organisation:** The `web/src/` directory has three layers:
+- `app/` — Next.js route files only (thin re-exports). Do not add logic here.
+- `core/` — Shared infrastructure: Supabase clients, UI primitives, shell layout, types.
+- `modules/mXX-name/` — One folder per feature module. This is where contributors work. Each has its own README.
+
+See `web/CONTRIBUTING.md` for the full contributor guide.
+
+**Auth:** Supabase Auth with cookie-based sessions (`@supabase/ssr`). Server components read the session via `createClient()` from `@/core/lib/supabase/server`.
 
 **RLS:** Every table has row-level security. A helper function `is_admin()` checks `user_profiles.role` to grant admin-level policies without exposing the service role key.
 
@@ -188,6 +195,104 @@ CREATE TABLE collaboration_agreements (
 );
 ```
 
+### `user_bio`
+Extended profile fields (bio wizard steps 2–5).
+
+```sql
+CREATE TABLE user_bio (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id),
+  values_principles TEXT,
+  skills TEXT[],
+  goals TEXT,
+  places_traveling JSONB[],   -- [{ location, from_date, to_date, notes }]
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### `user_offers` / `user_requests`
+Offer and request items from the profile wizard (steps 6–7).
+
+```sql
+CREATE TABLE user_offers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  category TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE user_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  request_text TEXT NOT NULL,
+  category TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### `user_achievements`
+Earned badges (M08 Contribution Tracking).
+
+```sql
+CREATE TABLE user_achievements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  achievement_key TEXT NOT NULL,    -- e.g. 'profile_pioneer'
+  achievement_name TEXT NOT NULL,
+  earned_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, achievement_key)
+);
+```
+
+### `proposals`
+Governance proposals (M09).
+
+```sql
+CREATE TABLE proposals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  decision_mode TEXT DEFAULT 'consent',
+    -- consent | democracy | meritocracy | ai
+  status TEXT DEFAULT 'open',
+    -- open | closed | decided
+  created_by UUID REFERENCES auth.users(id),
+  closes_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### `proposal_votes`
+Individual votes on governance proposals.
+
+```sql
+CREATE TABLE proposal_votes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  proposal_id UUID REFERENCES proposals(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  vote TEXT NOT NULL,    -- consent | concern | object
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(proposal_id, user_id)
+);
+```
+
+### `proposal_comments`
+Discussion thread per governance proposal.
+
+```sql
+CREATE TABLE proposal_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  proposal_id UUID REFERENCES proposals(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
 ---
 
 ## 5. Role-Based Access Control
@@ -224,11 +329,12 @@ $$;
 | Route | Component | Auth | Description |
 |---|---|---|---|
 | `/` | Server | public | Landing page — hero, module grid, join CTA |
+| `/home` | Server + Client | public | Portal explainer — live DB content per module, module links |
 | `/dashboard` | Server | public / member | M00 — Community overview for guests; personal home for members |
 | `/network` | Server | public / member | M01 — Member directory, tile/list toggle |
 | `/network/discover` | Server | public / member | M01 — Profile discovery (guests see all; members see matches) |
 | `/network/matches` | Server | public / member | M01 — Guest sees teaser; logged-in sees AI matches |
-| `/network/profile` | Server | member | M01 — Your own profile |
+| `/u/[username]` | Server | public | M01 — Public member profile page |
 | `/blueprint` | Server + Client | public / admin | M04 — Read-only for all; edit mode for admin |
 | `/join` | Server + Client | public / member / admin | M05 — Guest sees teaser; member applies; admin reviews |
 | `/agreements` | Server + Client | public / member / admin | M06 — Open projects visible to all; proposals for joining+ |
@@ -236,6 +342,8 @@ $$;
 | `/ops` | Server | public / admin | M07 — Project list visible to all; admin controls |
 | `/ops/new` | Server + Client | admin | M07 — Create a project |
 | `/ops/[id]` | Server + Client | public / admin | M07 — Project detail, updates feed, proposals panel (admin) |
+| `/contributions` | Server | member | M08 — Achievements catalog; Profile Pioneer badge |
+| `/governance` | Server + Client | member | M09 — Proposals, voting, discussion threads |
 | `/profile/edit` | Client | member | Edit profile (8-step wizard) |
 | `/changelog` | Static | public | Release notes |
 
@@ -245,6 +353,10 @@ $$;
 
 | File | Purpose |
 |---|---|
+| `src/components/AppShell.tsx` | Shell layout wrapping all non-auth pages. Provides `ProfileCompletionProvider` + `AppTopBar` + `AppSideNav` + main content. |
+| `src/components/AppTopBar.tsx` | Top nav — logo + v3.01, search bar, bell, user pill (→ `/profile/edit`), profile completion bar. |
+| `src/components/AppSideNav.tsx` | Left side nav — M00–M09 module links with module colors. |
+| `src/contexts/ProfileCompletion.tsx` | React context sharing profile completion % between `AppTopBar` (seeds from DB) and profile wizard (pushes live updates). |
 | `src/lib/module-meta.ts` | Single source of truth for all 14 module colors, labels, and descriptions. No `'use client'` directive — importable by both server and client components. |
 | `src/components/ModuleHeader.tsx` | Colored header band at the top of each module page. Hover/tap reveals module description. Imports from `module-meta.ts`. |
 | `src/components/DashCardTooltip.tsx` | Client wrapper for dashboard module cards. Hover shows a popup with the module description and module-color accent border. |
@@ -275,9 +387,8 @@ $$;
 
 ```bash
 # Build + deploy to Cloudflare Workers
-cd web
-npm run deploy
-# Runs: opennextjs-cloudflare build && opennextjs-cloudflare deploy
+cd web && npm run deploy:cf
+# Runs: opennextjs-cloudflare build && wrangler deploy
 ```
 
 **Live URL:** `https://tribes-platform.correa-oscar11.workers.dev`
@@ -343,5 +454,5 @@ The platform is built to be cloned. When a second community wants a portal:
 
 ---
 
-*Document version: 2.1*
-*Updated: 2026-05-15 — Guest browsing, shared components, cloning architecture, M02 v2 opt-in directory design*
+*Document version: 3.01*
+*Updated: 2026-05-21 — AppShell + ProfileCompletion context, M08 achievements, M09 governance, 4 new DB tables, new routes, deploy command fix*

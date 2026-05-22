@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
-import OpsClient from './OpsClient'
+import { createClient } from '@/core/lib/supabase/server'
+import OpsClient from '@/modules/m07-ops/OpsClient'
 
 export default async function OpsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // ── User role ──────────────────────────────────────────────────────────────
   let isAdmin = false
   if (user) {
     const { data: profile } = await supabase
@@ -16,15 +15,11 @@ export default async function OpsPage() {
     isAdmin = ['admin', 'project_lead'].includes(profile?.role ?? '')
   }
 
-  // ── Projects ───────────────────────────────────────────────────────────────
   const { data: projects } = await supabase
     .from('projects')
     .select('id, title, description, status, open_for_collaborators, needs, deadline, sprint_name, created_at')
     .order('created_at', { ascending: false })
 
-  // ── Deliverables (with assignee username) ──────────────────────────────────
-  // Try to join user_profiles for assignee username; fall back gracefully if
-  // the deliverables table doesn't exist yet (returns empty array).
   const { data: deliverablesRaw } = await supabase
     .from('deliverables')
     .select('id, project_id, title, assignee_id, due_date, status, progress, user_profiles(username)')
@@ -41,7 +36,6 @@ export default async function OpsPage() {
     assignee_username: d.user_profiles?.username ?? null,
   }))
 
-  // ── Project updates (recent 20, with author first_name) ────────────────────
   const { data: updatesRaw } = await supabase
     .from('project_updates')
     .select('id, project_id, user_id, content, created_at, user_profiles(first_name)')
@@ -57,7 +51,6 @@ export default async function OpsPage() {
     author_first_name: u.user_profiles?.first_name ?? null,
   }))
 
-  // ── Computed stats ─────────────────────────────────────────────────────────
   const allProjects = projects ?? []
   const activeCount = allProjects.filter(p => p.status === 'active').length
   const deliverableCount = deliverables.length
@@ -71,7 +64,6 @@ export default async function OpsPage() {
     return new Date(d.due_date) < today
   }).length
 
-  // Sprint name: use first project's sprint_name if set
   const sprintName = allProjects.find(p => p.sprint_name)?.sprint_name ?? null
 
   return (

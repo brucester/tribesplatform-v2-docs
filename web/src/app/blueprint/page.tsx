@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import BlueprintClient from './BlueprintClient'
+import { createClient } from '@/core/lib/supabase/server'
+import BlueprintClient from '@/modules/m04-blueprint/BlueprintClient'
 
 export default async function BlueprintPage() {
   const supabase = await createClient()
@@ -15,14 +15,12 @@ export default async function BlueprintPage() {
     isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(profile?.role ?? '')
   }
 
-  // Fetch the single community blueprint
   const { data: communityBlueprint } = await supabase
     .from('blueprints')
     .select('*')
     .eq('is_community', true)
     .maybeSingle()
 
-  // No community blueprint yet — only admins can create it
   if (!communityBlueprint) {
     if (!isAdmin) {
       return (
@@ -32,7 +30,6 @@ export default async function BlueprintPage() {
       )
     }
 
-    // Admin creates the one community blueprint
     const { data: created } = await supabase
       .from('blueprints')
       .insert({ user_id: user!.id, answers: {}, flags: {}, is_community: true })

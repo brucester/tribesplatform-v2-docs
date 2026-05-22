@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import DiscoverClient from '../DiscoverClient'
+import { createClient } from '@/core/lib/supabase/server'
+import DiscoverClient from '@/modules/m01-network/DiscoverClient'
 
 export default async function DiscoverPage() {
   const supabase = await createClient()

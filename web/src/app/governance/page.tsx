@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import GovernanceClient from './GovernanceClient'
+import { createClient } from '@/core/lib/supabase/server'
+import GovernanceClient from '@/modules/m09-governance/GovernanceClient'
 
 export default async function GovernancePage() {
   const supabase = await createClient()

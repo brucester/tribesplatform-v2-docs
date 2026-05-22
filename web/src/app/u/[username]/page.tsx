@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/core/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { computeMatch } from '@/lib/match-score'
+import { computeMatch } from '@/modules/m01-network/lib/match-score'
 import UserProfileClient from './UserProfileClient'
-import NetworkSidebar from '@/app/network/NetworkSidebar'
-import NetworkRightPanel from '@/app/network/NetworkRightPanel'
+import NetworkSidebar from '@/modules/m01-network/NetworkSidebar'
+import NetworkRightPanel from '@/modules/m01-network/NetworkRightPanel'
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params

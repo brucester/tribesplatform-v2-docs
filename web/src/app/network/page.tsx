@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/core/lib/supabase/server'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/core/components/ui/card'
+import { Button } from '@/core/components/ui/button'
 import { User, Gift, HelpCircle, Search, Sparkles } from 'lucide-react'
-import MemberList from './MemberList'
-import { computeMatch } from '@/lib/match-score'
+import MemberList from '@/modules/m01-network/MemberList'
+import { computeMatch } from '@/modules/m01-network/lib/match-score'
 
 export default async function NetworkDashboard() {
   const supabase = await createClient()
@@ -31,7 +31,6 @@ export default async function NetworkDashboard() {
   const profile = (profileRes as any).data
   const displayName = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Explorer' : null
 
-  // Compute top matches
   const myBio = (myBioRes as any).data ?? null
   const bioMap: Record<string, any> = {}
   for (const b of (allBiosRes as any).data ?? []) bioMap[b.user_id] = b
@@ -45,7 +44,6 @@ export default async function NetworkDashboard() {
         .slice(0, 4)
     : []
 
-  // Scores for "New in the Network" cards
   const recentMatchScores: Record<string, { score: number; reasons: string[] }> = {}
   if (myBio) {
     for (const u of recentUsers) {
@@ -70,7 +68,6 @@ export default async function NetworkDashboard() {
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
 
-      {/* Guest banner */}
       {!user && (
         <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>
@@ -119,7 +116,6 @@ export default async function NetworkDashboard() {
         ))}
       </div>
 
-      {/* Matches section — only for logged-in users */}
       {user && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>

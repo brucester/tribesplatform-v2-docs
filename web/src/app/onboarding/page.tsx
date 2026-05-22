@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { UserStatus } from '@/types/database'
+import type { UserStatus } from '@/core/types/database'
 
 const STATUS_OPTIONS: { value: UserStatus; label: string; desc: string }[] = [
   { value: 'looking',   label: 'Actively looking',    desc: 'Seeking a community to join or build' },

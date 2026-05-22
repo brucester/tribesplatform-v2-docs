@@ -1,13 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
-import JoinClient from './JoinClient'
-import JoinAdminClient from './JoinAdminClient'
-import ModuleHeader from '@/components/ModuleHeader'
+import { createClient } from '@/core/lib/supabase/server'
+import JoinClient from '@/modules/m05-join/JoinClient'
+import JoinAdminClient from '@/modules/m05-join/JoinAdminClient'
+import ModuleHeader from '@/core/components/ModuleHeader'
 
 export default async function JoinPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Read join questions from the most complete blueprint
   const { data: blueprints } = await supabase
     .from('blueprints')
     .select('answers, updated_at')
@@ -22,7 +21,6 @@ export default async function JoinPage() {
     .map((q: string) => q.trim())
     .filter((q: string) => q.length > 0)
 
-  // Check role
   let role = 'explorer'
   if (user) {
     const { data: profile } = await supabase
@@ -35,14 +33,12 @@ export default async function JoinPage() {
 
   const isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(role)
 
-  // Admin: show all applications for review
   if (isAdmin) {
     const { data: apps } = await supabase
       .from('applications')
       .select('id, user_id, status, answers, admin_notes, created_at')
       .order('created_at', { ascending: false })
 
-    // Fetch applicant profile info
     const userIds = (apps ?? []).map(a => a.user_id)
     const { data: profiles } = userIds.length > 0
       ? await supabase
@@ -69,20 +65,17 @@ export default async function JoinPage() {
     )
   }
 
-  // Regular user: fetch all data needed for the multi-step flow
   let existingApplication: { status: string; answers: Record<string, string>; created_at: string } | null = null
   let userProfile: { first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null } | null = null
   let signedValueIds: string[] = []
   let buddyProfiles: { id: string; first_name: string | null; headline: string | null; city: string | null }[] = []
 
-  // Values are public — fetch for everyone
   const { data: valuesData } = await supabase
     .from('community_values')
     .select('id, title, description, sort_order')
     .order('sort_order')
   const communityValues = (valuesData ?? []) as { id: string; title: string; description: string; sort_order: number }[]
 
-  // Fetch a few public member profiles for buddy preview (guests see this read-only)
   const buddiesQuery = user
     ? supabase.from('user_profiles').select('id, first_name, headline, city').neq('id', user.id).limit(3)
     : supabase.from('user_profiles').select('id, first_name, headline, city').limit(3)

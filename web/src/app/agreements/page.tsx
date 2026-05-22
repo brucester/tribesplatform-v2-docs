@@ -1,8 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
-import AgreementsAdminClient from './AgreementsAdminClient'
-import AgreementsClient from './AgreementsClient'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import { createClient } from '@/core/lib/supabase/server'
+import AgreementsAdminClient from '@/modules/m06-agreements/AgreementsAdminClient'
+import AgreementsClient from '@/modules/m06-agreements/AgreementsClient'
 
 const LEAD_COLORS = [
   '#1d4ed8', '#7c3aed', '#0f766e', '#b45309', '#be185d',
@@ -21,13 +19,10 @@ function initialForName(name: string | null | undefined): string {
   return name.trim().charAt(0).toUpperCase()
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default async function AgreementsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // ── Fetch current user's role ──────────────────────────────────────────────
   let role = 'explorer'
   if (user) {
     const { data: profile } = await supabase
@@ -40,7 +35,6 @@ export default async function AgreementsPage() {
 
   const isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(role)
 
-  // ── Admin path — unchanged ─────────────────────────────────────────────────
   if (isAdmin) {
     const { data: allAgreements } = await supabase
       .from('collaboration_agreements')
@@ -74,9 +68,6 @@ export default async function AgreementsPage() {
     return <AgreementsAdminClient agreements={enriched} />
   }
 
-  // ── Regular user / guest path ──────────────────────────────────────────────
-
-  // Fetch projects with all fields needed by the artboard
   const { data: rawProjects } = await supabase
     .from('projects')
     .select('id, title, description, status, open_for_collaborators, needs, deadline, lead_user_id, created_by')
@@ -85,8 +76,6 @@ export default async function AgreementsPage() {
     .order('created_at', { ascending: false })
 
   const projectRows = rawProjects ?? []
-
-  // Fetch lead profiles — collect all lead_user_id / created_by ids
   const leadIds = [
     ...new Set(
       projectRows
@@ -97,10 +86,7 @@ export default async function AgreementsPage() {
 
   const [leadProfilesRes, myAgreementsRes] = await Promise.all([
     leadIds.length > 0
-      ? supabase
-          .from('user_profiles')
-          .select('id, first_name, username')
-          .in('id', leadIds)
+      ? supabase.from('user_profiles').select('id, first_name, username').in('id', leadIds)
       : Promise.resolve({ data: [] }),
     user
       ? supabase
@@ -115,7 +101,6 @@ export default async function AgreementsPage() {
     (leadProfilesRes.data ?? []).map(p => [p.id, p])
   )
 
-  // Enrich projects with lead info + derived display fields
   const projects = projectRows.map(p => {
     const leadId = p.lead_user_id ?? p.created_by ?? null
     const leadProfile = leadId ? leadProfileMap[leadId] : null

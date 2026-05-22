@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/core/lib/supabase/server'
 import Link from 'next/link'
-import { computeMatch } from '@/lib/match-score'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { computeMatch } from '@/modules/m01-network/lib/match-score'
+import { Card, CardContent, CardHeader, CardTitle } from '@/core/components/ui/card'
+import { Button } from '@/core/components/ui/button'
 import { Sparkles, Pencil } from 'lucide-react'
-import MatchesTabs from './MatchesTabs'
+import MatchesTabs from '@/modules/m01-network/MatchesTabs'
 
 export default async function MatchesPage() {
   const supabase = await createClient()
