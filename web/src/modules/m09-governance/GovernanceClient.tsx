@@ -246,12 +246,14 @@ export default function GovernanceClient({ proposals: initial, memberCount, curr
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 16 }}>{!isLoggedIn ? '👁' : '🔓'}</span>
+            <span style={{ fontSize: 16 }}>{!isLoggedIn ? '👁' : role === 'joining' ? '🌱' : '🔓'}</span>
             <div>
               <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)' }}>
                 {!isLoggedIn
                   ? 'You\'re previewing Governance — create a free account to vote and comment.'
-                  : 'You\'re an Explorer — complete M05 Join to vote and submit proposals.'}
+                  : role === 'joining'
+                    ? 'You\'re Joining — once you become a Resident you\'ll be able to vote and submit proposals.'
+                    : 'You\'re an Explorer — complete M05 Join to participate in governance.'}
               </span>
             </div>
           </div>
@@ -261,6 +263,8 @@ export default function GovernanceClient({ proposals: initial, memberCount, curr
                 <a href="/auth/signup" style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', background: 'var(--m9)', padding: '5px 14px', borderRadius: 7, textDecoration: 'none' }}>Create account</a>
                 <a href="/auth/login" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--m9)', padding: '5px 4px', textDecoration: 'none' }}>Sign in</a>
               </>
+            ) : role === 'joining' ? (
+              <a href="/contributions" style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', background: '#d97706', padding: '5px 14px', borderRadius: 7, textDecoration: 'none' }}>View contributions →</a>
             ) : (
               <a href="/join" style={{ fontSize: 12.5, fontWeight: 700, color: '#fff', background: '#d97706', padding: '5px 14px', borderRadius: 7, textDecoration: 'none' }}>Go to M05 Join →</a>
             )}
