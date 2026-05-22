@@ -18,7 +18,7 @@ export default async function GovernancePage() {
     supabase
       .from('user_profiles')
       .select('id', { count: 'exact', head: true })
-      .in('role', ['resident', 'circle_lead', 'project_lead', 'admin']),
+      .in('role', ['member', 'circle_lead', 'project_lead', 'admin']),
   ])
 
   let myVotes: Record<string, string> = {}
@@ -34,7 +34,7 @@ export default async function GovernancePage() {
       myVotes[v.proposal_id] = v.vote
     }
     role = profileRes.data?.role ?? 'explorer'
-    isFullMember = ['resident', 'circle_lead', 'project_lead', 'admin'].includes(role)
+    isFullMember = ['member', 'circle_lead', 'project_lead', 'admin'].includes(role)
   }
 
   return (

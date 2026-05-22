@@ -66,9 +66,9 @@ export default async function HomePage() {
     hasApplied = !!appRes.data
     role = profileRes.data?.role ?? 'explorer'
     applicationStatus = appRes.data?.status ?? null
-    isFullMember = ['resident', 'circle_lead', 'project_lead', 'admin'].includes(role)
+    isFullMember = ['member', 'circle_lead', 'project_lead', 'admin'].includes(role)
 
-    if (['joining', 'resident', 'circle_lead', 'project_lead', 'admin'].includes(role)) {
+    if (['joining', 'member', 'circle_lead', 'project_lead', 'admin'].includes(role)) {
       const { error } = await supabase.from('user_achievements').upsert(
         { user_id: user.id, achievement_key: 'community_joiner' },
         { onConflict: 'user_id,achievement_key', ignoreDuplicates: true }

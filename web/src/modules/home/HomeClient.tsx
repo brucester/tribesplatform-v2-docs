@@ -144,7 +144,7 @@ function Split({ children, reverse = false }: { children: React.ReactNode; rever
 const ROLE_LABELS: Record<string, string> = {
   explorer: 'Explorer',
   joining: 'Joining Member',
-  resident: 'Resident',
+  member: 'Member',
   circle_lead: 'Circle Lead',
   project_lead: 'Project Lead',
   admin: 'Admin',
@@ -161,7 +161,7 @@ export default function HomeClient({
 }: Props) {
   const name = firstName || (isLoggedIn ? 'there' : 'you')
   const roleLabel = ROLE_LABELS[role] ?? 'Explorer'
-  const isJoiningPlus = ['joining', 'resident', 'circle_lead', 'project_lead', 'admin'].includes(role)
+  const isJoiningPlus = ['joining', 'member', 'circle_lead', 'project_lead', 'admin'].includes(role)
 
   // M05 - values
   const [checked, setChecked] = useState<boolean[]>(() => communityValues.map(() => hasApplied))
@@ -298,21 +298,21 @@ export default function HomeClient({
               tier: 'joining',
             },
             {
-              step: '04', icon: '⊕', label: 'Resident',
+              step: '04', icon: '⊕', label: 'Member',
               sublabel: 'Full member',
               color: 'var(--m9)',
               items: ['All modules active', 'Lead projects', 'Governance rights', 'Build together'],
               cta: null, ctaHref: null,
-              tier: 'resident',
+              tier: 'member',
             },
           ] as const).map((t, i) => {
-            const tierOrder = ['explorer', 'joining', 'resident']
+            const tierOrder = ['explorer', 'joining', 'member']
             const currentTierIdx = tierOrder.indexOf(role ?? 'explorer')
             const thisTierIdx = t.tier ? tierOrder.indexOf(t.tier) : -1
             const isCurrent = isLoggedIn
               ? (t.tier === null && !isJoiningPlus && role === 'explorer' && i === 1)
-                || (t.tier === 'joining' && isJoiningPlus && !['resident', 'circle_lead', 'project_lead', 'admin'].includes(role ?? ''))
-                || (t.tier === 'resident' && ['resident', 'circle_lead', 'project_lead', 'admin'].includes(role ?? ''))
+                || (t.tier === 'joining' && isJoiningPlus && !['member', 'circle_lead', 'project_lead', 'admin'].includes(role ?? ''))
+                || (t.tier === 'member' && ['member', 'circle_lead', 'project_lead', 'admin'].includes(role ?? ''))
               : i === 0
             const isActive = isCurrent || (i === 0) || (isLoggedIn && thisTierIdx !== -1 && thisTierIdx < currentTierIdx)
             return (
@@ -470,7 +470,7 @@ export default function HomeClient({
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
                 {[
-                  { num: '01', name: 'Community Network', desc: `${memberCount} residents and explorers`, color: 'var(--m1)', href: '/network' },
+                  { num: '01', name: 'Community Network', desc: `${memberCount} members and explorers`, color: 'var(--m1)', href: '/network' },
                   { num: '04', name: 'Project Blueprint', desc: overall !== null ? `${overall.toFixed(1)}/10 readiness · ${currentPhaseIdx >= 0 ? phaseProgress[currentPhaseIdx].name : 'In progress'}` : 'Blueprint in progress', color: 'var(--m4)', href: '/blueprint' },
                   { num: '05', name: 'Join the community', desc: '3 steps · Sign the values', color: 'var(--m5)', cta: true, href: '/join' },
                   { num: '06', name: 'Agreements', desc: `${activeProjectCount} open project${activeProjectCount !== 1 ? 's' : ''}`, color: 'var(--m6)', href: '/agreements' },
@@ -508,7 +508,7 @@ export default function HomeClient({
           <SectionHead
             mod="01" label="Community Network" color="var(--m1)"
             h="Meet the people gathering around this idea."
-            lead="Before anything is built, the right people have to find each other. Browse rich profiles of every resident and explorer — sorted by how well your offers, seeks, values, and skills line up."
+            lead="Before anything is built, the right people have to find each other. Browse rich profiles of every member and explorer — sorted by how well your offers, seeks, values, and skills line up."
             href="/network"
             why={[
               '<strong>Real profiles, not posts.</strong> What you bring, what you need, where you\'re headed.',

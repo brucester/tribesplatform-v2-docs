@@ -30,7 +30,7 @@ Active community projects with deliverables, sprint tracking, and update posts. 
 ## Role gating
 
 - **Explorer**: can browse but not post updates
-- **Joining / Resident**: can post project updates
+- **Joining / Member**: can post project updates
 - **Admin / project_lead**: can create/edit projects, manage deliverables
 
 ## Project status flow

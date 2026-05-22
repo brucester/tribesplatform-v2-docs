@@ -252,7 +252,7 @@ export default function GovernanceClient({ proposals: initial, memberCount, curr
                 {!isLoggedIn
                   ? 'You\'re previewing Governance — create a free account to vote and comment.'
                   : role === 'joining'
-                    ? 'You\'re Joining — once you become a Resident you\'ll be able to vote and submit proposals.'
+                    ? 'You\'re Joining — once you become a Member you\'ll be able to vote and submit proposals.'
                     : 'You\'re an Explorer — complete M05 Join to participate in governance.'}
               </span>
             </div>

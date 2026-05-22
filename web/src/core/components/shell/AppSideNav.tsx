@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 
 const CLUBHOUSE = [
   { num: '00', name: 'Dashboard',   color: 'var(--ink)', href: '/dashboard' },
-  { num: '01', name: 'Residents',   color: 'var(--m1)',  href: '/network' },
+  { num: '01', name: 'Members',     color: 'var(--m1)',  href: '/network' },
   { num: '04', name: 'Blueprint',   color: 'var(--m4)',  href: '/blueprint' },
   { num: '05', name: 'Join',        color: 'var(--m5)',  href: '/join' },
 ] as const

@@ -34,7 +34,7 @@ AI-facilitated community decision-making. Members submit proposals; the system r
 ## Role gating
 
 - **Explorer / Joining**: can view proposals and comments
-- **Resident / circle_lead / project_lead / admin**: can vote and create proposals
+- **Member / circle_lead / project_lead / admin**: can vote and create proposals
 
 ## Proposal lifecycle
 

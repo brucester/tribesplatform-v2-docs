@@ -6,13 +6,13 @@ import { computeOverallReadiness, computeGatesPassed, computePhaseProgress, type
 const ROLE_LABELS: Record<string, string> = {
   explorer:     'Explorer',
   joining:      'Joining',
-  resident:     'Resident',
+  member:       'Member',
   circle_lead:  'Circle Lead',
   project_lead: 'Project Lead',
   admin:        'Admin',
 }
 
-const ROLE_ORDER = ['explorer', 'joining', 'resident', 'circle_lead', 'project_lead', 'admin']
+const ROLE_ORDER = ['explorer', 'joining', 'member', 'circle_lead', 'project_lead', 'admin']
 const roleRank = (r: string) => ROLE_ORDER.indexOf(r)
 function atLeast(userRole: string, minRole: string) {
   return roleRank(userRole) >= roleRank(minRole)
@@ -120,14 +120,14 @@ export default async function DashboardPage() {
     {
       num: '08', name: 'Contributions',
       desc: 'Track points, badges, and logged effort',
-      color: 'var(--m8)', href: '/contributions', locked: locked('resident'),
+      color: 'var(--m8)', href: '/contributions', locked: locked('member'),
     },
     {
       num: '09', name: 'Governance',
       desc: openProposals > 0
         ? `${openProposals} open proposal${openProposals !== 1 ? 's' : ''} · vote or comment`
         : 'No open proposals · submit one',
-      color: 'var(--m9)', href: '/governance', locked: locked('resident'),
+      color: 'var(--m9)', href: '/governance', locked: locked('member'),
     },
   ]
 
@@ -311,7 +311,7 @@ function ModCard({ num, name, desc, color, href, locked, cta }: ModuleCard) {
           </span>
         )}
         {locked && (
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)' }}>🔒 Resident</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)' }}>🔒 Member</span>
         )}
       </div>
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 3 }}>{name}</div>

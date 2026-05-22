@@ -28,7 +28,7 @@ The full onboarding flow. Guides an `explorer` through three steps: (1) sign com
 
 - **Explorer**: sees JoinClient (join flow)
 - **Admin / circle_lead / project_lead**: sees JoinAdminClient (review panel)
-- **Joining / Resident**: sees their existing application status
+- **Joining / Member**: sees their existing application status
 
 ## Application flow
 

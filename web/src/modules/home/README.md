@@ -34,7 +34,7 @@ The home page adapts to the viewer's role:
 - **Guest**: sees community overview with sign-up CTA
 - **Explorer**: sees overview + "access tiers" strip showing next steps
 - **Joining**: sees joining reward banner + full portal
-- **Resident / above**: sees full portal with match scores
+- **Member / above**: sees full portal with match scores
 
 ## How to work on this module
 

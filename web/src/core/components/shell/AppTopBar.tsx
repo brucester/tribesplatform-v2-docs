@@ -211,7 +211,7 @@ export default function AppTopBar({ onMobileNavToggle, mobileNavOpen }: {
           <line x1="20" y1="20" x2="16.6" y2="16.6" />
         </svg>
         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          Search residents, projects, proposals…
+          Search members, projects, proposals…
         </span>
         <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-4)', padding: '1px 5px', border: '1px solid var(--rule)', borderRadius: 4, flexShrink: 0 }}>⌘K</span>
       </div>

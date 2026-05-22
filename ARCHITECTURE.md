@@ -99,7 +99,7 @@ CREATE TABLE user_profiles (
   username TEXT UNIQUE,
   avatar_url TEXT,
   role TEXT DEFAULT 'explorer',
-    -- explorer | joining | resident | circle_lead | project_lead | admin
+    -- explorer | joining | member | circle_lead | project_lead | admin
   bio TEXT,
   location TEXT,
   user_types TEXT[],           -- Community Member, Vision Holder, Service Provider, etc.
@@ -319,7 +319,7 @@ $$;
 | guest (no account) | ✅ public view | ✅ public view | ✅ public view | ✅ public view | ✅ public view | ✗ |
 | `explorer` | ✅ | ✅ read-only | ✅ | ✅ | ✅ apply | ✗ |
 | `joining` | ✅ | ✅ read-only | ✅ | ✅ propose | ✅ view status | ✗ |
-| `resident` | ✅ | ✅ read-only | ✅ | ✅ propose | ✅ view status | ✗ |
+| `member` | ✅ | ✅ read-only | ✅ | ✅ propose | ✅ view status | ✗ |
 | `admin` | ✅ full | ✅ **edit** | ✅ | ✅ propose + review | ✅ review all | ✅ |
 
 ---

@@ -28,7 +28,7 @@ Members propose collaboration on active community projects. They describe what t
 ## Role gating
 
 - **Explorer**: blocked — redirect to `/join`
-- **Joining / Resident**: can browse projects and submit proposals
+- **Joining / Member**: can browse projects and submit proposals
 - **Admin / circle_lead / project_lead**: sees admin review panel
 
 ## Agreement statuses
