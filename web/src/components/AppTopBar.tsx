@@ -158,7 +158,7 @@ export default function AppTopBar() {
           <Link href="/changelog" style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 600, color: 'var(--ink-4)', letterSpacing: '0.06em', textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink-2)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-4)')}>
-            v3.10
+            v3.11
           </Link>
         </div>
       </Link>
