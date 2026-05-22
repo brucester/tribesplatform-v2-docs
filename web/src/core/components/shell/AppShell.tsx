@@ -5,7 +5,7 @@ import AppTopBar from '@/core/components/shell/AppTopBar'
 import AppSideNav from '@/core/components/shell/AppSideNav'
 import { ProfileCompletionProvider } from '@/core/contexts/ProfileCompletion'
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({ children, role }: { children: React.ReactNode; role: string }) {
   const pathname = usePathname()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
@@ -23,6 +23,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <AppSideNav
           mobileOpen={mobileNavOpen}
           onClose={() => setMobileNavOpen(false)}
+          initialRole={role}
         />
         <main style={{ overflowY: 'auto', background: 'var(--bg)' }}>
           {children}
