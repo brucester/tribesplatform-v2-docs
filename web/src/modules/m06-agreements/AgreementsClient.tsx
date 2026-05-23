@@ -228,6 +228,12 @@ export default function AgreementsClient({
   const isExplorer = userRole === 'explorer'
   const isGuest = !userId
 
+  // Existing proposal for the currently selected project
+  const existingAgreement = myAgreements.find(a => a.project_id === selectedId) ?? null
+  // Can resubmit if draft or rejected; anything else blocks a new submission
+  const canResubmit = existingAgreement?.status === 'draft' || existingAgreement?.status === 'rejected'
+  const hasBlockingProposal = !!existingAgreement && !canResubmit
+
   // Filter logic
   const myProjectIds = new Set(myAgreements.map(a => a.project_id))
   const openProjects = projects.filter(p => p.status === 'active' && p.open_for_collaborators)
@@ -248,14 +254,14 @@ export default function AgreementsClient({
 
     const { data: inserted, error } = await supabase
       .from('collaboration_agreements')
-      .insert({
+      .upsert({
         user_id: userId,
         project_id: selectedId,
         work_description: workDescription.trim(),
         expected_reward: expectedReward.trim(),
         conditions: conditions.trim() || null,
         status: 'pending',
-      })
+      }, { onConflict: 'project_id,user_id' })
       .select('id, created_at')
       .single()
 
@@ -288,14 +294,14 @@ export default function AgreementsClient({
     setSubmitting(true)
     setSubmitError(null)
 
-    const { error } = await supabase.from('collaboration_agreements').insert({
+    const { error } = await supabase.from('collaboration_agreements').upsert({
       user_id: userId,
       project_id: selectedId,
       work_description: workDescription.trim() || '(draft)',
       expected_reward: expectedReward.trim() || '(draft)',
       conditions: conditions.trim() || null,
       status: 'draft',
-    })
+    }, { onConflict: 'project_id,user_id' })
 
     if (error) {
       setSubmitError(error.message)
@@ -531,6 +537,9 @@ export default function AgreementsClient({
                     setSelectedId(p.id)
                     setSubmitted(false)
                     setSubmitError(null)
+                    setWorkDescription('')
+                    setExpectedReward('')
+                    setConditions('')
                   }}
                 />
               ))
@@ -688,6 +697,34 @@ export default function AgreementsClient({
                       View another project
                     </button>
                   </div>
+                ) : hasBlockingProposal ? (
+                  /* Existing proposal — prevent duplicate submission */
+                  (() => {
+                    const STATUS_INFO: Record<string, { label: string; color: string; desc: string }> = {
+                      pending:   { label: 'Under review',  color: '#f59e0b', desc: 'Your proposal is waiting for the project lead to review it.' },
+                      accepted:  { label: 'Accepted',      color: '#22c55e', desc: 'Your proposal was accepted. Keep an eye on Operations for next steps.' },
+                      active:    { label: 'Active',        color: '#3b82f6', desc: 'This collaboration is active. Deliver what you promised!' },
+                      completed: { label: 'Completed',     color: '#94a3b8', desc: 'This collaboration is marked complete. Well done.' },
+                    }
+                    const info = STATUS_INFO[existingAgreement!.status] ?? STATUS_INFO.pending
+                    return (
+                      <div style={{ padding: '8px 0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: info.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{info.label}</span>
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55, marginBottom: 16 }}>{info.desc}</p>
+                        <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 8, padding: '12px 14px', fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.55 }}>
+                          <div style={{ marginBottom: 6 }}>
+                            <strong style={{ color: 'var(--ink-2)' }}>Will do:</strong> {existingAgreement!.work_description}
+                          </div>
+                          <div>
+                            <strong style={{ color: 'var(--ink-2)' }}>Expects:</strong> {existingAgreement!.expected_reward}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()
                 ) : (
                   <>
                     <FormField
