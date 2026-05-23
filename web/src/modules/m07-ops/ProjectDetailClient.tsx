@@ -4,6 +4,8 @@ import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const STATUS_STYLE: Record<string, { label: string; color: string }> = {
   active:    { label: 'Active',    color: '#22c55e' },
   paused:    { label: 'Paused',    color: '#f59e0b' },
@@ -24,34 +26,147 @@ const COLLAB_STATUS: Record<string, { label: string; color: string; bg: string }
   completed: { label: 'Completed', color: '#94a3b8', bg: '#94a3b814' },
 }
 
+const TASK_STATUS: { value: string; label: string; color: string; bg: string }[] = [
+  { value: 'backlog',     label: 'Backlog',      color: 'var(--ink-4)', bg: 'var(--bg-3)' },
+  { value: 'in_progress', label: 'In progress',  color: '#4338ca',      bg: '#4338ca14' },
+  { value: 'review',      label: 'Review',       color: '#f59e0b',      bg: '#f59e0b14' },
+  { value: 'done',        label: 'Done',         color: '#22c55e',      bg: '#22c55e14' },
+]
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Deliverable {
+  id: string
+  title: string
+  status: string
+  due_date: string | null
+  assignee_id: string | null
+  progress: number | null
+}
+
 interface Project {
   id: string; title: string; description: string | null
   status: string; open_for_collaborators: boolean
   created_at: string; updated_at: string
 }
 
-export default function ProjectDetailClient({ project, updates, agreements, activeCollaborations, userId, userRole, isAdmin }: {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function TaskStatusPill({ status, onChange }: { status: string; onChange?: (s: string) => void }) {
+  const ts = TASK_STATUS.find(s => s.value === status) ?? TASK_STATUS[0]
+  if (!onChange) {
+    return (
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+        color: ts.color, background: ts.bg, padding: '3px 9px', borderRadius: 20, whiteSpace: 'nowrap',
+      }}>
+        {ts.label}
+      </span>
+    )
+  }
+  return (
+    <select
+      value={status}
+      onChange={e => onChange(e.target.value)}
+      style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
+        color: ts.color, background: ts.bg, border: 'none', borderRadius: 20,
+        padding: '3px 9px', cursor: 'pointer', outline: 'none', appearance: 'none',
+        WebkitAppearance: 'none',
+      }}
+    >
+      {TASK_STATUS.map(s => (
+        <option key={s.value} value={s.value}>{s.label}</option>
+      ))}
+    </select>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function ProjectDetailClient({
+  project, updates, agreements, activeCollaborations,
+  deliverables: initialDeliverables, userId, userRole, isAdmin, isProjectCreator,
+}: {
   project: Project
   updates: any[]
-  agreements: any[]          // admin: all proposals for management
-  activeCollaborations: any[] // everyone: accepted/active/completed
+  agreements: any[]
+  activeCollaborations: any[]
+  deliverables: Deliverable[]
   userId: string
   userRole: string
   isAdmin: boolean
+  isProjectCreator: boolean
 }) {
   const supabase = createClient()
   const router = useRouter()
   const s = STATUS_STYLE[project.status] ?? STATUS_STYLE.active
 
+  // canManage = admin or the project creator
+  const canManage = isAdmin || isProjectCreator
+
+  // ── Subtasks state ──────────────────────────────────────────────────────────
+  const [deliverables, setDeliverables] = useState<Deliverable[]>(initialDeliverables)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskDue, setNewTaskDue] = useState('')
+  const [addingTask, setAddingTask] = useState(false)
+  const [taskError, setTaskError] = useState<string | null>(null)
+
+  // ── Updates state ───────────────────────────────────────────────────────────
   const [updateText, setUpdateText] = useState('')
   const [postingUpdate, setPostingUpdate] = useState(false)
 
+  // ── Project settings (admin only) ───────────────────────────────────────────
   const [editStatus, setEditStatus] = useState(project.status)
   const [editOpenCollab, setEditOpenCollab] = useState(project.open_for_collaborators)
   const [savingSettings, setSavingSettings] = useState(false)
 
-  const [agreementUpdates, setAgreementUpdates] = useState<Record<string, string>>({})
+  // ── Agreement management (admin only) ───────────────────────────────────────
   const [savingAgreement, setSavingAgreement] = useState<string | null>(null)
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box',
+    padding: '10px 14px', borderRadius: 'var(--radius)',
+    border: '1px solid var(--rule)', background: 'var(--surface)',
+    color: 'var(--ink)', fontSize: 14, outline: 'none', fontFamily: 'inherit',
+  }
+
+  async function addSubtask() {
+    if (!newTaskTitle.trim()) return
+    setAddingTask(true)
+    setTaskError(null)
+    const { data, error } = await supabase.from('deliverables').insert({
+      project_id: project.id,
+      title: newTaskTitle.trim(),
+      due_date: newTaskDue || null,
+      status: 'backlog',
+      progress: 0,
+    }).select('id, title, status, due_date, assignee_id, progress').single()
+    if (error) {
+      setTaskError(error.message)
+      setAddingTask(false)
+      return
+    }
+    setDeliverables(prev => [...prev, data])
+    setNewTaskTitle('')
+    setNewTaskDue('')
+    setAddingTask(false)
+  }
+
+  async function updateTaskStatus(taskId: string, newStatus: string) {
+    setDeliverables(prev => prev.map(d => d.id === taskId ? { ...d, status: newStatus } : d))
+    await supabase.from('deliverables').update({ status: newStatus }).eq('id', taskId)
+  }
+
+  async function deleteTask(taskId: string) {
+    setDeliverables(prev => prev.filter(d => d.id !== taskId))
+    await supabase.from('deliverables').delete().eq('id', taskId)
+  }
 
   async function postUpdate() {
     if (!updateText.trim()) return
@@ -85,13 +200,6 @@ export default function ProjectDetailClient({ project, updates, agreements, acti
     router.refresh()
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', boxSizing: 'border-box',
-    padding: '10px 14px', borderRadius: 'var(--radius)',
-    border: '1px solid var(--rule)', background: 'var(--surface)',
-    color: 'var(--ink)', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-  }
-
   return (
     <div style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 80px' }}>
 
@@ -120,8 +228,8 @@ export default function ProjectDetailClient({ project, updates, agreements, acti
             {project.description}
           </p>
         )}
-        {project.open_for_collaborators && project.status === 'active' && !isAdmin && (
-          <Link href={`/agreements`} style={{ display: 'inline-block', marginTop: 16, background: '#3b82f6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 20px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
+        {project.open_for_collaborators && project.status === 'active' && !canManage && (
+          <Link href="/agreements" style={{ display: 'inline-block', marginTop: 16, background: '#3b82f6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 20px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
             Propose collaboration →
           </Link>
         )}
@@ -129,10 +237,132 @@ export default function ProjectDetailClient({ project, updates, agreements, acti
 
       <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 340px' : '1fr', gap: 32 }}>
 
-        {/* Left — updates + active collaborations */}
+        {/* ── Left column ──────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
-          {/* Active collaborations — visible to everyone */}
+          {/* ── Subtasks — visible to project creator + admin ─────────────── */}
+          {canManage && (
+            <div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
+                Subtasks · {deliverables.length}
+              </div>
+
+              {/* Add subtask form */}
+              <div style={{
+                background: 'var(--bg-2)', border: '1px solid var(--rule)',
+                borderRadius: 10, padding: '14px 16px', marginBottom: 14,
+              }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={e => setNewTaskTitle(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addSubtask()}
+                    placeholder="New subtask title…"
+                    style={{ ...inputStyle, flex: '1 1 200px', padding: '8px 12px', fontSize: 13 }}
+                  />
+                  <input
+                    type="date"
+                    value={newTaskDue}
+                    onChange={e => setNewTaskDue(e.target.value)}
+                    style={{ ...inputStyle, width: 'auto', padding: '8px 12px', fontSize: 13, colorScheme: 'dark' }}
+                  />
+                  <button
+                    onClick={addSubtask}
+                    disabled={addingTask || !newTaskTitle.trim()}
+                    style={{
+                      background: 'var(--m7)', color: '#fff', fontSize: 13, fontWeight: 600,
+                      padding: '8px 18px', borderRadius: 8, border: 'none', whiteSpace: 'nowrap',
+                      cursor: addingTask || !newTaskTitle.trim() ? 'not-allowed' : 'pointer',
+                      opacity: addingTask || !newTaskTitle.trim() ? 0.55 : 1,
+                    }}
+                  >
+                    {addingTask ? 'Adding…' : '+ Add'}
+                  </button>
+                </div>
+                {taskError && <p style={{ fontSize: 12, color: '#ef4444', marginTop: 8, marginBottom: 0 }}>{taskError}</p>}
+              </div>
+
+              {/* Subtask list */}
+              {deliverables.length === 0 ? (
+                <div style={{ color: 'var(--ink-4)', fontSize: 13, padding: '8px 0' }}>
+                  No subtasks yet. Add the first one above.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {deliverables.map(d => (
+                    <div key={d.id} style={{
+                      background: 'var(--surface)', border: '1px solid var(--rule)',
+                      borderRadius: 9, padding: '10px 14px',
+                      display: 'flex', alignItems: 'center', gap: 12,
+                    }}>
+                      {/* Status selector */}
+                      <TaskStatusPill status={d.status} onChange={s => updateTaskStatus(d.id, s)} />
+
+                      {/* Title */}
+                      <span style={{
+                        flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--ink)',
+                        textDecoration: d.status === 'done' ? 'line-through' : 'none',
+                        opacity: d.status === 'done' ? 0.55 : 1,
+                      }}>
+                        {d.title}
+                      </span>
+
+                      {/* Due date */}
+                      {d.due_date && (
+                        <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', whiteSpace: 'nowrap' }}>
+                          {fmtDate(d.due_date)}
+                        </span>
+                      )}
+
+                      {/* Delete */}
+                      <button
+                        onClick={() => deleteTask(d.id)}
+                        style={{ background: 'none', border: 'none', color: 'var(--ink-4)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px', flexShrink: 0 }}
+                        title="Remove subtask"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Subtasks read-only (non-managers can still see them) ──────── */}
+          {!canManage && deliverables.length > 0 && (
+            <div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
+                Subtasks · {deliverables.length}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {deliverables.map(d => (
+                  <div key={d.id} style={{
+                    background: 'var(--surface)', border: '1px solid var(--rule)',
+                    borderRadius: 9, padding: '10px 14px',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                  }}>
+                    <TaskStatusPill status={d.status} />
+                    <span style={{
+                      flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--ink)',
+                      textDecoration: d.status === 'done' ? 'line-through' : 'none',
+                      opacity: d.status === 'done' ? 0.55 : 1,
+                    }}>
+                      {d.title}
+                    </span>
+                    {d.due_date && (
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', whiteSpace: 'nowrap' }}>
+                        {fmtDate(d.due_date)}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Active collaborations — visible to everyone ────────────────── */}
           <div>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
               Active collaborations · {activeCollaborations.length}
@@ -164,7 +394,6 @@ export default function ProjectDetailClient({ project, updates, agreements, acti
                       display: 'grid', gridTemplateColumns: '36px 1fr auto',
                       gap: '0 14px', alignItems: 'start',
                     }}>
-                      {/* Avatar */}
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
                         background: 'color-mix(in srgb, var(--m6) 12%, var(--bg))',
@@ -173,8 +402,6 @@ export default function ProjectDetailClient({ project, updates, agreements, acti
                       }}>
                         {initial}
                       </div>
-
-                      {/* Details */}
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>{name}</div>
                         <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, marginBottom: 4 }}>
@@ -186,8 +413,6 @@ export default function ProjectDetailClient({ project, updates, agreements, acti
                           {a.expected_reward}
                         </div>
                       </div>
-
-                      {/* Status pill */}
                       <span style={{
                         fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
                         color: cs.color, background: cs.bg,
@@ -202,13 +427,13 @@ export default function ProjectDetailClient({ project, updates, agreements, acti
             )}
           </div>
 
-          {/* Updates feed */}
+          {/* ── Updates feed ──────────────────────────────────────────────── */}
           <div>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
               Updates
             </div>
 
-            {isAdmin && (
+            {canManage && (
               <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '16px', marginBottom: 20 }}>
                 <textarea
                   value={updateText}
@@ -252,7 +477,7 @@ export default function ProjectDetailClient({ project, updates, agreements, acti
           </div>
         </div>
 
-        {/* Right — admin panel */}
+        {/* ── Right column — admin panel only ──────────────────────────────── */}
         {isAdmin && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
