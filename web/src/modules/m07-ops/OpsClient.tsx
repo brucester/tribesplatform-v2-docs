@@ -155,61 +155,65 @@ function ProgressBar({ progress, color }: { progress: number; color: string }) {
 
 function KanbanCard({
   deliverable,
+  projectId,
   projectTitle,
   color,
 }: {
   deliverable: Deliverable
+  projectId: string
   projectTitle: string
   color: string
 }) {
   return (
-    <div style={{
-      background: 'var(--surface)',
-      border: '1px solid var(--rule)',
-      borderLeft: `3px solid ${color}`,
-      borderRadius: 8,
-      padding: '10px 12px',
-      marginBottom: 8,
-      boxShadow: 'var(--shadow-sm)',
-    }}>
+    <Link href={`/ops/${projectId}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
       <div style={{
-        fontSize: 12,
-        fontWeight: 600,
-        marginBottom: 6,
-        color: 'var(--ink)',
-        lineHeight: 1.35,
+        background: 'var(--surface)',
+        border: '1px solid var(--rule)',
+        borderLeft: `3px solid ${color}`,
+        borderRadius: 8,
+        padding: '10px 12px',
+        boxShadow: 'var(--shadow-sm)',
+        cursor: 'pointer',
       }}>
-        {deliverable.title}
-      </div>
-      {deliverable.status === 'in_progress' && deliverable.progress != null && (
-        <ProgressBar progress={deliverable.progress} color={color} />
-      )}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 4,
-      }}>
-        <span style={{
-          fontFamily: 'var(--mono)',
-          fontSize: 10,
-          color: 'var(--ink-3)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          maxWidth: '60%',
+        <div style={{
+          fontSize: 12,
+          fontWeight: 600,
+          marginBottom: 6,
+          color: 'var(--ink)',
+          lineHeight: 1.35,
         }}>
-          {projectTitle}
-        </span>
-        <span style={{
-          fontFamily: 'var(--mono)',
-          fontSize: 10,
-          color: 'var(--ink-3)',
+          {deliverable.title}
+        </div>
+        {deliverable.status === 'in_progress' && deliverable.progress != null && (
+          <ProgressBar progress={deliverable.progress} color={color} />
+        )}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 4,
         }}>
-          {fmtDate(deliverable.due_date)}
-        </span>
+          <span style={{
+            fontFamily: 'var(--mono)',
+            fontSize: 10,
+            color: 'var(--ink-3)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: '60%',
+          }}>
+            {projectTitle}
+          </span>
+          <span style={{
+            fontFamily: 'var(--mono)',
+            fontSize: 10,
+            color: 'var(--ink-3)',
+          }}>
+            {fmtDate(deliverable.due_date)}
+          </span>
+        </div>
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -554,6 +558,7 @@ export default function OpsClient({
                       <KanbanCard
                         key={d.id}
                         deliverable={d}
+                        projectId={d.project_id}
                         projectTitle={proj?.title ?? '—'}
                         color={color}
                       />

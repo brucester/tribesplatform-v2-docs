@@ -9,16 +9,23 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const [profileRes, projectRes, updatesRes, agreementsRes] = await Promise.all([
+  const [profileRes, projectRes, updatesRes, allAgreementsRes, activeAgreementsRes] = await Promise.all([
     supabase.from('user_profiles').select('role, first_name').eq('id', user.id).single(),
     supabase.from('projects').select('*').eq('id', id).single(),
     supabase.from('project_updates')
       .select('id, content, created_at, user_profiles(first_name, username)')
       .eq('project_id', id)
       .order('created_at', { ascending: false }),
+    // Admin: all proposals for management
     supabase.from('collaboration_agreements')
       .select('id, work_description, expected_reward, status, created_at, user_profiles(first_name, username)')
       .eq('project_id', id)
+      .order('created_at', { ascending: false }),
+    // Everyone: accepted/active collaborations only
+    supabase.from('collaboration_agreements')
+      .select('id, work_description, expected_reward, status, created_at, user_profiles(first_name, username)')
+      .eq('project_id', id)
+      .in('status', ['accepted', 'active', 'completed'])
       .order('created_at', { ascending: false }),
   ])
 
@@ -26,15 +33,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const isAdmin = isOpsAdmin(profileRes.data?.role ?? '')
 
-  const agreements = isAdmin
-    ? (agreementsRes.data ?? [])
-    : (agreementsRes.data ?? []).filter((a: any) => a.user_profiles?.username === profileRes.data?.first_name)
-
   return (
     <ProjectDetailClient
       project={projectRes.data}
       updates={updatesRes.data ?? []}
-      agreements={agreements}
+      agreements={isAdmin ? (allAgreementsRes.data ?? []) : []}
+      activeCollaborations={activeAgreementsRes.data ?? []}
       userId={user.id}
       userRole={profileRes.data?.role ?? 'explorer'}
       isAdmin={isAdmin}

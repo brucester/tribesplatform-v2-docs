@@ -18,16 +18,23 @@ const AGREEMENT_STATUS: Record<string, { label: string; color: string }> = {
   completed: { label: 'Completed',      color: '#94a3b8' },
 }
 
+const COLLAB_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  accepted:  { label: 'Accepted',  color: '#22c55e', bg: '#22c55e14' },
+  active:    { label: 'Active',    color: '#3b82f6', bg: '#3b82f614' },
+  completed: { label: 'Completed', color: '#94a3b8', bg: '#94a3b814' },
+}
+
 interface Project {
   id: string; title: string; description: string | null
   status: string; open_for_collaborators: boolean
   created_at: string; updated_at: string
 }
 
-export default function ProjectDetailClient({ project, updates, agreements, userId, userRole, isAdmin }: {
+export default function ProjectDetailClient({ project, updates, agreements, activeCollaborations, userId, userRole, isAdmin }: {
   project: Project
   updates: any[]
-  agreements: any[]
+  agreements: any[]          // admin: all proposals for management
+  activeCollaborations: any[] // everyone: accepted/active/completed
   userId: string
   userRole: string
   isAdmin: boolean
@@ -43,7 +50,6 @@ export default function ProjectDetailClient({ project, updates, agreements, user
   const [editOpenCollab, setEditOpenCollab] = useState(project.open_for_collaborators)
   const [savingSettings, setSavingSettings] = useState(false)
 
-  // Agreement status editing
   const [agreementUpdates, setAgreementUpdates] = useState<Record<string, string>>({})
   const [savingAgreement, setSavingAgreement] = useState<string | null>(null)
 
@@ -87,7 +93,7 @@ export default function ProjectDetailClient({ project, updates, agreements, user
   }
 
   return (
-    <div style={{ maxWidth: 840, margin: '0 auto', padding: '48px 20px 80px' }}>
+    <div style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 80px' }}>
 
       {/* Back */}
       <Link href="/ops" style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 28 }}>
@@ -115,7 +121,7 @@ export default function ProjectDetailClient({ project, updates, agreements, user
           </p>
         )}
         {project.open_for_collaborators && project.status === 'active' && !isAdmin && (
-          <Link href={`/agreements/${project.id}`} style={{ display: 'inline-block', marginTop: 16, background: '#3b82f6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 20px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
+          <Link href={`/agreements`} style={{ display: 'inline-block', marginTop: 16, background: '#3b82f6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 20px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
             Propose collaboration →
           </Link>
         )}
@@ -123,53 +129,127 @@ export default function ProjectDetailClient({ project, updates, agreements, user
 
       <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 340px' : '1fr', gap: 32 }}>
 
-        {/* Left — updates feed */}
-        <div>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 16 }}>
-            Updates
+        {/* Left — updates + active collaborations */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+
+          {/* Active collaborations — visible to everyone */}
+          <div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
+              Active collaborations · {activeCollaborations.length}
+            </div>
+
+            {activeCollaborations.length === 0 ? (
+              <div style={{
+                background: 'var(--bg-2)', border: '1px solid var(--rule)',
+                borderRadius: 10, padding: '28px 20px', textAlign: 'center',
+                color: 'var(--ink-4)', fontSize: 13,
+              }}>
+                No active collaborations yet.{' '}
+                {project.open_for_collaborators && project.status === 'active' && (
+                  <Link href="/agreements" style={{ color: 'var(--m6)', fontWeight: 600, textDecoration: 'none' }}>
+                    Be the first to propose →
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {activeCollaborations.map((a: any) => {
+                  const cs = COLLAB_STATUS[a.status] ?? COLLAB_STATUS.accepted
+                  const name = a.user_profiles?.first_name ?? a.user_profiles?.username ?? 'Community member'
+                  const initial = (a.user_profiles?.first_name ?? a.user_profiles?.username ?? '?')[0].toUpperCase()
+                  return (
+                    <div key={a.id} style={{
+                      background: 'var(--surface)', border: '1px solid var(--rule)',
+                      borderRadius: 12, padding: '16px 18px',
+                      display: 'grid', gridTemplateColumns: '36px 1fr auto',
+                      gap: '0 14px', alignItems: 'start',
+                    }}>
+                      {/* Avatar */}
+                      <div style={{
+                        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                        background: 'color-mix(in srgb, var(--m6) 12%, var(--bg))',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 700, color: 'var(--m6)',
+                      }}>
+                        {initial}
+                      </div>
+
+                      {/* Details */}
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>{name}</div>
+                        <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 600, color: 'var(--ink-3)' }}>Contributing: </span>
+                          {a.work_description}
+                        </div>
+                        <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                          <span style={{ fontWeight: 600, color: 'var(--ink-3)' }}>In exchange for: </span>
+                          {a.expected_reward}
+                        </div>
+                      </div>
+
+                      {/* Status pill */}
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                        color: cs.color, background: cs.bg,
+                        padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap', flexShrink: 0,
+                      }}>
+                        {cs.label}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
-          {isAdmin && (
-            <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '16px', marginBottom: 20 }}>
-              <textarea
-                value={updateText}
-                onChange={e => setUpdateText(e.target.value)}
-                placeholder="Post an update for this project…"
-                rows={3}
-                style={{ ...inputStyle, background: 'var(--surface)', resize: 'vertical', lineHeight: 1.6, marginBottom: 10 }}
-              />
-              <button
-                onClick={postUpdate}
-                disabled={postingUpdate || !updateText.trim()}
-                style={{ background: '#4338ca', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 'var(--radius)', border: 'none', cursor: postingUpdate || !updateText.trim() ? 'not-allowed' : 'pointer', opacity: postingUpdate || !updateText.trim() ? 0.65 : 1 }}
-              >
-                {postingUpdate ? 'Posting…' : 'Post update'}
-              </button>
+          {/* Updates feed */}
+          <div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
+              Updates
             </div>
-          )}
 
-          {updates.length === 0 ? (
-            <div style={{ color: 'var(--ink-4)', fontSize: 13, padding: '24px 0' }}>No updates yet.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-              {updates.map((u: any, i: number) => {
-                const author = u.user_profiles?.first_name ?? u.user_profiles?.username ?? 'Team'
-                const date = new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                return (
-                  <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0 16px', paddingBottom: 24 }}>
-                    <div style={{ paddingTop: 3 }}>
-                      <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-4)' }}>{date}</div>
-                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', marginTop: 2 }}>{author}</div>
+            {isAdmin && (
+              <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '16px', marginBottom: 20 }}>
+                <textarea
+                  value={updateText}
+                  onChange={e => setUpdateText(e.target.value)}
+                  placeholder="Post an update for this project…"
+                  rows={3}
+                  style={{ ...inputStyle, background: 'var(--surface)', resize: 'vertical', lineHeight: 1.6, marginBottom: 10 }}
+                />
+                <button
+                  onClick={postUpdate}
+                  disabled={postingUpdate || !updateText.trim()}
+                  style={{ background: '#4338ca', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 'var(--radius)', border: 'none', cursor: postingUpdate || !updateText.trim() ? 'not-allowed' : 'pointer', opacity: postingUpdate || !updateText.trim() ? 0.65 : 1 }}
+                >
+                  {postingUpdate ? 'Posting…' : 'Post update'}
+                </button>
+              </div>
+            )}
+
+            {updates.length === 0 ? (
+              <div style={{ color: 'var(--ink-4)', fontSize: 13, padding: '24px 0' }}>No updates yet.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {updates.map((u: any, i: number) => {
+                  const author = u.user_profiles?.first_name ?? u.user_profiles?.username ?? 'Team'
+                  const date = new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  return (
+                    <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0 16px', paddingBottom: 24 }}>
+                      <div style={{ paddingTop: 3 }}>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-4)' }}>{date}</div>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', marginTop: 2 }}>{author}</div>
+                      </div>
+                      <div style={{ borderLeft: '1px solid var(--rule)', paddingLeft: 16, position: 'relative' }}>
+                        <div style={{ position: 'absolute', left: -5, top: 6, width: 8, height: 8, borderRadius: '50%', background: i === 0 ? '#4338ca' : 'var(--rule)', border: '1.5px solid var(--surface)' }} />
+                        <p style={{ color: 'var(--ink-2)', fontSize: 14, lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap' }}>{u.content}</p>
+                      </div>
                     </div>
-                    <div style={{ borderLeft: '1px solid var(--rule)', paddingLeft: 16, position: 'relative' }}>
-                      <div style={{ position: 'absolute', left: -5, top: 6, width: 8, height: 8, borderRadius: '50%', background: i === 0 ? '#4338ca' : 'var(--rule)', border: '1.5px solid var(--surface)' }} />
-                      <p style={{ color: 'var(--ink-2)', fontSize: 14, lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap' }}>{u.content}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right — admin panel */}
@@ -196,10 +276,10 @@ export default function ProjectDetailClient({ project, updates, agreements, user
               </button>
             </div>
 
-            {/* Collaboration proposals */}
+            {/* All proposals — admin management */}
             <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', padding: '16px' }}>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 12 }}>
-                Proposals ({agreements.length})
+                All proposals ({agreements.length})
               </div>
               {agreements.length === 0 ? (
                 <p style={{ color: 'var(--ink-4)', fontSize: 12 }}>No proposals yet.</p>
