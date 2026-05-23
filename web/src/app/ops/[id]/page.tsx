@@ -9,7 +9,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const [profileRes, projectRes, updatesRes, allAgreementsRes, activeAgreementsRes, deliverablesRes] = await Promise.all([
+  const [profileRes, projectRes, updatesRes, allAgreementsRes, activeAgreementsRes, deliverablesRes, myProposalRes] = await Promise.all([
     supabase.from('user_profiles').select('role, first_name').eq('id', user.id).single(),
     supabase.from('projects').select('*, created_by, lead_user_id').eq('id', id).single(),
     supabase.from('project_updates')
@@ -29,6 +29,11 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       .select('id, title, status, due_date, assignee_id, progress')
       .eq('project_id', id)
       .order('created_at', { ascending: true }),
+    supabase.from('collaboration_agreements')
+      .select('id, work_description, expected_reward, conditions, status')
+      .eq('project_id', id)
+      .eq('user_id', user.id)
+      .maybeSingle(),
   ])
 
   if (!projectRes.data) notFound()
@@ -44,6 +49,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       agreements={isAdmin ? (allAgreementsRes.data ?? []) : []}
       activeCollaborations={activeAgreementsRes.data ?? []}
       deliverables={deliverablesRes.data ?? []}
+      myProposal={myProposalRes.data ?? null}
       userId={user.id}
       userRole={profileRes.data?.role ?? 'explorer'}
       isAdmin={isAdmin}

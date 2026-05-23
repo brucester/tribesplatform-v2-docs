@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { fmtDate } from '@/core/lib/format'
+import { isJoiningOrAbove } from '@/core/lib/roles'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -51,6 +52,23 @@ interface Project {
   created_at: string; updated_at: string
 }
 
+interface MyProposal {
+  id: string
+  work_description: string | null
+  expected_reward: string | null
+  conditions: string | null
+  status: string
+}
+
+const BLOCKING_STATUSES = ['pending', 'accepted', 'active', 'completed']
+const PROPOSAL_STATUS_INFO: Record<string, { label: string; color: string; note: string }> = {
+  pending:   { label: 'Pending review', color: '#f59e0b', note: 'Your proposal is waiting for admin review.' },
+  accepted:  { label: 'Accepted',       color: '#22c55e', note: 'Your proposal was accepted. Start your contribution!' },
+  active:    { label: 'Active',         color: '#3b82f6', note: 'Your collaboration is underway.' },
+  completed: { label: 'Completed',      color: '#94a3b8', note: 'This collaboration has been marked complete.' },
+  rejected:  { label: 'Not accepted',   color: '#ef4444', note: 'Your previous proposal was not accepted. You can submit a new one.' },
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function TaskStatusPill({ status, onChange }: { status: string; onChange?: (s: string) => void }) {
@@ -87,13 +105,14 @@ function TaskStatusPill({ status, onChange }: { status: string; onChange?: (s: s
 
 export default function ProjectDetailClient({
   project, updates, agreements, activeCollaborations,
-  deliverables: initialDeliverables, userId, userRole, isAdmin, isProjectCreator,
+  deliverables: initialDeliverables, myProposal: initialMyProposal, userId, userRole, isAdmin, isProjectCreator,
 }: {
   project: Project
   updates: any[]
   agreements: any[]
   activeCollaborations: any[]
   deliverables: Deliverable[]
+  myProposal: MyProposal | null
   userId: string
   userRole: string
   isAdmin: boolean
@@ -103,8 +122,8 @@ export default function ProjectDetailClient({
   const router = useRouter()
   const s = STATUS_STYLE[project.status] ?? STATUS_STYLE.active
 
-  // canManage = admin or the project creator
   const canManage = isAdmin || isProjectCreator
+  const canPropose = !canManage && isJoiningOrAbove(userRole) && project.open_for_collaborators && project.status === 'active'
 
   // ── Subtasks state ──────────────────────────────────────────────────────────
   const [deliverables, setDeliverables] = useState<Deliverable[]>(initialDeliverables)
@@ -124,6 +143,42 @@ export default function ProjectDetailClient({
 
   // ── Agreement management (admin only) ───────────────────────────────────────
   const [savingAgreement, setSavingAgreement] = useState<string | null>(null)
+
+  // ── Proposal form ───────────────────────────────────────────────────────────
+  const [myProposal, setMyProposal] = useState<MyProposal | null>(initialMyProposal)
+  const hasBlockingProposal = !!myProposal && BLOCKING_STATUSES.includes(myProposal.status)
+  const [showProposalForm, setShowProposalForm] = useState(false)
+  const [workDesc, setWorkDesc] = useState(myProposal?.work_description ?? '')
+  const [reward, setReward] = useState(myProposal?.expected_reward ?? '')
+  const [conditions, setConditions] = useState(myProposal?.conditions ?? '')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  async function submitProposal() {
+    if (!workDesc.trim() || !reward.trim()) return
+    setSubmitting(true)
+    setSubmitError(null)
+    const { data, error } = await supabase
+      .from('collaboration_agreements')
+      .upsert({
+        project_id: project.id,
+        user_id: userId,
+        work_description: workDesc.trim(),
+        expected_reward: reward.trim(),
+        conditions: conditions.trim() || null,
+        status: 'pending',
+      }, { onConflict: 'project_id,user_id' })
+      .select('id, work_description, expected_reward, conditions, status')
+      .single()
+    if (error) {
+      setSubmitError(error.message)
+      setSubmitting(false)
+      return
+    }
+    setMyProposal(data)
+    setShowProposalForm(false)
+    setSubmitting(false)
+  }
 
   const inputStyle: React.CSSProperties = {
     width: '100%', boxSizing: 'border-box',
@@ -224,12 +279,93 @@ export default function ProjectDetailClient({
             {project.description}
           </p>
         )}
-        {project.open_for_collaborators && project.status === 'active' && !canManage && (
-          <Link href="/agreements" style={{ display: 'inline-block', marginTop: 16, background: '#3b82f6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 20px', borderRadius: 'var(--radius)', textDecoration: 'none' }}>
-            Propose collaboration →
-          </Link>
+        {canPropose && !hasBlockingProposal && (
+          <button
+            onClick={() => setShowProposalForm(v => !v)}
+            style={{ display: 'inline-block', marginTop: 16, background: showProposalForm ? 'var(--bg-2)' : '#3b82f6', color: showProposalForm ? 'var(--ink-3)' : '#fff', fontSize: 13, fontWeight: 600, padding: '9px 20px', borderRadius: 'var(--radius)', border: showProposalForm ? '1px solid var(--rule)' : 'none', cursor: 'pointer' }}
+          >
+            {showProposalForm ? 'Cancel' : 'Propose collaboration →'}
+          </button>
         )}
+        {canPropose && hasBlockingProposal && myProposal && (() => {
+          const info = PROPOSAL_STATUS_INFO[myProposal.status]
+          return (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 16, background: `${info.color}12`, border: `1px solid ${info.color}40`, borderRadius: 'var(--radius)', padding: '8px 14px' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: info.color }}>{info.label}</span>
+              <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{info.note}</span>
+            </div>
+          )
+        })()}
       </div>
+
+      {/* ── Inline proposal form ─────────────────────────────────────────────── */}
+      {showProposalForm && canPropose && (
+        <div style={{
+          background: 'color-mix(in srgb, #3b82f6 5%, var(--surface))',
+          border: '1px solid color-mix(in srgb, #3b82f6 30%, var(--rule))',
+          borderRadius: 12, padding: '22px 24px', marginBottom: 32,
+        }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3b82f6', marginBottom: 18 }}>
+            Propose collaboration
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
+                What will you contribute? <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <textarea
+                value={workDesc}
+                onChange={e => setWorkDesc(e.target.value)}
+                placeholder="Describe what you'll do, deliver, or create for this project…"
+                rows={3}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
+                What do you expect in return? <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <textarea
+                value={reward}
+                onChange={e => setReward(e.target.value)}
+                placeholder="Mentorship, credits, revenue share, recognition…"
+                rows={2}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>
+                Any conditions or notes? <span style={{ color: 'var(--ink-4)', fontWeight: 400 }}>(optional)</span>
+              </label>
+              <textarea
+                value={conditions}
+                onChange={e => setConditions(e.target.value)}
+                placeholder="Timing constraints, availability, dependencies…"
+                rows={2}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--rule)', background: 'var(--surface)', color: 'var(--ink)', fontSize: 14, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit', outline: 'none' }}
+              />
+            </div>
+            {submitError && (
+              <p style={{ fontSize: 12, color: '#ef4444', margin: 0 }}>{submitError}</p>
+            )}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <button
+                onClick={submitProposal}
+                disabled={submitting || !workDesc.trim() || !reward.trim()}
+                style={{ background: '#3b82f6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 22px', borderRadius: 'var(--radius)', border: 'none', cursor: submitting || !workDesc.trim() || !reward.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !workDesc.trim() || !reward.trim() ? 0.6 : 1 }}
+              >
+                {submitting ? 'Submitting…' : 'Submit proposal'}
+              </button>
+              <button
+                onClick={() => setShowProposalForm(false)}
+                style={{ background: 'none', border: 'none', fontSize: 13, color: 'var(--ink-4)', cursor: 'pointer', padding: '9px 4px' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 340px' : '1fr', gap: 32 }}>
 
@@ -371,10 +507,10 @@ export default function ProjectDetailClient({
                 color: 'var(--ink-4)', fontSize: 13,
               }}>
                 No active collaborations yet.{' '}
-                {project.open_for_collaborators && project.status === 'active' && (
-                  <Link href="/agreements" style={{ color: 'var(--m6)', fontWeight: 600, textDecoration: 'none' }}>
+                {canPropose && !hasBlockingProposal && (
+                  <button onClick={() => { setShowProposalForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }} style={{ background: 'none', border: 'none', color: 'var(--m6)', fontWeight: 600, cursor: 'pointer', fontSize: 13, padding: 0 }}>
                     Be the first to propose →
-                  </Link>
+                  </button>
                 )}
               </div>
             ) : (
