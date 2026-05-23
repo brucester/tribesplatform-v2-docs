@@ -12,7 +12,7 @@ export default async function NewProjectPage() {
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!isOpsAdmin(profile?.role ?? '')) {
     redirect('/ops')

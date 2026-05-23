@@ -15,7 +15,7 @@ export default async function AgreementsPage() {
       .from('user_profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     role = profile?.role ?? 'explorer'
 
     role = await promoteToMemberIfEligible(supabase, user.id, role)

@@ -32,7 +32,7 @@ export default async function NetworkDashboard() {
     const [offersRes, seeksRes, profileRes, allProfilesRes, allBiosRes, myBioRes] = await Promise.all([
       supabase.from('user_offers').select('id').eq('user_id', user.id),
       supabase.from('user_requests').select('id').eq('user_id', user.id),
-      supabase.from('user_profiles').select('first_name, last_name').eq('id', user.id).single(),
+      supabase.from('user_profiles').select('first_name, last_name').eq('id', user.id).maybeSingle(),
       supabase.from('user_profiles')
         .select('id, username, first_name, last_name, avatar_url, city, country, user_types')
         .neq('id', user.id),

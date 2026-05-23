@@ -12,7 +12,7 @@ export default async function BlueprintPage() {
       .from('user_profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     isAdmin = isCircleAdmin(profile?.role ?? '')
   }
 

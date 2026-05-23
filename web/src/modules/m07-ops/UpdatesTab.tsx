@@ -1,24 +1,11 @@
 'use client'
 
 import { fmtDate } from '@/core/lib/format'
-
-interface ProjectUpdate {
-  id: string
-  project_id: string
-  user_id: string
-  content: string
-  created_at: string
-  author_first_name?: string | null
-}
-
-interface Project {
-  id: string
-  title: string
-}
+import type { ProjectUpdate, ProjectSummary } from './types'
 
 export function UpdatesTab({ updates, projects }: {
   updates: ProjectUpdate[]
-  projects: Project[]
+  projects: ProjectSummary[]
 }) {
   const projectMap = Object.fromEntries(projects.map(p => [p.id, p.title]))
 

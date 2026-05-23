@@ -22,7 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       .from('user_profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     role = profile?.role ?? 'explorer'
   }
 

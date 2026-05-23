@@ -14,7 +14,7 @@ export default async function OpsPage() {
       .from('user_profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     userRole = profile?.role ?? 'explorer'
     isAdmin = isOpsAdmin(userRole)
 

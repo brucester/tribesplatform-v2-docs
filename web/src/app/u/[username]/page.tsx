@@ -13,8 +13,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   // Profile being viewed + viewer's own data (for sidebar/right panel) fetched in parallel
   const [profileRes, viewerProfileRes, viewerBioRes, viewerOffersRes, viewerRequestsRes] = await Promise.all([
-    supabase.from('user_profiles').select('*').eq('username', username).single(),
-    user ? supabase.from('user_profiles').select('username, avatar_url, first_name, headline').eq('id', user.id).single() : Promise.resolve({ data: null }),
+    supabase.from('user_profiles').select('*').eq('username', username).maybeSingle(),
+    user ? supabase.from('user_profiles').select('username, avatar_url, first_name, headline').eq('id', user.id).maybeSingle() : Promise.resolve({ data: null }),
     user ? supabase.from('user_bio').select('values_principles, skills, interests, goals, personality_details').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
     user ? supabase.from('user_offers').select('id').eq('user_id', user.id) : Promise.resolve({ data: null }),
     user ? supabase.from('user_requests').select('id').eq('user_id', user.id) : Promise.resolve({ data: null }),

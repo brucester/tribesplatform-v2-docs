@@ -13,7 +13,7 @@ export default async function AgreementFormPage({ params }: { params: Promise<{ 
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!isJoiningOrAbove(profile?.role ?? '')) redirect('/join')
 

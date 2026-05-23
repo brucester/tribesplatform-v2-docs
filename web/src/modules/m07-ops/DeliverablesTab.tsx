@@ -1,22 +1,7 @@
 'use client'
 
 import { fmtDate } from '@/core/lib/format'
-
-interface Deliverable {
-  id: string
-  project_id: string
-  title: string
-  assignee_id: string | null
-  due_date: string | null
-  status: string
-  progress: number | null
-  assignee_username?: string | null
-}
-
-interface Project {
-  id: string
-  title: string
-}
+import type { Deliverable, ProjectSummary } from './types'
 
 const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> = {
   backlog:     { label: 'Backlog',     color: 'var(--ink-4)', bg: 'var(--bg-3)' },
@@ -27,7 +12,7 @@ const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> 
 
 export function DeliverablesTab({ deliverables, projects }: {
   deliverables: Deliverable[]
-  projects: Project[]
+  projects: ProjectSummary[]
 }) {
   const projectMap = Object.fromEntries(projects.map(p => [p.id, p.title]))
 

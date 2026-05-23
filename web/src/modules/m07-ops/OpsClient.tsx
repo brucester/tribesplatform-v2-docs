@@ -6,40 +6,9 @@ import { createClient } from '@/core/lib/supabase/client'
 import { fmtDate } from '@/core/lib/format'
 import { DeliverablesTab } from './DeliverablesTab'
 import { UpdatesTab } from './UpdatesTab'
+import type { Project, Deliverable, ProjectUpdate } from './types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Project {
-  id: string
-  title: string
-  description: string | null
-  status: string
-  open_for_collaborators: boolean
-  needs: string | null
-  deadline: string | null
-  sprint_name: string | null
-  created_at: string
-}
-
-interface Deliverable {
-  id: string
-  project_id: string
-  title: string
-  assignee_id: string | null
-  due_date: string | null
-  status: string
-  progress: number | null
-  assignee_username?: string | null
-}
-
-interface ProjectUpdate {
-  id: string
-  project_id: string
-  user_id: string
-  content: string
-  created_at: string
-  author_first_name?: string | null
-}
 
 interface OpsClientProps {
   projects: Project[]

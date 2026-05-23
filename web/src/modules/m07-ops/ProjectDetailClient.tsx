@@ -5,6 +5,7 @@ import { fmtDate } from '@/core/lib/format'
 import { isJoiningOrAbove } from '@/core/lib/roles'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import type { Project, Deliverable, ProjectUpdate, CollaborationAgreement, MyProposal } from './types'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -34,31 +35,6 @@ const TASK_STATUS: { value: string; label: string; color: string; bg: string }[]
   { value: 'review',      label: 'Review',       color: '#f59e0b',      bg: '#f59e0b14' },
   { value: 'done',        label: 'Done',         color: '#22c55e',      bg: '#22c55e14' },
 ]
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Deliverable {
-  id: string
-  title: string
-  status: string
-  due_date: string | null
-  assignee_id: string | null
-  progress: number | null
-}
-
-interface Project {
-  id: string; title: string; description: string | null
-  status: string; open_for_collaborators: boolean
-  created_at: string; updated_at: string
-}
-
-interface MyProposal {
-  id: string
-  work_description: string | null
-  expected_reward: string | null
-  conditions: string | null
-  status: string
-}
 
 const BLOCKING_STATUSES = ['pending', 'accepted', 'active', 'completed']
 const PROPOSAL_STATUS_INFO: Record<string, { label: string; color: string; note: string }> = {
@@ -108,9 +84,9 @@ export default function ProjectDetailClient({
   deliverables: initialDeliverables, myProposal: initialMyProposal, userId, userRole, isAdmin, isProjectCreator,
 }: {
   project: Project
-  updates: any[]
-  agreements: any[]
-  activeCollaborations: any[]
+  updates: ProjectUpdate[]
+  agreements: CollaborationAgreement[]
+  activeCollaborations: CollaborationAgreement[]
   deliverables: Deliverable[]
   myProposal: MyProposal | null
   userId: string
@@ -197,7 +173,7 @@ export default function ProjectDetailClient({
       due_date: newTaskDue || null,
       status: 'backlog',
       progress: 0,
-    }).select('id, title, status, due_date, assignee_id, progress').single()
+    }).select('id, project_id, title, status, due_date, assignee_id, progress').single()
     if (error) {
       setTaskError(error.message)
       setAddingTask(false)
@@ -516,7 +492,7 @@ export default function ProjectDetailClient({
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {activeCollaborations.map((a: any) => {
+                {activeCollaborations.map(a => {
                   const cs = COLLAB_STATUS[a.status] ?? COLLAB_STATUS.accepted
                   const name = a.user_profiles?.first_name ?? a.user_profiles?.username ?? 'Community member'
                   const initial = (a.user_profiles?.first_name ?? a.user_profiles?.username ?? '?')[0].toUpperCase()
@@ -589,7 +565,7 @@ export default function ProjectDetailClient({
               <div style={{ color: 'var(--ink-4)', fontSize: 13, padding: '24px 0' }}>No updates yet.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {updates.map((u: any, i: number) => {
+                {updates.map((u, i) => {
                   const author = u.user_profiles?.first_name ?? u.user_profiles?.username ?? 'Team'
                   const date = new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                   return (
@@ -643,7 +619,7 @@ export default function ProjectDetailClient({
                 <p style={{ color: 'var(--ink-4)', fontSize: 12 }}>No proposals yet.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {agreements.map((a: any) => {
+                  {agreements.map(a => {
                     const as = AGREEMENT_STATUS[a.status] ?? AGREEMENT_STATUS.pending
                     const name = a.user_profiles?.first_name ?? a.user_profiles?.username ?? 'User'
                     return (

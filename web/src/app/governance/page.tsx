@@ -29,7 +29,7 @@ export default async function GovernancePage() {
   if (user) {
     const [myVotesRes, profileRes] = await Promise.all([
       supabase.from('proposal_votes').select('proposal_id, vote').eq('user_id', user.id),
-      supabase.from('user_profiles').select('role').eq('id', user.id).single(),
+      supabase.from('user_profiles').select('role').eq('id', user.id).maybeSingle(),
     ])
     for (const v of myVotesRes.data ?? []) {
       myVotes[v.proposal_id] = v.vote
