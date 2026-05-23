@@ -87,7 +87,7 @@ This session extended the platform from M07 → M09, added a persistent app shel
 
 ### Deployment — v3.01
 - Deployed to Cloudflare Workers via `npm run deploy:cf`
-- Live: `https://tribes-platform.correa-oscar11.workers.dev`
+- Live: `https://myconet.correa-oscar11.workers.dev`
 - Version tag `v3.01` added below logo in AppTopBar
 
 ---
@@ -252,7 +252,7 @@ Black → Brown → Red → Orange → Yellow → Green → Blue → Indigo → 
 - Migrated from Vercel to Cloudflare Workers using `@opennextjs/cloudflare`
 - Vercel Hobby capped function execution at 60s; Cloudflare Workers charge CPU time only — MiniMax 524 gateway timeouts resolved
 - Deploy command: `cd web && npm run deploy`
-- Live: `https://tribes-platform.correa-oscar11.workers.dev`
+- Live: `https://myconet.correa-oscar11.workers.dev`
 
 ### Documents updated
 - `EXECUTIVE-SUMMARY.md` — v3.0, reflects single-community portal, live modules, core loop, tech stack

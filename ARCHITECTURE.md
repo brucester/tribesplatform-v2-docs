@@ -391,7 +391,7 @@ cd web && npm run deploy:cf
 # Runs: opennextjs-cloudflare build && wrangler deploy
 ```
 
-**Live URL:** `https://tribes-platform.correa-oscar11.workers.dev`
+**Live URL:** `https://myconet.correa-oscar11.workers.dev`
 
 Environment variables are set in `.dev.vars` (local) and Cloudflare dashboard (production):
 - `NEXT_PUBLIC_SUPABASE_URL`
