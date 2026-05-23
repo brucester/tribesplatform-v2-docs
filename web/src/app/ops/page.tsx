@@ -1,138 +1,93 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-
-const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  active:    { label: 'Active',     color: '#22c55e', bg: '#22c55e15' },
-  paused:    { label: 'Paused',     color: '#f59e0b', bg: '#f59e0b15' },
-  completed: { label: 'Completed',  color: '#94a3b8', bg: '#94a3b815' },
-}
+import { createClient } from '@/core/lib/supabase/server'
+import OpsClient from '@/modules/m07-ops/OpsClient'
+import { isOpsAdmin } from '@/core/lib/roles'
+import { promoteToMemberIfEligible } from '@/core/lib/promotions'
 
 export default async function OpsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  let isAdmin = false
+  let userRole = 'explorer'
+  let leadCircles: string[] = []
+  if (user) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role, lead_circles')
+      .eq('id', user.id)
+      .maybeSingle()
+    userRole = profile?.role ?? 'explorer'
+    leadCircles = profile?.lead_circles ?? []
+    isAdmin = isOpsAdmin(userRole)
 
-  const isAdmin = ['admin', 'project_lead'].includes(profile?.role ?? '')
+    userRole = await promoteToMemberIfEligible(supabase, user.id, userRole)
+  }
 
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, title, description, status, open_for_collaborators, created_at, updated_at')
+    .select('id, title, description, status, open_for_collaborators, circle, needs, deadline, sprint_name, created_at, created_by, lead_user_id')
     .order('created_at', { ascending: false })
 
-  const activeProjects = projects?.filter(p => p.status === 'active') ?? []
-  const otherProjects = projects?.filter(p => p.status !== 'active') ?? []
+  const { data: deliverablesRaw } = await supabase
+    .from('deliverables')
+    .select('id, project_id, title, assignee_id, due_date, status, progress, user_profiles(username)')
+    .order('due_date', { ascending: true })
+
+  const deliverables = (deliverablesRaw ?? []).map((d: any) => ({
+    id: d.id as string,
+    project_id: d.project_id as string,
+    title: d.title as string,
+    assignee_id: d.assignee_id as string | null,
+    due_date: d.due_date as string | null,
+    status: (d.status as string) ?? 'backlog',
+    progress: d.progress as number | null,
+    assignee_username: d.user_profiles?.username ?? null,
+  }))
+
+  const { data: updatesRaw } = await supabase
+    .from('project_updates')
+    .select('id, project_id, user_id, content, created_at, user_profiles(first_name)')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  const updates = (updatesRaw ?? []).map((u: any) => ({
+    id: u.id as string,
+    project_id: u.project_id as string,
+    user_id: u.user_id as string,
+    content: u.content as string,
+    created_at: u.created_at as string,
+    author_first_name: u.user_profiles?.first_name ?? null,
+  }))
+
+  const allProjects = projects ?? []
+  const activeCount = allProjects.filter(p => p.status === 'active').length
+  const deliverableCount = deliverables.length
+  const doneCount = deliverables.filter(d => d.status === 'done').length
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const atRiskCount = deliverables.filter(d => {
+    if (!d.due_date) return false
+    if (['done', 'review'].includes(d.status)) return false
+    return new Date(d.due_date) < today
+  }).length
+
+  const sprintName = allProjects.find(p => p.sprint_name)?.sprint_name ?? null
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 20px 80px' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40, gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4338ca', background: '#4338ca15', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
-            M07 · Operations
-          </div>
-          <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', lineHeight: 1.1, marginBottom: 8 }}>
-            Community Projects
-          </h1>
-          <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>
-            Active work happening in the community. Click a project to see updates.
-          </p>
-        </div>
-        {isAdmin && (
-          <Link href="/ops/new" style={{
-            background: '#4338ca', color: '#fff', fontSize: 13, fontWeight: 600,
-            padding: '9px 20px', borderRadius: 'var(--radius)', textDecoration: 'none',
-            whiteSpace: 'nowrap', flexShrink: 0,
-          }}>
-            + New project
-          </Link>
-        )}
-      </div>
-
-      {/* Active projects */}
-      {activeProjects.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 40 }}>
-          {activeProjects.map(p => (
-            <ProjectCard key={p.id} project={p} />
-          ))}
-        </div>
-      ) : (
-        <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius-lg)', padding: '40px 24px', textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ fontSize: 28, marginBottom: 12 }}>🌱</div>
-          <p style={{ color: 'var(--ink-3)', fontSize: 14 }}>No active projects yet.</p>
-          {isAdmin && (
-            <Link href="/ops/new" style={{ display: 'inline-block', marginTop: 12, fontSize: 13, color: '#4338ca', fontWeight: 600, textDecoration: 'none' }}>
-              Add the first project →
-            </Link>
-          )}
-        </div>
-      )}
-
-      {/* Completed / paused */}
-      {otherProjects.length > 0 && (
-        <>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 12 }}>
-            Past projects
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {otherProjects.map(p => (
-              <ProjectCard key={p.id} project={p} muted />
-            ))}
-          </div>
-        </>
-      )}
-
-    </div>
-  )
-}
-
-function ProjectCard({ project, muted }: { project: any; muted?: boolean }) {
-  const s = STATUS_STYLE[project.status] ?? STATUS_STYLE.active
-  const updated = new Date(project.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-
-  return (
-    <Link href={`/ops/${project.id}`} style={{ textDecoration: 'none' }}>
-      <div style={{
-        background: 'var(--surface)', border: '1px solid var(--rule)',
-        borderLeft: `4px solid ${muted ? 'var(--rule)' : '#4338ca'}`,
-        borderRadius: 'var(--radius)', padding: '18px 20px',
-        display: 'flex', alignItems: 'center', gap: 16,
-        opacity: muted ? 0.7 : 1,
-        transition: 'box-shadow 120ms, transform 120ms',
-        cursor: 'pointer',
-      }} className="hover-elevate">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'var(--display)', fontSize: 16, color: 'var(--ink)', fontWeight: 600 }}>
-              {project.title}
-            </span>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: s.color, background: s.bg, padding: '2px 8px', borderRadius: 20 }}>
-              {s.label}
-            </span>
-            {project.open_for_collaborators && project.status === 'active' && (
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#3b82f6', background: '#3b82f615', padding: '2px 8px', borderRadius: 20 }}>
-                Open for collaborators
-              </span>
-            )}
-          </div>
-          {project.description && (
-            <p style={{ color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.55, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {project.description}
-            </p>
-          )}
-        </div>
-        <div style={{ flexShrink: 0, textAlign: 'right' }}>
-          <div style={{ fontSize: 11, color: 'var(--ink-4)' }}>Updated {updated}</div>
-          <div style={{ fontSize: 12, color: '#4338ca', fontWeight: 500, marginTop: 2 }}>View →</div>
-        </div>
-      </div>
-    </Link>
+    <OpsClient
+      projects={allProjects}
+      deliverables={deliverables}
+      updates={updates}
+      activeCount={activeCount}
+      deliverableCount={deliverableCount}
+      doneCount={doneCount}
+      atRiskCount={atRiskCount}
+      isAdmin={isAdmin}
+      userId={user?.id ?? null}
+      userRole={userRole}
+      leadCircles={leadCircles}
+      sprintName={sprintName}
+    />
   )
 }

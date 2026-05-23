@@ -2,6 +2,135 @@ import Link from 'next/link'
 
 const ENTRIES = [
   {
+    version: 'v3.41',
+    date: '2026-05-23',
+    title: 'Circles, Kanban drag-and-drop, admin users editor, type consolidation',
+    items: [
+      'New core/lib/format.ts consolidates fmtDate, formatDeadline, colorForId, and initialForName — eliminates the duplicated copies across 6 files in m06-agreements and m07-ops.',
+      'Restructured network/page.tsx user-conditional Supabase queries into a guarded if (user) block, removing all 10+ "as any" casts and giving the compiler full type inference. agreements/[id]/page.tsx now uses isJoiningOrAbove() instead of hardcoded role string.',
+      'Cloudflare Worker renamed from tribes-platform → myconet. Live URL is now https://myconet.correa-oscar11.workers.dev. All docs, README, ARCHITECTURE, log.md, and wrangler.jsonc reflect the new name.',
+      'Inline collaboration proposal form on project detail pages — the "Propose collaboration" and "Be the first to propose" buttons now open a form right on the project page (work description, expected reward, optional conditions) and submit via upsert. Existing pending/accepted/active proposals show a status panel instead.',
+      'Mobile-optimized the project detail page: padding scales down, admin two-column grid stacks to single column, the add-subtask row goes vertical (title → date → button full-width), task titles truncate with ellipsis, proposal status badge wraps cleanly.',
+      'Consolidated M07 ops types into modules/m07-ops/types.ts (Project, ProjectSummary, Deliverable, ProjectUpdate, CollaborationAgreement, MyProposal) — replaces 11 duplicated inline interfaces across 4 files and removes 6+ "any[]" props on ProjectDetailClient.',
+      'Hardened user_profiles fetches: all 12 .single() calls in route pages converted to .maybeSingle() so brand-new users without a profile row don\'t error out — the existing role ?? "explorer" fallback handles the null case.',
+      'Circles on projects — added projects.circle (one of ecology, hardware, humanware, economy, tech) and user_profiles.lead_circles (text[]). New core/lib/pillars.ts exports PILLARS, PILLAR_META (label, color, emoji), and isPillar() for any module to render a circle badge.',
+      'Circle pill picker added to the propose-project modal (M06), the admin new-project form (M07), and the project detail settings panel. Project headers now show a circle badge for everyone.',
+      'Kanban cards on the Ops board now support HTML5 drag-and-drop between status columns, permission-gated: admin can move any deliverable, project_lead can move deliverables in their own projects, circle_lead can move deliverables in projects whose circle they lead. Optimistic UI update on drop with router.refresh() after the DB write. Cards show a circle badge directly.',
+      'New /admin/users page (admin-only) lists every user with an inline editor: role dropdown (Explorer, Joining, Member, Project lead, Circle lead, Admin) and — when role is circle_lead — a pillar pill picker for lead_circles. Search filters by name, username, or role. Per-row save button with Saving → ✓ Saved → Save states.',
+      'Sidenav now shows an "Admin → Users" section that renders only for users with role admin.',
+    ],
+  },
+  {
+    version: 'v3.31',
+    date: '2026-05-22',
+    title: 'Ops subtasks, public collaborations, join journey page, agreement dedup',
+    items: [
+      'Project creators (created_by or lead_user_id) can now add, update, and delete subtasks directly on their project detail page. Subtask status is an inline dropdown (Backlog → In progress → Review → Done) with optimistic updates.',
+      'Project creators can also post project updates — previously only admins could do this.',
+      'Active collaborations (accepted/active/completed agreements) are now visible to every logged-in user on the project detail page, showing each collaborator, what they\'re contributing, and what they expect in return.',
+      'Kanban cards on the Ops board are now clickable links that navigate to the project detail page.',
+      'Collaboration agreements now use upsert instead of insert — submitting a proposal on a project you\'ve already proposed on updates the existing row instead of throwing a duplicate key error.',
+      'If you already have an active proposal on a selected project, the form is replaced with a clear status panel showing the existing proposal\'s current state (pending, accepted, active, completed).',
+      'The /join page for guests now shows a three-step community journey (Explorer → Joining Member → Full Member) with bullets explaining what each stage unlocks and a CTA to sign up.',
+      'Full members and above (member, circle_lead, project_lead, admin) see a role roadmap on /join instead of the application form — all 6 roles shown with how to reach each one and what access it grants.',
+    ],
+  },
+  {
+    version: 'v3.30',
+    date: '2026-05-22',
+    title: 'Code quality sprint — component extraction and cleanup',
+    items: [
+      'Extracted NewProjectModal from AgreementsClient into its own file — self-contained, manages its own state, ~110 lines removed from the parent component.',
+      'Extracted AgreementFormFields (FormField, FocusInput, FocusTextarea, inputStyle) into a shared module file, reused by both AgreementsClient and NewProjectModal.',
+      'Extracted DeliverablesTab and UpdatesTab from OpsClient into their own files — removed ~200 lines of inline duplication from the ops module.',
+      'All component extractions are pure refactors: zero behavior changes, build passes clean, all routes verified.',
+    ],
+  },
+  {
+    version: 'v3.22',
+    date: '2026-05-22',
+    title: 'Codebase cleanup sprint — roles, promotions, performance',
+    items: [
+      'Deleted four duplicate legacy directories (src/lib/, src/components/, src/contexts/, src/types/) that were left over from the v3.20 reorganization. Build now relies entirely on src/core/ and src/modules/.',
+      'Finished resident → member role rename across all UI copy, landing page, sidebar section label ("Welcome Home"), and module descriptions.',
+      'Centralized all role authority logic into src/core/lib/roles.ts — isFullMember, isCircleAdmin, isOpsAdmin, isAdmin, MEMBER_ROLES. Replaced 11 inline role arrays across the codebase.',
+      'Role permission matrix clarified: circle_lead + admin manage Blueprint/Join/Agreements; circle_lead + project_lead + admin see the full Ops panel; admin only can edit records.',
+      'Extracted member promotion logic into src/core/lib/promotions.ts — promoteToMemberIfEligible() checks both paths (accepted agreement + active project) in one parallel query.',
+      'Renamed /api/claude → /api/scan (the route calls MiniMax, not Claude). Removed verbose debug console.log statements from production.',
+      'Fixed sidebar role flash — role is now fetched server-side in layout.tsx and passed as a prop, so the correct role renders on the first paint with no client-side delay.',
+      'Fixed optimistic agreement update to use the real DB row ID returned from insert instead of crypto.randomUUID().',
+      'Collapsed N+1 queries in the Agreements admin view from 3 queries down to 1 using embedded Supabase joins.',
+      'Added Pending proposals section to Ops admin view — admins can Activate or Decline proposed projects inline.',
+      'Fixed projects_status_check DB constraint to include pending status, allowing joining users to propose new projects.',
+    ],
+  },
+  {
+    version: 'v3.20',
+    date: '2026-05-22',
+    title: 'Open-source codebase reorganization — core/ + modules/',
+    items: [
+      'Introduced a three-layer source architecture: src/core/ (shared infrastructure), src/modules/mXX-name/ (one self-contained folder per feature), and src/app/ (thin Next.js route entry points that simply re-export from modules).',
+      'All feature components, utilities, and lib/ functions moved into their module folder — contributors can now work on M01 Network, M04 Blueprint, M07 Ops, etc. without touching anything outside that folder.',
+      'src/core/ centralizes Supabase clients (server + browser), all shadcn/ui primitives, the app shell (AppTopBar, AppSideNav, AppShell), shared types, and contexts.',
+      'Every module and core/ now has a README.md documenting what it does, which DB tables it touches, and how to run it locally.',
+      'New web/CONTRIBUTING.md — full open-source contributor guide with quick-start, import convention table, database migration steps, and PR checklist.',
+      'Legacy duplicate directories (src/lib/, src/components/, src/contexts/, src/types/) were left in place at this version — fully removed in v3.22.',
+    ],
+  },
+  {
+    version: 'v3.12',
+    date: '2026-05-22',
+    title: 'Mobile slide-in navigation panel',
+    items: [
+      'Mobile left navigation drawer — collapsed by default, opened via a "Modules" button in the top bar with a 4-grid icon.',
+      'Nav slides in from the left with a 200ms cubic-bezier transition; a blurred backdrop appears behind it.',
+      'Tapping any module link, the ✕ close button, or the backdrop closes the drawer.',
+      'Desktop layout unchanged — sidenav remains a static column.',
+      'AppTopBar hides the verbose "/ MyCommunityNetwork" sub-text and search bar on mobile to prevent overflow at narrow viewports.',
+    ],
+  },
+  {
+    version: 'v3.11',
+    date: '2026-05-22',
+    title: 'Mobile optimization pass across all pages',
+    items: [
+      'Fixed home page content cut-off for logged-in users on mobile — all sections get responsive padding and no-overflow root.',
+      'Switched fixed repeat(N, 1fr) grids to auto-fit minmax() across Dashboard, Network, Governance, Ops, Agreements, and Home.',
+      'Governance master-detail layout stacks vertically on small screens; sidebar collapses to a 260px-tall scrollable strip.',
+      'Community Joiner achievement badge awarded automatically when a join applicant is accepted.',
+      'Fixed upsert error: removed non-existent achievement_name column from user_achievements insert.',
+    ],
+  },
+  {
+    version: 'v3.10',
+    date: '2026-05-21',
+    title: 'Match scoring, AppTopBar dropdown, Home access tiers, Governance 4-layer demo',
+    items: [
+      'New match scoring engine (lib/match-score.ts) — scores two member bios across shared skills (up to 30 pts), shared interests (up to 20 pts), OCEAN personality similarity (up to 25 pts), and MBTI compatibility (up to 25 pts). Max score 100.',
+      'Network dashboard shows a "Your Matches" section with top 4 ranked matches, with score badge and reasons. MemberList cards and tiles show a match % badge when a score is available.',
+      'Public profile pages show a match score pill (score + reason) when viewing another member.',
+      'AppTopBar avatar pill now opens a hover/click dropdown: View profile, Edit profile, Dashboard, Network, Contributions, Governance, theme toggle (light/dark), and Sign out.',
+      'Home portal /home — new access tiers strip showing Browse → Create Account → Join → Resident with "YOU ARE HERE" highlight based on actual role.',
+      'Joining reward banner on /home shown to joining+ roles with Community Joiner badge callout.',
+      'Governance demo on /home upgraded to full 4-layer panel (Consent, Democracy, Meritocracy, AI Facilitation) with live progress bar and LIVE/Evaluating status.',
+      'GovernanceClient now uses evalLayers() against real votes, with StatusPill component and role-gated "New proposal" button.',
+      'Version tag in top bar now links to this changelog page.',
+    ],
+  },
+  {
+    version: 'v3.01',
+    date: '2026-05-21',
+    title: 'AppShell, M08 Contributions, M09 Governance, /home portal',
+    items: [
+      'New AppShell.tsx wraps all non-auth pages with AppTopBar + AppSideNav + ProfileCompletionProvider.',
+      'Profile completion bar — 22px strip under nav showing % complete across 11 fields. Disappears at 100%.',
+      'M08 Contributions page — achievement catalog with unlocked/locked states. Profile Pioneer badge awarded automatically at 100% profile completion.',
+      'M09 Governance page — full proposal list with 4 decision-mode filters, vote breakdown bars, comment threads, and new proposal modal.',
+      'New /home portal explainer — live data from all modules. Member cards, Blueprint phases, values checkboxes, project proposals, deliverables feed.',
+      'New tables: user_achievements (with RLS), proposals, proposal_votes, proposal_comments.',
+    ],
+  },
+  {
     version: 'v3.09',
     date: '2026-05-14',
     title: 'Conflict-aware AI review panel',
@@ -219,14 +348,14 @@ export default function ChangelogPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {ENTRIES.map((entry, i) => (
-          <div key={entry.version} style={{
+          <div key={entry.version} className="changelog-timeline" style={{
             display: 'grid',
             gridTemplateColumns: '100px 1fr',
             gap: '0 28px',
             paddingBottom: 40,
           }}>
             {/* Left column — version + date */}
-            <div style={{ paddingTop: 3 }}>
+            <div className="changelog-meta" style={{ paddingTop: 3 }}>
               <div style={{
                 fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700,
                 color: 'var(--accent)', letterSpacing: '0.04em',

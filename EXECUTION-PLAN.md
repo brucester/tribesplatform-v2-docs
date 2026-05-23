@@ -1,6 +1,6 @@
 # MyCoNet v2 — Execution Plan
 
-> Version: 2.0 | Date: 2026-05-14 | Status: PHASE 0 LIVE
+> Version: 2.1 | Date: 2026-05-15 | Status: PHASE 0 LIVE — CLONING NEXT
 
 ---
 
@@ -8,14 +8,20 @@
 
 | Module | Status | Notes |
 |---|---|---|
-| M00 — Dashboard | ✅ Live | Personal home screen for every member. Role-scoped panels. Live counts from M05/M06/M07. |
-| M01 — Community Network | ✅ Live | Profiles, bio wizard (8 steps), avatar upload, discover, AI match scoring (values + skills + OCEAN + MBTI), dark mode, offers/seeks. |
-| M04 — Blueprint | ✅ Live | Shared community document. Admin edits; all members read-only. AI document scanning (MiniMax M2.7) fills wizard fields from uploaded PDFs. Join application questions field added at step 1.4. |
-| M05 — Join | ✅ Live | Application form pulled from Blueprint step 1.4 questions. Explorer gate. Admin sees review panel with all applications, filter by status, accept/decline/mark-reviewing with notes. Accept sets user role to `joining`. |
-| M06 — Agreements | ✅ Live | Joining+ members submit collaboration proposals (what I'll do + what I expect). Admin review panel shows all proposals across all projects. Status flow: pending → accepted → active → completed. |
-| M07 — Operations | ✅ Live | Admin creates projects, posts timeline updates, toggles open-for-collaborators. Project detail shows collaboration proposals inline. Open projects surface in M06 for member proposals. |
-| M02 — Neighborhood Directory | 🔗 v1 link | Dashboard links out to v1 tribesplatform.app with "v1 available ↗" badge. |
-| M03 — Resources & Tools | 🔗 v1 link | Dashboard links out to v1 tribesplatform.app with "v1 available ↗" badge. |
+| M00 — Dashboard | ✅ Live | Personal home screen. Role-scoped panels. Live counts from M05/M06/M07. Guest-browsable with community overview. Module hover tooltips. |
+| M01 — Community Network | ✅ Live | Profiles, bio wizard (8 steps), avatar upload, discover, AI match scoring (values + skills + OCEAN + MBTI), dark mode, offers/seeks. Tile/list view toggle. Member thumbnails (72px). |
+| M04 — Blueprint | ✅ Live | Shared community document. Admin edits; all members read-only. AI document scanning (MiniMax M2.7) fills wizard fields from uploaded PDFs. Join questions at step 1.4. Conflict-aware AI review panel. Full-screen fixed layout (no nav overlap). |
+| M05 — Join | ✅ Live | Application form pulled from Blueprint step 1.4 questions. Explorer gate. Admin review panel. Accept sets user role to `joining`. Guest-browsable (teaser view for non-members). |
+| M06 — Agreements | ✅ Live | Joining+ members submit collaboration proposals. Admin review panel. Status flow: pending → accepted → active → completed. Live count on dashboard. Guest-browsable (open projects visible). |
+| M07 — Operations | ✅ Live | Admin creates projects, posts timeline updates, toggles open-for-collaborators. Project detail shows collaboration proposals inline. Guest-browsable. |
+| M02 — Neighborhood Directory | 🔗 v1 link | Dashboard links out to v1 tribesplatform.app. v2 will be cross-portal opt-in directory. |
+| M03 — Resources & Tools | 🔗 v1 link | Dashboard links out to v1 tribesplatform.app. Building in v2 next. |
+
+### Visual Identity System (2026-05-15)
+- `src/lib/module-meta.ts` — single source of truth for all 14 module colors, labels, descriptions
+- `src/components/ModuleHeader.tsx` — colored header band on every module page
+- `src/components/DashCardTooltip.tsx` — hover tooltip on dashboard module cards
+- `src/app/network/MemberList.tsx` — tile/list view toggle (client component)
 
 ---
 
@@ -42,10 +48,33 @@ The core loop is proven:
 1. Admin uploads governing documents → Blueprint AI-scans and fills fields
 2. Admin sets join questions in Blueprint step 1.4
 3. Admin creates projects in Operations (M07)
-4. New member signs up → lands on Dashboard → reads Blueprint → applies to join
+4. New visitor lands on Dashboard or Network → reads Blueprint → applies to join
 5. Admin reviews application → accepts → member gets `joining` role
 6. Joining member browses open projects → submits collaboration proposal
 7. Admin reviews proposals → accepts → active → completed
+
+---
+
+## Phase 0.5 — Clone for Second Community 🔜 NEXT
+
+**Goal:** Deploy a second independent portal for a new community, proving the cloning process works end-to-end.
+
+**What cloning means:**
+1. Fork/clone the repo
+2. Create a new Supabase project (separate DB, separate auth)
+3. Set new environment variables (Supabase URL + anon key)
+4. Deploy to a new Cloudflare Worker (separate URL)
+5. Admin fills in their community Blueprint, sets join questions, creates projects
+
+**Things to verify before cloning:**
+- No hardcoded community names in the codebase (check nav, landing page, dashboard header)
+- Landing page copy is generic enough to be adapted, or parameterized from the DB
+- Avatar bucket policy works on fresh Supabase projects
+- MiniMax API key works independently per deployment
+
+**Nice-to-have before cloning:**
+- A community name field in the Blueprint (or a simple `.env` variable) so the nav/landing page shows the right community name without code changes
+- A basic "community settings" page in the admin panel
 
 ---
 
@@ -112,18 +141,32 @@ The core loop is proven:
 
 ---
 
-## Phase 3 — Multi-Community
+## Phase 3 — Multi-Community & M02 v2
 
-*Each community gets its own isolated portal. Same codebase, scoped by community.*
+*The codebase is already structured for this. Each community is an independent deployment.*
 
-**What changes:**
-- Add `community_id` to all tables (already planned in schema)
-- Community creation flow (`/new-community`)
-- Subdomain or path-based routing (`/c/[slug]` or `myconet.community/[slug]`)
-- Admin scoped to their community only
-- M02 Neighborhood Directory becomes a public-facing map of all communities
+**What multi-community means:**
+- Each group clones the repo and gets their own URL + database
+- No shared database infrastructure — each community is fully isolated
+- Admin of each portal only has access to their own community's data
 
-**Dependencies:** At least 2 communities wanting to use the platform.
+**M02 — Neighborhood Directory (v2):**
+
+This is the network layer that connects independent community portals into a visible ecosystem. Each community portal will have an **opt-in toggle** in their admin settings: "List our community in the public Neighborhood Directory."
+
+When opted in, the community's public profile appears in M02 on every portal — showing:
+- Community name + description (from Blueprint)
+- Active open projects (from M07)
+- Member count
+- Location / focus area
+- A link to visit their portal
+
+This gives network-level visibility without merging databases or requiring any central server. The directory is built by each community choosing to share.
+
+**Implementation options:**
+- **Federated pull:** Each portal exposes a public API endpoint (`/api/community-profile`) and M02 aggregates on request. No central DB needed.
+- **Central registry:** A lightweight registry service stores opted-in communities (just name + URL + summary). Simpler to build.
+- **Manual curation (start here):** Initial v2 of M02 is a manually maintained list while we validate the design. Automate later.
 
 ---
 
@@ -164,14 +207,14 @@ Per-member AI instance
 
 ## Phase 5 — Hive (Inter-Community Layer)
 
-Once multiple communities are live, Module 13 opens a shared layer above individual portals:
+Once multiple communities are live and M02 v2 is running, Module 13 opens a shared layer:
 - Network-wide feed of opportunities and needs
 - Cross-community project collaboration
 - Shared resource libraries
 - Mutual aid requests
 - Inter-community events
 
-The data is already structured for it — every table will have `community_id`. Hive is a visibility layer built on top.
+The opt-in M02 directory is the foundation for Hive — communities that share their profile in M02 can optionally participate in the wider Hive network.
 
 ---
 
@@ -180,24 +223,27 @@ The data is already structured for it — every table will have `community_id`. 
 | Gate | Condition | Unlocks |
 |---|---|---|
 | **Phase 0** | ✅ M00, M01, M04, M05, M06, M07 live | Core loop proven |
+| **Clone proven** | Second community portal live end-to-end | Cloning playbook locked |
 | **Member depth** | M08 live + M01 messaging | Community is sticky |
 | **Governance** | M09 live | Community can decide together formally |
-| **Multi-community** | 2+ communities want to use it | Phase 3 build starts |
+| **M02 v2** | 2+ communities opted in to directory | Network visibility begins |
 | **Agent ready** | Multi-community live + DB tables stable | M12 → M10 → M11 |
-| **Hive** | 3+ communities live | M13 build starts |
+| **Hive** | 3+ communities live in M02 directory | M13 build starts |
 
 ---
 
 ## Immediate Next Steps
 
-1. **M08 Contribution Tracking** — reward completed agreements and onboarding milestones
-2. **M01 Direct Messaging** — let matched members talk to each other
-3. **M04 PDF Export** — let the community share their Blueprint externally
-4. **M09 Governance skeleton** — simple proposal + vote flow (no AI yet, just the structure)
-5. **Changelog and docs** — keep these updated with every deploy
+1. **Clone preparation** — audit for hardcoded community names; add community name to `.env` or Blueprint config
+2. **Clone for second community** — prove the end-to-end deployment process
+3. **M08 Contribution Tracking** — reward completed agreements and onboarding milestones
+4. **M01 Direct Messaging** — let matched members talk to each other
+5. **M04 PDF Export** — let the community share their Blueprint externally
+6. **M09 Governance skeleton** — simple proposal + vote flow (no AI yet, just the structure)
+7. **M02 v2 design** — spec the opt-in directory system and how community profiles are structured
 
 ---
 
-*Document version: 2.0*
+*Document version: 2.1*
 *Authors: Oz + Claude*
-*Last updated: 2026-05-14 — Phase 0 complete*
+*Last updated: 2026-05-15 — Clone-first strategy, M02 v2 opt-in directory design, guest browsing, visual identity system*

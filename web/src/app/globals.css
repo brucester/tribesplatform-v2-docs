@@ -64,6 +64,23 @@
   --shadow-lg: 0 10px 40px rgba(0,0,0,.12);
   --tag-chip-bg: hsl(142 40% 90%);
   --tag-chip-color: hsl(142 50% 28%);
+
+  /* Module colors — source of truth is src/lib/module-meta.ts */
+  --m0: #18181b;
+  --m1: #92400e;
+  --m2: #b91c1c;
+  --m3: #ea580c;
+  --m4: #ca8a04;
+  --m5: #15803d;
+  --m6: #1d4ed8;
+  --m7: #4338ca;
+  --m8: #7c3aed;
+  --m9: #db2777;
+
+  /* Extra tokens used by the landing page */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04), 0 1px 1px rgba(0,0,0,.03);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.04);
+  --radius-xl: 1.125rem;
 }
 
 /* ─── Design tokens (dark) ──────────────────────────────────────── */
@@ -119,6 +136,11 @@
   --accent-soft: hsl(142 30% 10%);
   --tag-chip-bg: hsl(142 30% 12%);
   --tag-chip-color: hsl(142 60% 55%);
+
+  /* Module colors stay the same in dark mode — they're brand colors */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.12), 0 1px 1px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.20), 0 2px 4px rgba(0,0,0,.12);
+  --radius-xl: 1.125rem;
 }
 
 /* ─── Tailwind v4 theme tokens ──────────────────────────────────── */
@@ -214,10 +236,14 @@ a { color: inherit; text-decoration: none; }
 
 /* ─── Network layout ────────────────────────────────────────────── */
 .net-sidebar { display: flex; }
+.net-right-panel { display: flex; }
 .net-mobile-nav { display: none; }
 .net-content { padding-bottom: 0; }
 .net-nav-item:hover { background-color: var(--sidebar-accent) !important; }
 
+@media (max-width: 1024px) {
+  .net-right-panel { display: none; }
+}
 @media (max-width: 768px) {
   .net-sidebar { display: none; }
   .net-mobile-nav { display: flex; }
@@ -274,6 +300,107 @@ a { color: inherit; text-decoration: none; }
 }
 .module-card-link { transition: none; }
 
+/* ─── App shell layout ──────────────────────────────────────────── */
+.app-shell-layout {
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  grid-template-rows: 56px 1fr;
+}
+/* Hide mobile-only elements on desktop */
+.mobile-nav-header { display: none; }
+.topbar-modules-btn { display: none; }
+.mobile-nav-backdrop { display: none; }
+
+.sh-nav-item > div:hover {
+  background: var(--bg-3) !important;
+  box-shadow: none !important;
+}
+@media (max-width: 768px) {
+  .app-shell-layout { grid-template-columns: 1fr; }
+
+  /* Sidenav becomes a slide-in drawer on mobile */
+  .app-shell-sidenav {
+    position: fixed !important;
+    top: 56px !important;
+    left: 0 !important;
+    width: 260px !important;
+    height: calc(100vh - 56px) !important;
+    z-index: 50 !important;
+    transform: translateX(-100%);
+    transition: transform 200ms cubic-bezier(.4,0,.2,1);
+    box-shadow: 4px 0 24px rgba(0,0,0,.15) !important;
+  }
+  .app-shell-sidenav.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Mobile header row inside the nav */
+  .mobile-nav-header { display: flex !important; }
+
+  /* Modules toggle button */
+  .topbar-modules-btn { display: flex !important; }
+
+  /* Backdrop */
+  .mobile-nav-backdrop {
+    position: fixed;
+    inset: 0;
+    top: 56px;
+    background: rgba(0,0,0,0.4);
+    z-index: 49;
+    backdrop-filter: blur(2px);
+  }
+}
+
+/* ─── Mobile layout utilities ───────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Governance master-detail → stacked */
+  .gov-body { flex-direction: column !important; overflow: visible !important; max-height: none !important; }
+  .gov-sidebar { width: 100% !important; max-height: 260px !important; border-right: none !important; border-bottom: 1px solid var(--rule) !important; flex-shrink: 1 !important; }
+
+  /* Dashboard two-column → single */
+  .dash-two-col { grid-template-columns: 1fr !important; }
+
+  /* Changelog timeline → single col, meta above content */
+  .changelog-timeline { grid-template-columns: 1fr !important; }
+  .changelog-meta { padding-top: 0 !important; }
+
+  /* Home clubhouse mock browser sidebar → hidden on mobile */
+  .home-clubhouse-body { grid-template-columns: 1fr !important; }
+  .home-clubhouse-sidenav { display: none !important; }
+
+  /* Agreements two-column split → stack */
+  .agreements-split { grid-template-columns: 1fr !important; }
+
+  /* Section padding reduction */
+  .section-pad { padding-left: 16px !important; padding-right: 16px !important; }
+
+
+  /* AppTopBar — hide verbose brand text and search bar on mobile */
+  .topbar-brand-sub { display: none !important; }
+  .topbar-search { display: none !important; }
+
+  /* Home page section spacing reduction */
+  .home-section { padding-top: 40px !important; padding-left: 16px !important; padding-right: 16px !important; }
+  .home-split { gap: 28px !important; }
+  .home-clubhouse-section { padding-left: 16px !important; padding-right: 16px !important; }
+
+  /* Joining reward banner min-width override */
+  .joining-banner-text { min-width: 0 !important; }
+
+  /* Ops project detail */
+  .ops-detail-root { padding-top: 20px !important; padding-left: 16px !important; padding-right: 16px !important; }
+  .ops-detail-grid { grid-template-columns: 1fr !important; }
+  .ops-detail-h1 { font-size: 22px !important; }
+  .ops-subtask-form { flex-direction: column !important; align-items: stretch !important; }
+  .ops-subtask-form > * { width: 100% !important; box-sizing: border-box !important; }
+  .ops-update-row { grid-template-columns: 60px 1fr !important; }
+
+  /* Admin users row → stack on mobile */
+  .admin-user-row { grid-template-columns: 1fr !important; gap: 10px !important; }
+}
+
 /* ─── Dashboard cards ───────────────────────────────────────────── */
 .dash-card {
   background: var(--surface);
@@ -290,4 +417,18 @@ a:has(.dash-card):hover .dash-card {
 .dash-card-soon {
   cursor: default;
   background: var(--bg-2);
+}
+.dash-stat-card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.dash-stat-card--link {
+  transition: box-shadow 140ms, transform 140ms;
+  cursor: pointer;
+}
+a:has(.dash-stat-card--link):hover .dash-stat-card--link {
+  box-shadow: 0 4px 14px rgba(0,0,0,.10);
+  transform: translateY(-1px);
 }

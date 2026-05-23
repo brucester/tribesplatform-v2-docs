@@ -1,20 +1,23 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import DiscoverClient from '../DiscoverClient'
+import { createClient } from '@/core/lib/supabase/server'
+import DiscoverClient from '@/modules/m01-network/DiscoverClient'
 
 export default async function DiscoverPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+
+  let profilesQuery = supabase
+    .from('user_profiles')
+    .select('id, username, first_name, last_name, headline, city, country, avatar_url, user_types')
+    .order('created_at', { ascending: false })
+
+  if (user) profilesQuery = profilesQuery.neq('id', user.id)
 
   const [profilesRes, biosRes, myBioRes] = await Promise.all([
-    supabase
-      .from('user_profiles')
-      .select('id, username, first_name, last_name, headline, city, country, avatar_url, user_types')
-      .neq('id', user.id)
-      .order('created_at', { ascending: false }),
+    profilesQuery,
     supabase.from('user_bio').select('*'),
-    supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
+    user
+      ? supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   const bioMap: Record<string, any> = {}
@@ -24,8 +27,8 @@ export default async function DiscoverPage() {
     <DiscoverClient
       profiles={(profilesRes.data ?? []) as any}
       bioMap={bioMap}
-      myBio={myBioRes.data ?? null}
-      isLoggedIn={true}
+      myBio={(myBioRes as any).data ?? null}
+      isLoggedIn={!!user}
     />
   )
 }

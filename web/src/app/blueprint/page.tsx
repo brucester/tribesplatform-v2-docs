@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
-import BlueprintClient from './BlueprintClient'
+import { createClient } from '@/core/lib/supabase/server'
+import BlueprintClient from '@/modules/m04-blueprint/BlueprintClient'
+import { isCircleAdmin } from '@/core/lib/roles'
 
 export default async function BlueprintPage() {
   const supabase = await createClient()
@@ -11,23 +12,16 @@ export default async function BlueprintPage() {
       .from('user_profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
-    isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(profile?.role ?? '')
+      .maybeSingle()
+    isAdmin = isCircleAdmin(profile?.role ?? '')
   }
 
-  // Everyone reads the same community blueprint — the most recently updated one with content.
-  // Admins can edit it; everyone else sees it read-only.
-  const { data: blueprints } = await supabase
+  const { data: communityBlueprint } = await supabase
     .from('blueprints')
     .select('*')
-    .order('updated_at', { ascending: false })
-    .limit(10)
+    .eq('is_community', true)
+    .maybeSingle()
 
-  const communityBlueprint =
-    blueprints?.find(b => Object.keys((b.answers as Record<string, unknown>) ?? {}).length > 0) ??
-    blueprints?.[0]
-
-  // If no blueprint exists yet, admins can create one; others wait.
   if (!communityBlueprint) {
     if (!isAdmin) {
       return (
@@ -37,10 +31,9 @@ export default async function BlueprintPage() {
       )
     }
 
-    // Create the first community blueprint owned by this admin
     const { data: created } = await supabase
       .from('blueprints')
-      .insert({ user_id: user!.id, answers: {}, flags: {} })
+      .insert({ user_id: user!.id, answers: {}, flags: {}, is_community: true })
       .select()
       .single()
 

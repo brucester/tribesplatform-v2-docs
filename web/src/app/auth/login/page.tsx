@@ -1,11 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/core/components/ui/card'
+import { Button } from '@/core/components/ui/button'
+import { Input } from '@/core/components/ui/input'
+import { Label } from '@/core/components/ui/label'
 import { Loader2, Sprout, Users, Globe, Heart } from 'lucide-react'
 
 type Mode = 'login' | 'register' | 'forgot'
@@ -44,7 +44,7 @@ export default function AuthPage() {
     if (error) {
       setLoginError(error.message)
     } else {
-      router.push('/dashboard')
+      router.push('/home')
       router.refresh()
     }
     setLoginLoading(false)
@@ -69,7 +69,7 @@ export default function AuthPage() {
     } else if (data.user && !data.session) {
       setRegSent(true)
     } else {
-      router.push('/dashboard')
+      router.push('/home')
       router.refresh()
     }
     setRegLoading(false)

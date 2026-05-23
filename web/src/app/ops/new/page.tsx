@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/core/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import NewProjectClient from './NewProjectClient'
+import NewProjectClient from '@/modules/m07-ops/NewProjectClient'
+import { isOpsAdmin } from '@/core/lib/roles'
 
 export default async function NewProjectPage() {
   const supabase = await createClient()
@@ -11,9 +12,9 @@ export default async function NewProjectPage() {
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
-  if (!['admin', 'project_lead'].includes(profile?.role ?? '')) {
+  if (!isOpsAdmin(profile?.role ?? '')) {
     redirect('/ops')
   }
 

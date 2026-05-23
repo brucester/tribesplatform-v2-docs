@@ -2,6 +2,166 @@
 
 ---
 
+## 2026-05-21 — v3.10 — Match scoring, AppTopBar dropdown, Home access tiers, Governance 4-layer demo
+
+This session wired real computed match scores across the network, upgraded the top bar to a full dropdown menu, added a role-aware access tiers explainer to /home, and replaced the governance placeholder with a proper 4-layer interactive demo.
+
+### Match Scoring System
+- **New `lib/match-score.ts`** — `computeMatch(mine, theirs)` scores two bio objects on 4 axes: shared skills (up to 30 pts, 5 each), shared interests (up to 20 pts, 4 each), OCEAN similarity (up to 25 pts via euclidean distance), and MBTI compatibility (up to 25 pts via ideal pair / temperament tables). Returns `{ score, reasons[] }`.
+- **Network dashboard** — new "Your Matches" section above MemberList. Fetches all member bios, computes top 4 matches, renders match cards with score badge and reasons. Guests see nothing; users without a bio see a "complete your profile" prompt.
+- **MemberList** — both tile and list views now show match % badge (colored by tier: green ≥70, amber ≥40) when `matchScores` prop is provided.
+- **Public profile pages** — `u/[username]/page.tsx` computes match between viewer's bio and the profile being viewed; `UserProfileClient` renders a match score pill (score + first reason) in the header when viewing another user.
+- **Home Clubhouse section** — member cards now show real `matchScores[id].score` instead of hardcoded 82/74/66 etc.
+- **Matches full page** (`/network/matches`) — already existed; now receives real scored data.
+
+### AppTopBar — dropdown menu
+- Avatar pill is now a button that opens a hover/click dropdown (120ms delayed close to prevent flicker).
+- Dropdown items: View my profile, Edit profile, Dashboard, Network, Contributions, Governance, divider, Light/Dark mode toggle, divider, Sign out.
+- Theme toggle reads/writes `localStorage('theme')` and `data-theme` on `<html>`. State tracks `isDark` to flip label.
+- Sign out calls `supabase.auth.signOut()`, closes menu, then `router.push('/')` + `router.refresh()`.
+- Profile summary in dropdown header shows display name + `% profile complete` from context.
+
+### Home Portal — access tiers + role awareness
+- **Access tiers strip** — 4-column grid (Browse / Create account / Join / Resident) with per-column feature bullets. Current tier highlighted in `var(--ink)` dark background with "YOU ARE HERE" chip. CTAs (Sign up / Apply) only shown for tiers above the user's current level.
+- **Joining reward banner** — shown to `joining+` roles. Gradient banner with 🎉, welcome message using actual role label, and "Community Joiner" badge callout. Links to dashboard.
+- **Role labels** — `ROLE_LABELS` map converts DB role slugs to display strings throughout HomeClient.
+- **Clubhouse sidebar** — role label below avatar now reflects actual role (was hardcoded "Explorer").
+- **Governance demo** — replaced single vote bar + 3 buttons with a 4-layer panel (Consent, Democracy, Meritocracy, AI Facilitation). Layers progress bar shows `layersPassed / 4`, threshold marker at 75%. Proposal status toggles LIVE when ≥3 layers pass.
+- **home/page.tsx** — now fetches role, applicationStatus, user's bio, member bios, computes matchScores. Also auto-upserts `community_joiner` achievement for `joining+` roles (idempotent).
+
+### Governance M09 — real layer evaluation
+- **`evalLayers(proposal)`** — derives `consentPassed` (no objections), `democPassed` (majority consent votes), `meritPassed`, `aiPassed` from actual `proposal_votes`, returns `isLive`.
+- **`StatusPill`** — reusable component rendering LIVE or Evaluating pill based on `isLive`.
+- **Governance model strip** — info bar above proposal list showing all 4 layer icons + names.
+- **`isLoggedIn` + `role` props** — passed from server component; `isFullMember` gate on "New proposal" button.
+
+### Contributions M08
+- **`community_joiner` badge** — added to CATALOG. Hint: "Complete M05 Join and get accepted".
+- **Guest banner** — shown at top of page for unauthenticated visitors with create account / sign in CTAs.
+- **`user_achievements` fetch** — queries `achievement_key` + `earned_at` for logged-in users; `earnedAt` record drives earned-date display.
+
+### Join M05
+- Server component now fetches `community_values` and a sample of buddy profiles for all visitors (not just logged-in users), so the multi-step join flow renders correctly for guests.
+
+---
+
+## 2026-05-21 — v3.01 — AppShell, M08 achievements, M09 governance, /home portal explainer
+
+This session extended the platform from M07 → M09, added a persistent app shell with profile completion tracking, built the /home portal explainer page, and deployed as v3.01.
+
+### AppShell + consistent navigation
+- **New `AppShell.tsx`** — wraps all non-auth pages. Provides `ProfileCompletionProvider`, renders `AppTopBar` + `AppSideNav` + main content.
+- **AppTopBar updated** — user pill now links to `/profile/edit`. Logo gets a `v3.01` version tag below the brand name. Header changed to `flexDirection: column` to accommodate the completion bar below the nav row.
+- **Profile completion bar** — 22px strip under the nav showing profile completion %. 11-check scoring: avatar, first_name, headline, city, user_types, values_principles, skills, goals, 1+ active offer, 1+ active request, 1+ travel plan. Disappears at 100%. Click navigates to `/profile/edit`.
+- **New `ProfileCompletion.tsx` context** — `ProfileCompletionProvider` seeds `%` from DB on mount in AppTopBar; profile wizard pushes live updates as user fills fields (no DB round-trip on keystroke).
+- **AppSideNav** — M08 and M09 nav links activated (`href: '/contributions'`, `href: '/governance'`).
+
+### M08 — Contribution Tracking (live)
+- **New `/contributions` page** — server component. Fetches `user_achievements` for current user. Renders achievement catalog: unlocked = gold circle + earn date, locked = grey + CTA.
+- **Profile Pioneer badge** — awarded automatically when profile wizard reaches 100%. `useEffect` in `/profile/edit` watches form state; on pct === 100 calls `upsert({ onConflict: 'user_id,achievement_key', ignoreDuplicates: true })` — idempotent, fires at most once.
+- **Achievement banner** — gold gradient banner rendered above the profile wizard when badge is newly earned. "View badge →" link to `/contributions`.
+- **New `user_achievements` table** — `(id, user_id, achievement_key, achievement_name, earned_at)`. Unique constraint on `(user_id, achievement_key)`. RLS: users read own rows; insert own rows.
+
+### M09 — Governance (live)
+- **New `/governance` page** — server component. Fetches proposals with votes + proposer, eligible voter count, current user's votes, user role.
+- **New `GovernanceClient.tsx`** — full interactive governance module:
+  - 4 decision-mode filter chips: Consent ☉, Democracy ☑, Meritocracy △, AI ◇
+  - Left panel (300px): proposal list with layer badge, time remaining, vote state
+  - Right panel: proposal detail with vote breakdown bars, 3 vote buttons (un-vote on re-click), concern notice when concerns logged, discussion thread + comment input (⌘↵ to post)
+  - New proposal modal: title, description, decision mode select, days-open input
+  - `castVote()`, `postComment()`, `submitProposal()` — all async with optimistic state
+  - `timeLeft(closes_at)` and `ago(ts)` helpers
+- **3 new tables**: `proposals`, `proposal_votes` (unique per user/proposal), `proposal_comments`. All with RLS.
+
+### /home — Portal Explainer (live)
+- Server component fetching live DB data for all modules
+- M01: real member cards linked to `/u/[username]`
+- M04: animated Blueprint phases
+- M05: values checkboxes from Blueprint
+- M06: open projects + inline proposal form
+- M07: live deliverables feed
+- M08/M09: demo sections with module-color theming
+
+### M01 — Member card links
+- Member cards on `/home` now link to `/u/[username]` when username is present (plain div fallback if null)
+
+### Deployment — v3.01
+- Deployed to Cloudflare Workers via `npm run deploy:cf`
+- Live: `https://myconet.correa-oscar11.workers.dev`
+- Version tag `v3.01` added below logo in AppTopBar
+
+---
+
+## 2026-05-15 — UX polish, guest access, visual identity system
+
+This session focused on making the platform feel finished and ready to show to a second community. Every module now has consistent visual identity, all main pages are browsable without an account, and the dashboard is significantly more informative.
+
+### M00 — Dashboard
+- **Version tag** `v2.05` added top-left above the welcome message (will increment with each meaningful deploy)
+- **Module tooltip cards** — hovering any module card reveals a short description popup. Works for live modules AND coming-soon modules. Tooltip uses module color as accent, smooth fade-in/out animation.
+- **Agreements card** — was just a text paragraph; now shows a live count of collaboration proposals (fetched from `collaboration_agreements` table) matching the same stat+label layout as Operations
+- **Agreements lock removed** — M06 card was locked (grayed out) for explorers; agreements page is publicly browsable so there was no reason to gate it. Now always unlocked and clickable.
+- **Locked card styling fixed** — locked module cards now use their full module color (border, number badge, unlock chip) instead of gray. Previously looked like a broken/disabled element.
+
+### Guest browsing — all main pages open
+Previously every page redirected non-logged-in users to `/auth/login`. All main pages are now publicly viewable:
+- `/dashboard` — community overview (member count, blueprint stats, active projects, recent members)
+- `/network` — member directory, tile/list toggle, member thumbnails
+- `/network/discover` — discover page shows all profiles (excludes logged-in user if signed in)
+- `/network/matches` — guest sees a teaser explaining AI matching with Sign In / Join CTAs
+- `/agreements` — open projects viewable; proposal button only for signed-in members
+- `/ops` — project list and updates viewable; admin panel only shown if admin
+- `/blueprint` — full community blueprint readable by anyone
+
+### M01 — Community Network
+- **Member thumbnails** — were silently failing because `<AvatarImage>` (shadcn) fails without throwing. Replaced with plain `<img>` tags. Thumbnails now display correctly.
+- **Thumbnail size** — increased from 40px → 72px in tile view
+- **Tile / List toggle** — new toggle button (⊞ / ☰) switches between tile view (circular 72px photo, centered name/location/tags) and list view (56px photo, horizontal row). Tiles are the default. Toggle state lives in `MemberList.tsx` (client component).
+- **New file:** `src/app/network/MemberList.tsx` — extracted as client component since server component can't hold toggle state.
+
+### Visual identity system — ModuleHeader component
+Every module page now has a consistent colored header band at the top showing the module number, name, and a "tap to learn more" description that reveals on hover/tap.
+
+- **New file:** `src/components/ModuleHeader.tsx` — client component with onMouseEnter/onMouseLeave + onClick toggle. Smooth max-height animation on description reveal.
+- **New file:** `src/lib/module-meta.ts` — single source of truth for all 14 module colors, labels, and descriptions. Imported by both `ModuleHeader.tsx` and `DashCardTooltip.tsx`.
+- **Added to:** Dashboard (M00 black), Network sidebar (M01 brown band at top of left panel), Ops (M07 indigo), Agreements (M06 blue), Join (M05 green). Blueprint uses an M04 badge embedded in its own sidebar brand section (it's a full-screen app that can't take an external header).
+
+### NetworkSidebar — M01 identity band
+The left sidebar on the network page now has a brown module identity band at the top linking back to `/network`:
+- MyCoNet · Module / `01` (large display font) / Community Network
+- Mobile nav active color updated to match (#92400e brown)
+
+### Avatar upload fix
+- **Profile page** and **edit profile page** — re-uploading an existing avatar was failing silently. Root cause: Supabase storage requires a separate DELETE policy for upsert to work on existing files.
+- **Fix applied:** Supabase migration added `avatars_delete_policy`: `CREATE POLICY "Users can delete their own avatar" ON storage.objects FOR DELETE USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1])`
+- **Code fix:** Upload now uses explicit `upsert: true`, caches a cache-busted URL (`?t=Date.now()`) after upload, and shows an `alert()` with the actual error message if anything fails.
+
+### Blueprint — nav overlap fix
+The blueprint page is a full-screen three-panel app (sidebar / main / rail) with internal scrolling. The global sticky nav was overlapping the top of all three panels.
+
+- **Root cause:** In some browsers (Safari), `position: sticky` in a flex container doesn't push siblings down in the layout, causing `<main>` to start at y=0 instead of below the nav.
+- **Fix:** Changed `.wizard-root` from `position: relative; height: calc(100vh - 52px)` to `position: fixed; top: 53px; left: 0; right: 0; bottom: 0`. The wizard now always pins to exactly the nav's bottom edge regardless of how the browser handles the flex/sticky combination.
+- Nav height corrected to 53px (52px inner div + 1px border-bottom).
+
+### Landing page rewrite
+The main landing page (`/`) was generic copy. Replaced with a storytelling flow:
+- **Hero:** "You want to live differently. We built the tools." with Join + Browse CTAs
+- **4-step journey:** Find your people → Build the plan → Apply and arrive → Work on it every day
+- **Live modules grid** — shows all live modules with their colors and a short description
+- **Coming soon** — lower-opacity section for planned modules
+- **Profile layers** — explain the offer/seek/travel dimensions
+- **Bottom CTA** — final join prompt
+
+### New shared components
+| File | Purpose |
+|---|---|
+| `src/lib/module-meta.ts` | All 14 module colors, labels, and descriptions. Single source of truth. |
+| `src/components/ModuleHeader.tsx` | Colored header band for every module page. Hover/tap reveals description. |
+| `src/components/DashCardTooltip.tsx` | Hover tooltip wrapper for dashboard module cards. Shows description below card. |
+| `src/app/network/MemberList.tsx` | Client component for member grid with tile/list view toggle. |
+
+---
+
 ## 2026-05-14 — Conflict-aware AI review panel
 
 ### Blueprint — AI import conflict resolution
@@ -92,7 +252,7 @@ Black → Brown → Red → Orange → Yellow → Green → Blue → Indigo → 
 - Migrated from Vercel to Cloudflare Workers using `@opennextjs/cloudflare`
 - Vercel Hobby capped function execution at 60s; Cloudflare Workers charge CPU time only — MiniMax 524 gateway timeouts resolved
 - Deploy command: `cd web && npm run deploy`
-- Live: `https://tribes-platform.correa-oscar11.workers.dev`
+- Live: `https://myconet.correa-oscar11.workers.dev`
 
 ### Documents updated
 - `EXECUTIVE-SUMMARY.md` — v3.0, reflects single-community portal, live modules, core loop, tech stack

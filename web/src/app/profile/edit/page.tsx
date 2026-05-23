@@ -1,16 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Progress } from '@/components/ui/progress'
-import { Slider } from '@/components/ui/slider'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { createClient } from '@/core/lib/supabase/client'
+import { useProfileCompletion } from '@/core/contexts/ProfileCompletion'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/core/components/ui/card'
+import { Badge } from '@/core/components/ui/badge'
+import { Button } from '@/core/components/ui/button'
+import { Input } from '@/core/components/ui/input'
+import { Textarea } from '@/core/components/ui/textarea'
+import { Label } from '@/core/components/ui/label'
+import { Progress } from '@/core/components/ui/progress'
+import { Slider } from '@/core/components/ui/slider'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
 import {
   ArrowLeft, ArrowRight, Save, Loader2, User, Heart, Brain,
   Star, Target, Gift, HelpCircle, MapPin, X, Plus, Check, Camera,
@@ -204,9 +205,27 @@ function OceanSlider({ label, value, onChange, description, low, high }: {
   )
 }
 
+function computeWizardPct(form: FormData, avatarUrl: string | null): number {
+  const checks = [
+    !!avatarUrl,
+    !!form.first_name.trim(),
+    !!form.headline.trim(),
+    !!form.city.trim(),
+    form.user_types.length > 0,
+    !!form.values_principles.trim(),
+    form.skills.length > 0,
+    !!form.goals.trim(),
+    form.offers.some(o => o.title.trim()),
+    form.requests.some(r => r.request_text.trim()),
+    form.placesTraveling.some(t => t.location.trim()),
+  ]
+  return Math.round(checks.filter(Boolean).length / checks.length * 100)
+}
+
 export default function ProfileWizard() {
   const supabase = createClient()
   const router = useRouter()
+  const { setPct } = useProfileCompletion()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormData>(DEFAULT)
   const [userId, setUserId] = useState<string | null>(null)
@@ -214,6 +233,18 @@ export default function ProfileWizard() {
   const [saving, setSaving] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [achievementEarned, setAchievementEarned] = useState(false)
+
+  useEffect(() => {
+    if (loading || !userId) return
+    const pct = computeWizardPct(form, avatarUrl)
+    setPct(pct)
+    if (pct === 100) {
+      supabase.from('user_achievements')
+        .upsert({ user_id: userId, achievement_key: 'profile_complete' }, { onConflict: 'user_id,achievement_key', ignoreDuplicates: true })
+        .then(() => setAchievementEarned(true))
+    }
+  }, [form, avatarUrl, loading, userId])
 
   useEffect(() => {
     async function load() {
@@ -297,15 +328,16 @@ export default function ProfileWizard() {
     if (!file || !userId) return
     setAvatarUploading(true)
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${userId}.${ext}`
+      const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
+      const path = `${userId}/avatar.${ext}`
       const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', userId)
-      setAvatarUrl(publicUrl)
-    } catch (err) {
-      console.error('Avatar upload failed:', err)
+      const { error: dbErr } = await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', userId)
+      if (dbErr) throw dbErr
+      setAvatarUrl(publicUrl + '?t=' + Date.now())
+    } catch (err: any) {
+      alert('Photo upload failed: ' + (err?.message ?? String(err)))
     } finally {
       setAvatarUploading(false)
       e.target.value = ''
@@ -405,6 +437,38 @@ export default function ProfileWizard() {
 
   return (
     <div className="p-3 sm:p-6 max-w-4xl mx-auto">
+
+      {/* Achievement banner */}
+      {achievementEarned && (
+        <div style={{
+          marginBottom: 24, padding: '14px 18px', borderRadius: 12,
+          background: 'linear-gradient(135deg, color-mix(in srgb, var(--m1) 18%, transparent), color-mix(in srgb, var(--accent-color) 12%, transparent))',
+          border: '1px solid color-mix(in srgb, var(--m1) 35%, var(--rule))',
+          display: 'flex', alignItems: 'center', gap: 14,
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+            background: 'linear-gradient(135deg, var(--m1), var(--accent-color))',
+            display: 'grid', placeItems: 'center',
+            fontSize: 22, boxShadow: '0 2px 8px color-mix(in srgb, var(--m1) 35%, transparent)',
+          }}>✦</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 2 }}>
+              Achievement unlocked — Profile Pioneer
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+              You completed your full member profile. Badge added to your Contributions record.
+            </div>
+          </div>
+          <a href="/contributions" style={{
+            fontSize: 12, fontWeight: 600, color: 'var(--m1)',
+            textDecoration: 'none', whiteSpace: 'nowrap',
+            padding: '6px 12px', borderRadius: 8,
+            border: '1px solid color-mix(in srgb, var(--m1) 30%, var(--rule))',
+          }}>View badge →</a>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">

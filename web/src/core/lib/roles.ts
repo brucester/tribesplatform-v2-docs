@@ -1,0 +1,21 @@
+export const MEMBER_ROLES = ['member', 'circle_lead', 'project_lead', 'admin'] as const
+export const JOINING_OR_ABOVE = ['joining', 'member', 'circle_lead', 'project_lead', 'admin'] as const
+
+// All full members + leads + admin can vote and propose in Governance
+export const isFullMember = (role: string): boolean =>
+  MEMBER_ROLES.includes(role as (typeof MEMBER_ROLES)[number])
+
+// Joining users and above (access to member-gated content on Home etc.)
+export const isJoiningOrAbove = (role: string): boolean =>
+  JOINING_OR_ABOVE.includes(role as (typeof JOINING_OR_ABOVE)[number])
+
+// Manages Blueprint, Join, Agreements — circle_lead + admin only
+export const isCircleAdmin = (role: string): boolean =>
+  ['circle_lead', 'admin'].includes(role)
+
+// Sees full Ops admin panel — circle_lead, project_lead, admin
+export const isOpsAdmin = (role: string): boolean =>
+  ['circle_lead', 'project_lead', 'admin'].includes(role)
+
+// Only admin can directly edit records
+export const isAdmin = (role: string): boolean => role === 'admin'

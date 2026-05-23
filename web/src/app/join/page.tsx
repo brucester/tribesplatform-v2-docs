@@ -1,13 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import JoinClient from './JoinClient'
-import JoinAdminClient from './JoinAdminClient'
+import { createClient } from '@/core/lib/supabase/server'
+import JoinClient from '@/modules/m05-join/JoinClient'
+import JoinAdminClient from '@/modules/m05-join/JoinAdminClient'
+import ModuleHeader from '@/core/components/ModuleHeader'
+import { isCircleAdmin } from '@/core/lib/roles'
 
 export default async function JoinPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Read join questions from the most complete blueprint
   const { data: blueprints } = await supabase
     .from('blueprints')
     .select('answers, updated_at')
@@ -22,27 +22,24 @@ export default async function JoinPage() {
     .map((q: string) => q.trim())
     .filter((q: string) => q.length > 0)
 
-  // Check role
   let role = 'explorer'
   if (user) {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     role = profile?.role ?? 'explorer'
   }
 
-  const isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(role)
+  const isAdmin = isCircleAdmin(role)
 
-  // Admin: show all applications for review
   if (isAdmin) {
     const { data: apps } = await supabase
       .from('applications')
       .select('id, user_id, status, answers, admin_notes, created_at')
       .order('created_at', { ascending: false })
 
-    // Fetch applicant profile info
     const userIds = (apps ?? []).map(a => a.user_id)
     const { data: profiles } = userIds.length > 0
       ? await supabase
@@ -61,26 +58,63 @@ export default async function JoinPage() {
       username: profileMap[a.user_id]?.username ?? null,
     }))
 
-    return <JoinAdminClient applications={enriched} questions={questions} />
+    return (
+      <>
+        <ModuleHeader num="05" standalone />
+        <JoinAdminClient applications={enriched} questions={questions} />
+      </>
+    )
   }
 
-  // Regular user: show own application or form
   let existingApplication: { status: string; answers: Record<string, string>; created_at: string } | null = null
+  let userProfile: { first_name: string | null; last_name: string | null; headline: string | null; city: string | null; country: string | null } | null = null
+  let signedValueIds: string[] = []
+  let buddyProfiles: { id: string; first_name: string | null; headline: string | null; city: string | null }[] = []
+
+  const { data: valuesData } = await supabase
+    .from('community_values')
+    .select('id, title, description, sort_order')
+    .order('sort_order')
+  const communityValues = (valuesData ?? []) as { id: string; title: string; description: string; sort_order: number }[]
+
+  const buddiesQuery = user
+    ? supabase.from('user_profiles').select('id, first_name, headline, city').neq('id', user.id).limit(3)
+    : supabase.from('user_profiles').select('id, first_name, headline, city').limit(3)
+  const { data: buddiesData } = await buddiesQuery
+  buddyProfiles = (buddiesData ?? []) as any
+
   if (user) {
-    const { data } = await supabase
-      .from('applications')
-      .select('status, answers, created_at')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    existingApplication = data as any
+    const [appRes, profileRes, signaturesRes] = await Promise.all([
+      supabase
+        .from('applications')
+        .select('status, answers, created_at')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('user_profiles')
+        .select('first_name, last_name, headline, city, country')
+        .eq('id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('value_signatures')
+        .select('value_id')
+        .eq('user_id', user.id),
+    ])
+
+    existingApplication = appRes.data as any
+    userProfile = profileRes.data as any
+    signedValueIds = (signaturesRes.data ?? []).map((s: any) => s.value_id)
   }
 
   return (
     <JoinClient
-      questions={questions}
       userId={user?.id ?? null}
+      userRole={role}
       existingApplication={existingApplication}
-      hasQuestionsConfigured={questions.length > 0}
+      userProfile={userProfile}
+      communityValues={communityValues}
+      initialSignedValueIds={signedValueIds}
+      buddyProfiles={buddyProfiles}
     />
   )
 }

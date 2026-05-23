@@ -1,198 +1,123 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import AgreementsAdminClient from './AgreementsAdminClient'
-
-const STATUS_STYLE: Record<string, { label: string; color: string }> = {
-  pending:   { label: 'Pending review', color: '#15803d' },
-  accepted:  { label: 'Accepted',       color: '#22c55e' },
-  active:    { label: 'Active',         color: '#3b82f6' },
-  rejected:  { label: 'Not accepted',   color: '#ef4444' },
-  completed: { label: 'Completed',      color: '#94a3b8' },
-}
+import { createClient } from '@/core/lib/supabase/server'
+import { isCircleAdmin } from '@/core/lib/roles'
+import { promoteToMemberIfEligible } from '@/core/lib/promotions'
+import { colorForId, initialForName } from '@/core/lib/format'
+import AgreementsAdminClient from '@/modules/m06-agreements/AgreementsAdminClient'
+import AgreementsClient from '@/modules/m06-agreements/AgreementsClient'
 
 export default async function AgreementsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  let role = 'explorer'
+  if (user) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+    role = profile?.role ?? 'explorer'
 
-  const role = profile?.role ?? 'explorer'
-  const isAdmin = ['admin', 'circle_lead', 'project_lead'].includes(role)
+    role = await promoteToMemberIfEligible(supabase, user.id, role)
+  }
 
-  // Admin: show all agreements across all projects
+  const isAdmin = isCircleAdmin(role)
+
   if (isAdmin) {
     const { data: allAgreements } = await supabase
       .from('collaboration_agreements')
-      .select('id, user_id, project_id, work_description, expected_reward, status, admin_notes, created_at')
+      .select(`
+        id, user_id, project_id, work_description, expected_reward, status, admin_notes, created_at,
+        user_profiles!collaboration_agreements_user_id_fkey(first_name, username),
+        projects!collaboration_agreements_project_id_fkey(title)
+      `)
       .order('created_at', { ascending: false })
 
-    const agreements = allAgreements ?? []
-
-    // Fetch related user profiles and project titles
-    const userIds = [...new Set(agreements.map(a => a.user_id))]
-    const projectIds = [...new Set(agreements.map(a => a.project_id))]
-
-    const [profilesRes, projectsRes] = await Promise.all([
-      userIds.length > 0
-        ? supabase.from('user_profiles').select('id, first_name, username').in('id', userIds)
-        : Promise.resolve({ data: [] }),
-      projectIds.length > 0
-        ? supabase.from('projects').select('id, title').in('id', projectIds)
-        : Promise.resolve({ data: [] }),
-    ])
-
-    const profileMap = Object.fromEntries((profilesRes.data ?? []).map(p => [p.id, p]))
-    const projectMap = Object.fromEntries((projectsRes.data ?? []).map(p => [p.id, p]))
-
-    const enriched = agreements.map(a => ({
-      ...a,
-      admin_notes: a.admin_notes ?? null,
-      first_name: profileMap[a.user_id]?.first_name ?? null,
-      username: profileMap[a.user_id]?.username ?? null,
-      project_title: projectMap[a.project_id]?.title ?? null,
+    const enriched = (allAgreements ?? []).map((a: any) => ({
+      id: a.id as string,
+      user_id: a.user_id as string,
+      project_id: a.project_id as string,
+      work_description: a.work_description as string,
+      expected_reward: a.expected_reward as string,
+      status: a.status as string,
+      admin_notes: (a.admin_notes ?? null) as string | null,
+      created_at: a.created_at as string,
+      first_name: a.user_profiles?.first_name ?? null,
+      username: a.user_profiles?.username ?? null,
+      project_title: a.projects?.title ?? null,
     }))
 
     return <AgreementsAdminClient agreements={enriched} />
   }
 
-  // Non-admin member view
-  const canPropose = role !== 'explorer'
+  const { data: rawProjects } = await supabase
+    .from('projects')
+    .select('id, title, description, status, open_for_collaborators, needs, deadline, lead_user_id, created_by')
+    .eq('status', 'active')
+    .eq('open_for_collaborators', true)
+    .order('created_at', { ascending: false })
 
-  const [projectsRes, myAgreementsRes] = await Promise.all([
-    supabase.from('projects')
-      .select('id, title, description, status, open_for_collaborators, updated_at')
-      .eq('status', 'active')
-      .eq('open_for_collaborators', true)
-      .order('created_at', { ascending: false }),
-    supabase.from('collaboration_agreements')
-      .select('id, project_id, work_description, expected_reward, status, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false }),
+  const projectRows = rawProjects ?? []
+  const leadIds = [
+    ...new Set(
+      projectRows
+        .map(p => p.lead_user_id ?? p.created_by)
+        .filter((id): id is string => !!id)
+    ),
+  ]
+
+  const [leadProfilesRes, myAgreementsRes] = await Promise.all([
+    leadIds.length > 0
+      ? supabase.from('user_profiles').select('id, first_name, username').in('id', leadIds)
+      : Promise.resolve({ data: [] }),
+    user
+      ? supabase
+          .from('collaboration_agreements')
+          .select('id, project_id, work_description, expected_reward, status, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
   ])
 
-  const projects = projectsRes.data ?? []
-  const myAgreements = myAgreementsRes.data ?? []
-  const myAgreementsByProject = Object.fromEntries(myAgreements.map(a => [a.project_id, a]))
+  const leadProfileMap = Object.fromEntries(
+    (leadProfilesRes.data ?? []).map(p => [p.id, p])
+  )
+
+  const projects = projectRows.map(p => {
+    const leadId = p.lead_user_id ?? p.created_by ?? null
+    const leadProfile = leadId ? leadProfileMap[leadId] : null
+    const leadName = leadProfile?.first_name ?? leadProfile?.username ?? null
+    return {
+      id: p.id,
+      title: p.title,
+      description: p.description ?? null,
+      status: p.status,
+      open_for_collaborators: p.open_for_collaborators,
+      needs: (p.needs ?? []) as string[],
+      deadline: p.deadline ?? null,
+      lead_user_id: p.lead_user_id ?? null,
+      created_by: p.created_by ?? null,
+      lead_name: leadName,
+      lead_initial: initialForName(leadName),
+      lead_color: colorForId(leadId),
+    }
+  })
+
+  const myAgreements = (myAgreementsRes.data ?? []).map(a => ({
+    id: a.id,
+    project_id: a.project_id,
+    work_description: a.work_description,
+    expected_reward: a.expected_reward,
+    status: a.status,
+    created_at: a.created_at,
+  }))
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 20px 80px' }}>
-
-      {/* Header */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#1d4ed8', background: '#1d4ed815', padding: '3px 10px', borderRadius: 20, marginBottom: 12 }}>
-          M06 · Agreements
-        </div>
-        <h1 style={{ fontFamily: 'var(--display)', fontSize: 32, color: 'var(--ink)', lineHeight: 1.1, marginBottom: 8 }}>
-          Collaboration agreements
-        </h1>
-        <p style={{ color: 'var(--ink-3)', fontSize: 14, maxWidth: 540 }}>
-          Projects open for collaboration. Propose what you'll do and what you expect in return —
-          the team reviews and confirms your agreement.
-        </p>
-      </div>
-
-      {/* Explorer gate */}
-      {!canPropose && (
-        <div style={{ background: '#15803d10', border: '1px solid #15803d40', borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: 28, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 18, flexShrink: 0 }}>🔒</span>
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 4 }}>Complete M05 Join to propose collaborations</p>
-            <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-              Once your join application is accepted you'll be able to submit collaboration proposals.
-            </p>
-            <Link href="/join" style={{ fontSize: 12.5, color: '#15803d', fontWeight: 600, textDecoration: 'none', display: 'inline-block', marginTop: 8 }}>
-              Go to M05 Join →
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* My agreements */}
-      {myAgreements.length > 0 && (
-        <div style={{ marginBottom: 40 }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
-            My proposals
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {myAgreements.map(a => {
-              const project = projects.find(p => p.id === a.project_id)
-              const s = STATUS_STYLE[a.status] ?? STATUS_STYLE.pending
-              return (
-                <div key={a.id} style={{ background: 'var(--surface)', border: `1px solid ${s.color}30`, borderLeft: `4px solid ${s.color}`, borderRadius: 'var(--radius)', padding: '14px 18px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
-                      {project?.title ?? 'Project'}
-                    </span>
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: s.color, background: `${s.color}15`, padding: '2px 8px', borderRadius: 20 }}>
-                      {s.label}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: '0 0 3px' }}>
-                    <strong style={{ color: 'var(--ink-2)' }}>I will:</strong> {a.work_description}
-                  </p>
-                  <p style={{ fontSize: 12.5, color: 'var(--ink-3)', margin: 0 }}>
-                    <strong style={{ color: 'var(--ink-2)' }}>I expect:</strong> {a.expected_reward}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Open projects */}
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 14 }}>
-        Open projects
-      </div>
-
-      {projects.length === 0 ? (
-        <div style={{ background: 'var(--bg-2)', border: '1px solid var(--rule)', borderRadius: 'var(--radius-lg)', padding: '40px 24px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--ink-4)', fontSize: 14 }}>No projects open for collaboration right now.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {projects.map(p => {
-            const existing = myAgreementsByProject[p.id]
-            return (
-              <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--rule)', borderLeft: '4px solid #1d4ed8', borderRadius: 'var(--radius)', padding: '20px 22px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ fontFamily: 'var(--display)', fontSize: 17, color: 'var(--ink)', marginBottom: 6 }}>{p.title}</h3>
-                    {p.description && (
-                      <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.55, margin: 0 }}>{p.description}</p>
-                    )}
-                  </div>
-                  <div style={{ flexShrink: 0 }}>
-                    {existing ? (
-                      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: STATUS_STYLE[existing.status]?.color ?? '#15803d', background: `${STATUS_STYLE[existing.status]?.color ?? '#15803d'}15`, padding: '4px 10px', borderRadius: 20 }}>
-                        {STATUS_STYLE[existing.status]?.label ?? 'Proposed'}
-                      </span>
-                    ) : canPropose ? (
-                      <Link href={`/agreements/${p.id}`} style={{ background: '#1d4ed8', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 'var(--radius)', textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block' }}>
-                        Propose collaboration
-                      </Link>
-                    ) : (
-                      <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>Join first to propose</span>
-                    )}
-                  </div>
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <Link href={`/ops/${p.id}`} style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none' }}>
-                    View project in Operations →
-                  </Link>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-    </div>
+    <AgreementsClient
+      projects={projects}
+      myAgreements={myAgreements}
+      userRole={role}
+      userId={user?.id ?? null}
+    />
   )
 }

@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/core/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
-import AgreementFormClient from './AgreementFormClient'
+import { isJoiningOrAbove } from '@/core/lib/roles'
+import AgreementFormClient from '@/modules/m06-agreements/AgreementFormClient'
 
 export default async function AgreementFormPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -12,9 +13,9 @@ export default async function AgreementFormPage({ params }: { params: Promise<{ 
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
-  if (profile?.role === 'explorer') redirect('/join')
+  if (!isJoiningOrAbove(profile?.role ?? '')) redirect('/join')
 
   const { data: project } = await supabase
     .from('projects')
@@ -24,7 +25,6 @@ export default async function AgreementFormPage({ params }: { params: Promise<{ 
 
   if (!project || project.status !== 'active' || !project.open_for_collaborators) notFound()
 
-  // Check for existing agreement
   const { data: existing } = await supabase
     .from('collaboration_agreements')
     .select('id, work_description, expected_reward, status')

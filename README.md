@@ -2,7 +2,7 @@
 
 > AI-native operating system for regenerative neighborhoods.
 
-> Last updated: 2026-05-09 21:50 UTC
+> Last updated: 2026-05-21
 
 ## Quick Start
 
@@ -48,8 +48,8 @@ Each document serves a different purpose. Read them in order.
 
 ## Links
 
-- **Live Platform:** https://tribes-platform.correa-oscar11.workers.dev
+- **Live Platform:** https://myconet.correa-oscar11.workers.dev
 
 ## Status
 
-🟡 Iterating — Architecture approved, building V2 (2026-05-09)# test
+🟢 v3.01 LIVE — M00–M09 deployed on Cloudflare Workers (2026-05-21)
