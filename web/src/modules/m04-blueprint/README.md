@@ -2,6 +2,23 @@
 
 Guided community planning wizard. Takes a community through four phases — SPARK → PROVE → BUILD → LIVE — across five pillars (Ecology, Governance, Economy, Culture, Infrastructure). Admins fill in the blueprint; all members can read it.
 
+## Conceptual grounding
+
+The wizard structure is derived from four research-backed frameworks. Each step and field traces back to one or more of these — keep this in mind when editing `lib/wizard-data.ts`.
+
+| Framework | What it contributes |
+|-----------|---------------------|
+| **RNF** — Regenerative Neighborhood Framework | The 5 pillars and the 5-spiral timeline (what to include and when) |
+| **Alchemy** — Community Alchemy Playbook | The 11 sequential areas (steps and order) |
+| **RCOS** — Regenerative Community Operating System | The 7 governance layers (how the community governs itself) |
+| **CLIPS** — Community Learning Incubator Programme | Concentric health check (coherence between intention, structure, practice) |
+
+**Four phases · 13 steps:**
+- **01 SPARK** — Finding Your Why · Founding Group · Clarifying Purpose · First Agreements
+- **02 PROVE** — Business Model · Site Selection · Funding Strategy
+- **03 BUILD** — Securing Capital · Master Planning · Infrastructure · Community Activation
+- **04 LIVE** — Operations Go Live · Culture & Governance · Learning & Evolution
+
 ## Routes
 
 | Route | File |
