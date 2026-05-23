@@ -1,5 +1,7 @@
 'use client'
 
+import { fmtDate } from '@/core/lib/format'
+
 interface ProjectUpdate {
   id: string
   project_id: string
@@ -12,11 +14,6 @@ interface ProjectUpdate {
 interface Project {
   id: string
   title: string
-}
-
-function fmtDate(iso: string | null): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 export function UpdatesTab({ updates, projects }: {

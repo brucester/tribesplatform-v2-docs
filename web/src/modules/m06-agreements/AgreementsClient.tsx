@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
+import { colorForId, formatDeadline } from '@/core/lib/format'
 import NewProjectModal from './NewProjectModal'
 import { FormField, FocusInput, FocusTextarea } from './AgreementFormFields'
 
@@ -38,24 +39,6 @@ interface Props {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const LEAD_COLORS = [
-  '#1d4ed8', '#7c3aed', '#0f766e', '#b45309', '#be185d',
-  '#15803d', '#0369a1', '#9333ea',
-]
-
-function colorForId(id: string | null | undefined): string {
-  if (!id) return LEAD_COLORS[0]
-  let hash = 0
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash)
-  return LEAD_COLORS[Math.abs(hash) % LEAD_COLORS.length]
-}
-
-function formatDeadline(d: string | null): string {
-  if (!d) return 'No deadline'
-  const dt = new Date(d)
-  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 

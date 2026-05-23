@@ -4,50 +4,65 @@ import { Card, CardContent } from '@/core/components/ui/card'
 import { Button } from '@/core/components/ui/button'
 import { User, Gift, HelpCircle, Search, Sparkles } from 'lucide-react'
 import MemberList from '@/modules/m01-network/MemberList'
-import { computeMatch } from '@/modules/m01-network/lib/match-score'
+import { computeMatch, type Bio, type MatchResult } from '@/modules/m01-network/lib/match-score'
 
 export default async function NetworkDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [memberCountRes, recentRes, offersRes, seeksRes, profileRes, allProfilesRes, allBiosRes, myBioRes] = await Promise.all([
+  const [memberCountRes, recentRes] = await Promise.all([
     supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
     supabase.from('user_profiles')
       .select('id, username, first_name, last_name, avatar_url, user_types, city, country')
       .order('created_at', { ascending: false })
       .limit(8),
-    user ? supabase.from('user_offers').select('id').eq('user_id', user.id) : Promise.resolve({ data: [] }),
-    user ? supabase.from('user_requests').select('id').eq('user_id', user.id) : Promise.resolve({ data: [] }),
-    user ? supabase.from('user_profiles').select('first_name, last_name').eq('id', user.id).single() : Promise.resolve({ data: null }),
-    user ? supabase.from('user_profiles').select('id, username, first_name, last_name, avatar_url, city, country, user_types').neq('id', user.id) : Promise.resolve({ data: [] }),
-    user ? supabase.from('user_bio').select('*') : Promise.resolve({ data: [] }),
-    user ? supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
   ])
 
   const memberCount = memberCountRes.count ?? 0
   const recentUsers = (recentRes.data ?? []).filter(u => u.id !== user?.id)
-  const offersCount = (offersRes as any).data?.length ?? 0
-  const seeksCount = (seeksRes as any).data?.length ?? 0
-  const profile = (profileRes as any).data
-  const displayName = profile ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Explorer' : null
 
-  const myBio = (myBioRes as any).data ?? null
-  const bioMap: Record<string, any> = {}
-  for (const b of (allBiosRes as any).data ?? []) bioMap[b.user_id] = b
-  const topMatches = (allProfilesRes as any).data
-    ? ((allProfilesRes as any).data as any[])
-        .map((p: any) => {
-          const { score, reasons } = computeMatch(myBio, bioMap[p.id] ?? null)
-          return { profile: p, score, reasons }
-        })
-        .sort((a: any, b: any) => b.score - a.score)
-        .slice(0, 4)
-    : []
+  let offersCount = 0
+  let seeksCount = 0
+  let displayName: string | null = null
+  let myBio: Bio = null
+  let topMatches: { profile: NonNullable<typeof recentRes.data>[number]; score: number; reasons: string[] }[] = []
+  const recentMatchScores: Record<string, MatchResult> = {}
 
-  const recentMatchScores: Record<string, { score: number; reasons: string[] }> = {}
-  if (myBio) {
-    for (const u of recentUsers) {
-      recentMatchScores[u.id] = computeMatch(myBio, bioMap[u.id] ?? null)
+  if (user) {
+    const [offersRes, seeksRes, profileRes, allProfilesRes, allBiosRes, myBioRes] = await Promise.all([
+      supabase.from('user_offers').select('id').eq('user_id', user.id),
+      supabase.from('user_requests').select('id').eq('user_id', user.id),
+      supabase.from('user_profiles').select('first_name, last_name').eq('id', user.id).single(),
+      supabase.from('user_profiles')
+        .select('id, username, first_name, last_name, avatar_url, city, country, user_types')
+        .neq('id', user.id),
+      supabase.from('user_bio').select('*'),
+      supabase.from('user_bio').select('*').eq('user_id', user.id).maybeSingle(),
+    ])
+
+    offersCount = offersRes.data?.length ?? 0
+    seeksCount = seeksRes.data?.length ?? 0
+    const profile = profileRes.data
+    displayName = profile
+      ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Explorer'
+      : null
+
+    myBio = myBioRes.data ?? null
+    const bioMap: Record<string, Bio> = {}
+    for (const b of allBiosRes.data ?? []) bioMap[b.user_id] = b as Bio
+
+    topMatches = (allProfilesRes.data ?? [])
+      .map(p => {
+        const { score, reasons } = computeMatch(myBio, bioMap[p.id] ?? null)
+        return { profile: p, score, reasons }
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4)
+
+    if (myBio) {
+      for (const u of recentUsers) {
+        recentMatchScores[u.id] = computeMatch(myBio, bioMap[u.id] ?? null)
+      }
     }
   }
 
@@ -154,7 +169,7 @@ export default async function NetworkDashboard() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
-              {topMatches.map(({ profile: p, score, reasons }: any) => {
+              {topMatches.map(({ profile: p, score, reasons }) => {
                 const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username
                 const init = name[0]?.toUpperCase() ?? '?'
                 const loc = [p.city, p.country].filter(Boolean).join(', ')
@@ -207,7 +222,7 @@ export default async function NetworkDashboard() {
         </div>
       )}
 
-      <MemberList members={recentUsers as any} matchScores={recentMatchScores} />
+      <MemberList members={recentUsers} matchScores={recentMatchScores} />
     </div>
   )
 }

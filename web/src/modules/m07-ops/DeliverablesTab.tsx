@@ -1,5 +1,7 @@
 'use client'
 
+import { fmtDate } from '@/core/lib/format'
+
 interface Deliverable {
   id: string
   project_id: string
@@ -21,11 +23,6 @@ const STATUS_PILL: Record<string, { label: string; color: string; bg: string }> 
   in_progress: { label: 'In progress', color: 'var(--m7)',    bg: '#4338ca18' },
   review:      { label: 'Review',      color: '#f59e0b',      bg: '#f59e0b18' },
   done:        { label: 'Done',        color: 'var(--m5)',    bg: '#15803d18' },
-}
-
-function fmtDate(iso: string | null): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 export function DeliverablesTab({ deliverables, projects }: {

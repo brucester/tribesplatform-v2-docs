@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/core/lib/supabase/client'
+import { fmtDate } from '@/core/lib/format'
 import { DeliverablesTab } from './DeliverablesTab'
 import { UpdatesTab } from './UpdatesTab'
 
@@ -76,11 +77,6 @@ const KANBAN_COLUMNS: { key: string; label: string; color: string }[] = [
 function projectColor(projectId: string, allProjects: Project[]): string {
   const idx = allProjects.findIndex(p => p.id === projectId)
   return PROJECT_COLORS[(idx >= 0 ? idx : 0) % PROJECT_COLORS.length]
-}
-
-function fmtDate(iso: string | null): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────

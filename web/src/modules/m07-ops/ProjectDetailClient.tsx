@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
+import { fmtDate } from '@/core/lib/format'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -51,11 +52,6 @@ interface Project {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtDate(iso: string | null): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
 
 function TaskStatusPill({ status, onChange }: { status: string; onChange?: (s: string) => void }) {
   const ts = TASK_STATUS.find(s => s.value === status) ?? TASK_STATUS[0]

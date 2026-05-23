@@ -23,6 +23,7 @@ core/
 │   │   └── server.ts   Server Supabase client (use in Server Components / route handlers)
 │   ├── roles.ts        Role authority helpers — isFullMember, isCircleAdmin, isOpsAdmin, isAdmin, etc.
 │   ├── promotions.ts   Member promotion logic — promoteToMemberIfEligible()
+│   ├── format.ts       Shared display helpers — fmtDate, formatDeadline, colorForId, initialForName
 │   ├── modules.ts      Module registry — the canonical list of all M00–M13 modules
 │   ├── module-meta.ts  Display metadata (bg color, label, desc) for each module number
 │   └── utils.ts        Tailwind class merge helper (cn)
@@ -40,6 +41,7 @@ import { Button } from '@/core/components/ui/button'
 import type { Database } from '@/core/types/database'
 import { isFullMember, isCircleAdmin, isOpsAdmin } from '@/core/lib/roles'
 import { promoteToMemberIfEligible } from '@/core/lib/promotions'
+import { fmtDate, formatDeadline, colorForId, initialForName } from '@/core/lib/format'
 ```
 
 ## Supabase clients

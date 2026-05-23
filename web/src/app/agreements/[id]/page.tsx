@@ -1,5 +1,6 @@
 import { createClient } from '@/core/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
+import { isJoiningOrAbove } from '@/core/lib/roles'
 import AgreementFormClient from '@/modules/m06-agreements/AgreementFormClient'
 
 export default async function AgreementFormPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +15,7 @@ export default async function AgreementFormPage({ params }: { params: Promise<{ 
     .eq('id', user.id)
     .single()
 
-  if (profile?.role === 'explorer') redirect('/join')
+  if (!isJoiningOrAbove(profile?.role ?? '')) redirect('/join')
 
   const { data: project } = await supabase
     .from('projects')

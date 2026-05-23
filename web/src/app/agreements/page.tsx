@@ -1,25 +1,9 @@
 import { createClient } from '@/core/lib/supabase/server'
 import { isCircleAdmin } from '@/core/lib/roles'
 import { promoteToMemberIfEligible } from '@/core/lib/promotions'
+import { colorForId, initialForName } from '@/core/lib/format'
 import AgreementsAdminClient from '@/modules/m06-agreements/AgreementsAdminClient'
 import AgreementsClient from '@/modules/m06-agreements/AgreementsClient'
-
-const LEAD_COLORS = [
-  '#1d4ed8', '#7c3aed', '#0f766e', '#b45309', '#be185d',
-  '#15803d', '#0369a1', '#9333ea',
-]
-
-function colorForId(id: string | null | undefined): string {
-  if (!id) return LEAD_COLORS[0]
-  let hash = 0
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash)
-  return LEAD_COLORS[Math.abs(hash) % LEAD_COLORS.length]
-}
-
-function initialForName(name: string | null | undefined): string {
-  if (!name) return '?'
-  return name.trim().charAt(0).toUpperCase()
-}
 
 export default async function AgreementsPage() {
   const supabase = await createClient()
