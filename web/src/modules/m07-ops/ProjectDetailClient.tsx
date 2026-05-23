@@ -252,7 +252,7 @@ export default function ProjectDetailClient({
   }
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 80px' }}>
+    <div className="ops-detail-root" style={{ maxWidth: 920, margin: '0 auto', padding: '48px 20px 80px' }}>
 
       {/* Back */}
       <Link href="/ops" style={{ fontSize: 13, color: 'var(--ink-4)', fontWeight: 500, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 28 }}>
@@ -262,7 +262,7 @@ export default function ProjectDetailClient({
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-          <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', lineHeight: 1.1 }}>
+          <h1 className="ops-detail-h1" style={{ fontFamily: 'var(--display)', fontSize: 28, color: 'var(--ink)', lineHeight: 1.1 }}>
             {project.title}
           </h1>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: s.color, background: `${s.color}15`, padding: '3px 10px', borderRadius: 20 }}>
@@ -282,7 +282,7 @@ export default function ProjectDetailClient({
         {canPropose && !hasBlockingProposal && (
           <button
             onClick={() => setShowProposalForm(v => !v)}
-            style={{ display: 'inline-block', marginTop: 16, background: showProposalForm ? 'var(--bg-2)' : '#3b82f6', color: showProposalForm ? 'var(--ink-3)' : '#fff', fontSize: 13, fontWeight: 600, padding: '9px 20px', borderRadius: 'var(--radius)', border: showProposalForm ? '1px solid var(--rule)' : 'none', cursor: 'pointer' }}
+            style={{ display: 'block', width: '100%', maxWidth: 260, marginTop: 16, background: showProposalForm ? 'var(--bg-2)' : '#3b82f6', color: showProposalForm ? 'var(--ink-3)' : '#fff', fontSize: 13, fontWeight: 600, padding: '10px 20px', borderRadius: 'var(--radius)', border: showProposalForm ? '1px solid var(--rule)' : 'none', cursor: 'pointer', textAlign: 'center' }}
           >
             {showProposalForm ? 'Cancel' : 'Propose collaboration →'}
           </button>
@@ -290,7 +290,7 @@ export default function ProjectDetailClient({
         {canPropose && hasBlockingProposal && myProposal && (() => {
           const info = PROPOSAL_STATUS_INFO[myProposal.status]
           return (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 16, background: `${info.color}12`, border: `1px solid ${info.color}40`, borderRadius: 'var(--radius)', padding: '8px 14px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 16, background: `${info.color}12`, border: `1px solid ${info.color}40`, borderRadius: 'var(--radius)', padding: '8px 14px' }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: info.color }}>{info.label}</span>
               <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{info.note}</span>
             </div>
@@ -367,7 +367,7 @@ export default function ProjectDetailClient({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 340px' : '1fr', gap: 32 }}>
+      <div className="ops-detail-grid" style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 340px' : '1fr', gap: 32 }}>
 
         {/* ── Left column ──────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
@@ -384,7 +384,7 @@ export default function ProjectDetailClient({
                 background: 'var(--bg-2)', border: '1px solid var(--rule)',
                 borderRadius: 10, padding: '14px 16px', marginBottom: 14,
               }}>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div className="ops-subtask-form" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <input
                     type="text"
                     value={newTaskTitle}
@@ -433,7 +433,8 @@ export default function ProjectDetailClient({
 
                       {/* Title */}
                       <span style={{
-                        flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--ink)',
+                        flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500, color: 'var(--ink)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         textDecoration: d.status === 'done' ? 'line-through' : 'none',
                         opacity: d.status === 'done' ? 0.55 : 1,
                       }}>
@@ -592,7 +593,7 @@ export default function ProjectDetailClient({
                   const author = u.user_profiles?.first_name ?? u.user_profiles?.username ?? 'Team'
                   const date = new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                   return (
-                    <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0 16px', paddingBottom: 24 }}>
+                    <div key={u.id} className="ops-update-row" style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0 16px', paddingBottom: 24 }}>
                       <div style={{ paddingTop: 3 }}>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-4)' }}>{date}</div>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', marginTop: 2 }}>{author}</div>

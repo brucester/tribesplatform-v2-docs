@@ -388,6 +388,14 @@ a { color: inherit; text-decoration: none; }
 
   /* Joining reward banner min-width override */
   .joining-banner-text { min-width: 0 !important; }
+
+  /* Ops project detail */
+  .ops-detail-root { padding-top: 20px !important; padding-left: 16px !important; padding-right: 16px !important; }
+  .ops-detail-grid { grid-template-columns: 1fr !important; }
+  .ops-detail-h1 { font-size: 22px !important; }
+  .ops-subtask-form { flex-direction: column !important; align-items: stretch !important; }
+  .ops-subtask-form > * { width: 100% !important; box-sizing: border-box !important; }
+  .ops-update-row { grid-template-columns: 60px 1fr !important; }
 }
 
 /* ─── Dashboard cards ───────────────────────────────────────────── */
