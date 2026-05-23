@@ -9,6 +9,7 @@ export interface Project {
   description: string | null
   status: string
   open_for_collaborators: boolean
+  circle?: string | null
   needs?: string[] | string | null
   deadline?: string | null
   sprint_name?: string | null

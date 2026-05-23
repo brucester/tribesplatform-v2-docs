@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { PILLARS, PILLAR_META, type Pillar } from '@/core/lib/pillars'
 
 export default function NewProjectClient({ userId }: { userId: string }) {
   const supabase = createClient()
@@ -10,6 +11,7 @@ export default function NewProjectClient({ userId }: { userId: string }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [openForCollab, setOpenForCollab] = useState(true)
+  const [circle, setCircle] = useState<Pillar | ''>('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -18,9 +20,15 @@ export default function NewProjectClient({ userId }: { userId: string }) {
     if (!title.trim()) return
     setSaving(true)
     setError('')
-    const { data, error: err } = await supabase
+    const { error: err } = await supabase
       .from('projects')
-      .insert({ title: title.trim(), description: description.trim() || null, open_for_collaborators: openForCollab, created_by: userId })
+      .insert({
+        title: title.trim(),
+        description: description.trim() || null,
+        open_for_collaborators: openForCollab,
+        circle: circle || null,
+        created_by: userId,
+      })
       .select('id')
       .single()
     if (err) { setError(err.message); setSaving(false); return }
@@ -70,6 +78,35 @@ export default function NewProjectClient({ userId }: { userId: string }) {
             rows={5}
             style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
           />
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
+            Circle <span style={{ fontWeight: 400, color: 'var(--ink-4)' }}>— which pillar does this project belong to?</span>
+          </label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {PILLARS.map(p => {
+              const meta = PILLAR_META[p]
+              const active = circle === p
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setCircle(active ? '' : p)}
+                  style={{
+                    fontSize: 13, fontWeight: 600,
+                    padding: '7px 14px', borderRadius: 20,
+                    background: active ? meta.color : 'var(--surface)',
+                    color: active ? '#fff' : 'var(--ink-2)',
+                    border: `1px solid ${active ? meta.color : 'var(--rule)'}`,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {meta.emoji} {meta.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>

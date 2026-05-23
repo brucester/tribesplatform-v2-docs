@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/lib/supabase/client'
 import { fmtDate } from '@/core/lib/format'
+import { isPillar, PILLAR_META } from '@/core/lib/pillars'
 import { DeliverablesTab } from './DeliverablesTab'
 import { UpdatesTab } from './UpdatesTab'
 import type { Project, Deliverable, ProjectUpdate } from './types'
@@ -19,7 +21,34 @@ interface OpsClientProps {
   doneCount: number
   atRiskCount: number
   isAdmin: boolean
+  userId: string | null
+  userRole: string
+  leadCircles: string[]
   sprintName: string | null
+}
+
+/** Determines whether the current user can move a deliverable (drag it
+ * between Kanban columns). The hierarchy is:
+ *   - admin                    → can move any deliverable
+ *   - project_lead             → can move deliverables in projects they own
+ *   - circle_lead              → can move deliverables in projects in circles they lead
+ *   - member / joining / etc.  → cannot move
+ */
+function canMoveDeliverable(
+  d: Deliverable,
+  projects: Project[],
+  userId: string | null,
+  userRole: string,
+  leadCircles: string[],
+): boolean {
+  if (!userId) return false
+  if (userRole === 'admin') return true
+  const project = projects.find(p => p.id === d.project_id)
+  if (!project) return false
+  if (userRole === 'project_lead' && (project.created_by === userId || project.lead_user_id === userId)) return true
+  if (userRole === 'circle_lead' && project.circle && leadCircles.includes(project.circle)) return true
+  // circle_lead is also a circle_admin role; they can manage projects in their circles
+  return false
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -122,24 +151,45 @@ function KanbanCard({
   deliverable,
   projectId,
   projectTitle,
+  projectCircle,
   color,
+  canMove,
+  onDragStart,
+  onDragEnd,
+  isDragging,
 }: {
   deliverable: Deliverable
   projectId: string
   projectTitle: string
+  projectCircle: string | null | undefined
   color: string
+  canMove: boolean
+  onDragStart?: (id: string) => void
+  onDragEnd?: () => void
+  isDragging?: boolean
 }) {
+  const circleMeta = isPillar(projectCircle) ? PILLAR_META[projectCircle] : null
   return (
     <Link href={`/ops/${projectId}`} style={{ textDecoration: 'none', display: 'block', marginBottom: 8 }}>
-      <div style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--rule)',
-        borderLeft: `3px solid ${color}`,
-        borderRadius: 8,
-        padding: '10px 12px',
-        boxShadow: 'var(--shadow-sm)',
-        cursor: 'pointer',
-      }}>
+      <div
+        draggable={canMove}
+        onDragStart={canMove ? (e) => {
+          e.dataTransfer.effectAllowed = 'move'
+          e.dataTransfer.setData('text/plain', deliverable.id)
+          onDragStart?.(deliverable.id)
+        } : undefined}
+        onDragEnd={canMove ? () => onDragEnd?.() : undefined}
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--rule)',
+          borderLeft: `3px solid ${color}`,
+          borderRadius: 8,
+          padding: '10px 12px',
+          boxShadow: 'var(--shadow-sm)',
+          cursor: canMove ? 'grab' : 'pointer',
+          opacity: isDragging ? 0.5 : 1,
+        }}
+      >
         <div style={{
           fontSize: 12,
           fontWeight: 600,
@@ -149,6 +199,11 @@ function KanbanCard({
         }}>
           {deliverable.title}
         </div>
+        {circleMeta && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 600, color: circleMeta.color, background: `${circleMeta.color}15`, padding: '1px 6px', borderRadius: 20, marginBottom: 6 }}>
+            {circleMeta.emoji} {circleMeta.label}
+          </div>
+        )}
         {deliverable.status === 'in_progress' && deliverable.progress != null && (
           <ProgressBar progress={deliverable.progress} color={color} />
         )}
@@ -186,18 +241,40 @@ function KanbanCard({
 
 export default function OpsClient({
   projects,
-  deliverables,
+  deliverables: initialDeliverables,
   updates,
   activeCount,
   deliverableCount,
   doneCount,
   atRiskCount,
   isAdmin,
+  userId,
+  userRole,
+  leadCircles,
   sprintName,
 }: OpsClientProps) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'board' | 'deliverables' | 'updates'>('board')
   const [pendingProjects, setPendingProjects] = useState(projects.filter(p => p.status === 'pending'))
   const [activating, setActivating] = useState<string | null>(null)
+  const [deliverables, setDeliverables] = useState<Deliverable[]>(initialDeliverables)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+
+  async function moveDeliverable(deliverableId: string, newStatus: string) {
+    const d = deliverables.find(x => x.id === deliverableId)
+    if (!d || d.status === newStatus) return
+    if (!canMoveDeliverable(d, projects, userId, userRole, leadCircles)) return
+
+    setDeliverables(prev => prev.map(x => x.id === deliverableId ? { ...x, status: newStatus } : x))
+    const supabase = createClient()
+    const { error } = await supabase.from('deliverables').update({ status: newStatus }).eq('id', deliverableId)
+    if (error) {
+      setDeliverables(prev => prev.map(x => x.id === deliverableId ? { ...x, status: d.status } : x))
+    } else {
+      router.refresh()
+    }
+  }
 
   async function handleActivate(projectId: string) {
     setActivating(projectId)
@@ -466,12 +543,34 @@ export default function OpsClient({
         }}>
           {KANBAN_COLUMNS.map(col => {
             const cards = grouped[col.key] ?? []
+            const isTarget = dropTarget === col.key
             return (
-              <div key={col.key} style={{
-                background: 'var(--bg-2)',
-                borderRadius: 10,
-                padding: 10,
-              }}>
+              <div
+                key={col.key}
+                onDragOver={(e) => {
+                  if (!draggingId) return
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                  if (dropTarget !== col.key) setDropTarget(col.key)
+                }}
+                onDragLeave={(e) => {
+                  if (e.currentTarget === e.target) setDropTarget(null)
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const id = e.dataTransfer.getData('text/plain')
+                  if (id) moveDeliverable(id, col.key)
+                  setDropTarget(null)
+                  setDraggingId(null)
+                }}
+                style={{
+                  background: isTarget ? `${col.color}10` : 'var(--bg-2)',
+                  borderRadius: 10,
+                  padding: 10,
+                  border: isTarget ? `1px dashed ${col.color}` : '1px solid transparent',
+                  transition: 'background 120ms, border-color 120ms',
+                }}
+              >
                 {/* Column header */}
                 <div style={{
                   display: 'flex',
@@ -519,13 +618,19 @@ export default function OpsClient({
                   cards.map(d => {
                     const proj = projects.find(p => p.id === d.project_id)
                     const color = projectColor(d.project_id, projects)
+                    const canMove = canMoveDeliverable(d, projects, userId, userRole, leadCircles)
                     return (
                       <KanbanCard
                         key={d.id}
                         deliverable={d}
                         projectId={d.project_id}
                         projectTitle={proj?.title ?? '—'}
+                        projectCircle={proj?.circle ?? null}
                         color={color}
+                        canMove={canMove}
+                        onDragStart={(id) => setDraggingId(id)}
+                        onDragEnd={() => { setDraggingId(null); setDropTarget(null) }}
+                        isDragging={draggingId === d.id}
                       />
                     )
                   })

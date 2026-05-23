@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/core/lib/supabase/client'
 import { FormField, FocusInput, FocusTextarea, inputStyle } from './AgreementFormFields'
+import { PILLARS, PILLAR_META, type Pillar } from '@/core/lib/pillars'
 
 interface Props {
   userId: string
@@ -13,6 +14,7 @@ export default function NewProjectModal({ userId, onClose }: Props) {
   const [desc, setDesc] = useState('')
   const [needs, setNeeds] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [circle, setCircle] = useState<Pillar | ''>('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
@@ -28,6 +30,7 @@ export default function NewProjectModal({ userId, onClose }: Props) {
       description: desc.trim() || null,
       needs: needsList.length > 0 ? needsList : null,
       deadline: deadline || null,
+      circle: circle || null,
       status: 'pending',
       open_for_collaborators: true,
       created_by: userId,
@@ -96,6 +99,32 @@ export default function NewProjectModal({ userId, onClose }: Props) {
 
               <FormField label="Description" hint="optional">
                 <FocusTextarea value={desc} onChange={setDesc} placeholder="What is this project about? What does success look like?" />
+              </FormField>
+
+              <FormField label="Circle" hint="which pillar this project belongs to">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {PILLARS.map(p => {
+                    const meta = PILLAR_META[p]
+                    const active = circle === p
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setCircle(active ? '' : p)}
+                        style={{
+                          fontSize: 12, fontWeight: 600,
+                          padding: '6px 12px', borderRadius: 20,
+                          background: active ? meta.color : 'var(--surface)',
+                          color: active ? '#fff' : 'var(--ink-2)',
+                          border: `1px solid ${active ? meta.color : 'var(--rule)'}`,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {meta.emoji} {meta.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </FormField>
 
               <FormField label="Skills / help needed" hint="comma-separated">

@@ -6,6 +6,7 @@ import { isJoiningOrAbove } from '@/core/lib/roles'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Project, Deliverable, ProjectUpdate, CollaborationAgreement, MyProposal } from './types'
+import { PILLARS, PILLAR_META, isPillar, type Pillar } from '@/core/lib/pillars'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -115,6 +116,7 @@ export default function ProjectDetailClient({
   // ── Project settings (admin only) ───────────────────────────────────────────
   const [editStatus, setEditStatus] = useState(project.status)
   const [editOpenCollab, setEditOpenCollab] = useState(project.open_for_collaborators)
+  const [editCircle, setEditCircle] = useState<Pillar | ''>(isPillar(project.circle) ? project.circle : '')
   const [savingSettings, setSavingSettings] = useState(false)
 
   // ── Agreement management (admin only) ───────────────────────────────────────
@@ -213,6 +215,7 @@ export default function ProjectDetailClient({
     await supabase.from('projects').update({
       status: editStatus,
       open_for_collaborators: editOpenCollab,
+      circle: editCircle || null,
     }).eq('id', project.id)
     setSavingSettings(false)
     router.refresh()
@@ -249,6 +252,14 @@ export default function ProjectDetailClient({
               Open for collaborators
             </span>
           )}
+          {isPillar(project.circle) && (() => {
+            const m = PILLAR_META[project.circle]
+            return (
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: m.color, background: `${m.color}15`, padding: '3px 10px', borderRadius: 20 }}>
+                {m.emoji} {m.label}
+              </span>
+            )
+          })()}
         </div>
         {project.description && (
           <p style={{ color: 'var(--ink-2)', fontSize: 15, lineHeight: 1.65, maxWidth: 640 }}>
@@ -600,6 +611,32 @@ export default function ProjectDetailClient({
                   <option value="paused">Paused</option>
                   <option value="completed">Completed</option>
                 </select>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6 }}>Circle</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {PILLARS.map(p => {
+                    const meta = PILLAR_META[p]
+                    const active = editCircle === p
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setEditCircle(active ? '' : p)}
+                        style={{
+                          fontSize: 11, fontWeight: 600,
+                          padding: '4px 9px', borderRadius: 20,
+                          background: active ? meta.color : 'var(--surface)',
+                          color: active ? '#fff' : 'var(--ink-3)',
+                          border: `1px solid ${active ? meta.color : 'var(--rule)'}`,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {meta.emoji} {meta.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 14 }}>
                 <input type="checkbox" checked={editOpenCollab} onChange={e => setEditOpenCollab(e.target.checked)} style={{ accentColor: '#4338ca' }} />

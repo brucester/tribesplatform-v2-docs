@@ -9,13 +9,15 @@ export default async function OpsPage() {
 
   let isAdmin = false
   let userRole = 'explorer'
+  let leadCircles: string[] = []
   if (user) {
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role')
+      .select('role, lead_circles')
       .eq('id', user.id)
       .maybeSingle()
     userRole = profile?.role ?? 'explorer'
+    leadCircles = profile?.lead_circles ?? []
     isAdmin = isOpsAdmin(userRole)
 
     userRole = await promoteToMemberIfEligible(supabase, user.id, userRole)
@@ -23,7 +25,7 @@ export default async function OpsPage() {
 
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, title, description, status, open_for_collaborators, needs, deadline, sprint_name, created_at')
+    .select('id, title, description, status, open_for_collaborators, circle, needs, deadline, sprint_name, created_at, created_by, lead_user_id')
     .order('created_at', { ascending: false })
 
   const { data: deliverablesRaw } = await supabase
@@ -82,6 +84,9 @@ export default async function OpsPage() {
       doneCount={doneCount}
       atRiskCount={atRiskCount}
       isAdmin={isAdmin}
+      userId={user?.id ?? null}
+      userRole={userRole}
+      leadCircles={leadCircles}
       sprintName={sprintName}
     />
   )
