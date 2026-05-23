@@ -2,6 +2,25 @@ import Link from 'next/link'
 
 const ENTRIES = [
   {
+    version: 'v3.41',
+    date: '2026-05-23',
+    title: 'Circles, Kanban drag-and-drop, admin users editor, type consolidation',
+    items: [
+      'New core/lib/format.ts consolidates fmtDate, formatDeadline, colorForId, and initialForName — eliminates the duplicated copies across 6 files in m06-agreements and m07-ops.',
+      'Restructured network/page.tsx user-conditional Supabase queries into a guarded if (user) block, removing all 10+ "as any" casts and giving the compiler full type inference. agreements/[id]/page.tsx now uses isJoiningOrAbove() instead of hardcoded role string.',
+      'Cloudflare Worker renamed from tribes-platform → myconet. Live URL is now https://myconet.correa-oscar11.workers.dev. All docs, README, ARCHITECTURE, log.md, and wrangler.jsonc reflect the new name.',
+      'Inline collaboration proposal form on project detail pages — the "Propose collaboration" and "Be the first to propose" buttons now open a form right on the project page (work description, expected reward, optional conditions) and submit via upsert. Existing pending/accepted/active proposals show a status panel instead.',
+      'Mobile-optimized the project detail page: padding scales down, admin two-column grid stacks to single column, the add-subtask row goes vertical (title → date → button full-width), task titles truncate with ellipsis, proposal status badge wraps cleanly.',
+      'Consolidated M07 ops types into modules/m07-ops/types.ts (Project, ProjectSummary, Deliverable, ProjectUpdate, CollaborationAgreement, MyProposal) — replaces 11 duplicated inline interfaces across 4 files and removes 6+ "any[]" props on ProjectDetailClient.',
+      'Hardened user_profiles fetches: all 12 .single() calls in route pages converted to .maybeSingle() so brand-new users without a profile row don\'t error out — the existing role ?? "explorer" fallback handles the null case.',
+      'Circles on projects — added projects.circle (one of ecology, hardware, humanware, economy, tech) and user_profiles.lead_circles (text[]). New core/lib/pillars.ts exports PILLARS, PILLAR_META (label, color, emoji), and isPillar() for any module to render a circle badge.',
+      'Circle pill picker added to the propose-project modal (M06), the admin new-project form (M07), and the project detail settings panel. Project headers now show a circle badge for everyone.',
+      'Kanban cards on the Ops board now support HTML5 drag-and-drop between status columns, permission-gated: admin can move any deliverable, project_lead can move deliverables in their own projects, circle_lead can move deliverables in projects whose circle they lead. Optimistic UI update on drop with router.refresh() after the DB write. Cards show a circle badge directly.',
+      'New /admin/users page (admin-only) lists every user with an inline editor: role dropdown (Explorer, Joining, Member, Project lead, Circle lead, Admin) and — when role is circle_lead — a pillar pill picker for lead_circles. Search filters by name, username, or role. Per-row save button with Saving → ✓ Saved → Save states.',
+      'Sidenav now shows an "Admin → Users" section that renders only for users with role admin.',
+    ],
+  },
+  {
     version: 'v3.31',
     date: '2026-05-22',
     title: 'Ops subtasks, public collaborations, join journey page, agreement dedup',
