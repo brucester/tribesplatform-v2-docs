@@ -2,6 +2,35 @@ import Link from 'next/link'
 
 const ENTRIES = [
   {
+    version: 'v3.30',
+    date: '2026-05-22',
+    title: 'Code quality sprint — component extraction and cleanup',
+    items: [
+      'Extracted NewProjectModal from AgreementsClient into its own file — self-contained, manages its own state, ~110 lines removed from the parent component.',
+      'Extracted AgreementFormFields (FormField, FocusInput, FocusTextarea, inputStyle) into a shared module file, reused by both AgreementsClient and NewProjectModal.',
+      'Extracted DeliverablesTab and UpdatesTab from OpsClient into their own files — removed ~200 lines of inline duplication from the ops module.',
+      'All component extractions are pure refactors: zero behavior changes, build passes clean, all routes verified.',
+    ],
+  },
+  {
+    version: 'v3.22',
+    date: '2026-05-22',
+    title: 'Codebase cleanup sprint — roles, promotions, performance',
+    items: [
+      'Deleted four duplicate legacy directories (src/lib/, src/components/, src/contexts/, src/types/) that were left over from the v3.20 reorganization. Build now relies entirely on src/core/ and src/modules/.',
+      'Finished resident → member role rename across all UI copy, landing page, sidebar section label ("Welcome Home"), and module descriptions.',
+      'Centralized all role authority logic into src/core/lib/roles.ts — isFullMember, isCircleAdmin, isOpsAdmin, isAdmin, MEMBER_ROLES. Replaced 11 inline role arrays across the codebase.',
+      'Role permission matrix clarified: circle_lead + admin manage Blueprint/Join/Agreements; circle_lead + project_lead + admin see the full Ops panel; admin only can edit records.',
+      'Extracted member promotion logic into src/core/lib/promotions.ts — promoteToMemberIfEligible() checks both paths (accepted agreement + active project) in one parallel query.',
+      'Renamed /api/claude → /api/scan (the route calls MiniMax, not Claude). Removed verbose debug console.log statements from production.',
+      'Fixed sidebar role flash — role is now fetched server-side in layout.tsx and passed as a prop, so the correct role renders on the first paint with no client-side delay.',
+      'Fixed optimistic agreement update to use the real DB row ID returned from insert instead of crypto.randomUUID().',
+      'Collapsed N+1 queries in the Agreements admin view from 3 queries down to 1 using embedded Supabase joins.',
+      'Added Pending proposals section to Ops admin view — admins can Activate or Decline proposed projects inline.',
+      'Fixed projects_status_check DB constraint to include pending status, allowing joining users to propose new projects.',
+    ],
+  },
+  {
     version: 'v3.20',
     date: '2026-05-22',
     title: 'Open-source codebase reorganization — core/ + modules/',
@@ -11,8 +40,7 @@ const ENTRIES = [
       'src/core/ centralizes Supabase clients (server + browser), all shadcn/ui primitives, the app shell (AppTopBar, AppSideNav, AppShell), shared types, and contexts.',
       'Every module and core/ now has a README.md documenting what it does, which DB tables it touches, and how to run it locally.',
       'New web/CONTRIBUTING.md — full open-source contributor guide with quick-start, import convention table, database migration steps, and PR checklist.',
-      'Import aliases updated across the codebase: @/core/... and @/modules/... replace the legacy @/lib/, @/components/, @/contexts/, and @/types/ paths.',
-      'Zero breaking changes — all routes, API behaviour, and UI are identical. TypeScript passes with no errors.',
+      'Legacy duplicate directories (src/lib/, src/components/, src/contexts/, src/types/) were left in place at this version — fully removed in v3.22.',
     ],
   },
   {
