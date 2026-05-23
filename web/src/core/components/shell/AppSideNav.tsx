@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { isFullMember } from '@/core/lib/roles'
+import { isFullMember, isAdmin } from '@/core/lib/roles'
 
 const CLUBHOUSE = [
   { num: '00', name: 'Dashboard',   color: 'var(--ink)', href: '/dashboard' },
@@ -218,6 +218,32 @@ export default function AppSideNav({ mobileOpen, onClose, initialRole = 'explore
       {MEMBER_MODULES.map(m => (
         <NavItem key={m.num} {...m} active={isActive(m.href)} onClick={onClose} />
       ))}
+
+      {isAdmin(role) && (
+        <>
+          <SectionLabel label="Admin" />
+          <Link
+            href="/admin/users"
+            onClick={onClose}
+            style={{ textDecoration: 'none', display: 'block' }}
+            className="sh-nav-item"
+          >
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '9px 10px', borderRadius: 7,
+              fontSize: 13,
+              color: isActive('/admin/users') ? 'var(--ink)' : 'var(--ink-2)',
+              fontWeight: isActive('/admin/users') ? 600 : 400,
+              background: isActive('/admin/users') ? 'color-mix(in srgb, #dc2626 10%, var(--surface))' : 'transparent',
+              border: isActive('/admin/users') ? '1px solid color-mix(in srgb, #dc2626 25%, var(--rule))' : '1px solid transparent',
+            }}>
+              <span style={{ width: 2, height: 16, borderRadius: 2, background: '#dc2626', flexShrink: 0, opacity: isActive('/admin/users') ? 1 : 0.5 }} />
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600, width: 22, color: isActive('/admin/users') ? '#dc2626' : 'var(--ink-4)' }}>★</span>
+              <span>Users</span>
+            </div>
+          </Link>
+        </>
+      )}
 
       <div style={{ flex: 1 }} />
 
