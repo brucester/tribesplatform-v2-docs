@@ -29,6 +29,7 @@ interface BuddyProfile {
 
 interface Props {
   userId: string | null
+  userRole: string
   existingApplication: { status: string; answers: Record<string, string>; created_at: string } | null
   userProfile: UserProfile | null
   communityValues: CommunityValue[]
@@ -432,8 +433,208 @@ function Step3Submit({ userId, signedCount, totalValues, onBack, onSubmitted }: 
 
 // ─── Main client ──────────────────────────────────────────────────────────────
 
+// ─── Role Roadmap ─────────────────────────────────────────────────────────────
+
+const ROLE_MAP = [
+  {
+    role: 'explorer',
+    label: 'Explorer',
+    color: '#0ea5e9',
+    how: 'Sign up for a free account — takes under a minute.',
+    access: [
+      'Browse open projects and community members',
+      'Read the community blueprint and values',
+      'Explore the full platform before committing',
+    ],
+  },
+  {
+    role: 'joining',
+    label: 'Joining Member',
+    color: '#f59e0b',
+    how: 'Complete the M05 Join application: sign the community values, get matched with a buddy, and submit.',
+    access: [
+      'Submit collaboration proposals on open projects',
+      'View the Operations board and sprint progress',
+      'Appear in community network matching',
+    ],
+  },
+  {
+    role: 'member',
+    label: 'Full Member',
+    color: M5,
+    how: 'Application accepted. Activate by completing your first agreement or launching an active project.',
+    access: [
+      'Make binding collaboration agreements',
+      'Vote and submit proposals in Governance',
+      'Earn contribution points and build your reputation',
+      'Full network access — offers, seeks, and direct matching',
+    ],
+  },
+  {
+    role: 'project_lead',
+    label: 'Project Lead',
+    color: '#8b5cf6',
+    how: 'Appointed by an admin based on sustained project contributions.',
+    access: [
+      'Everything a Member can do',
+      'Manage the full Operations panel',
+      'Create and lead community projects',
+      'Review and update deliverables',
+    ],
+  },
+  {
+    role: 'circle_lead',
+    label: 'Circle Lead',
+    color: '#ec4899',
+    how: 'Appointed by an admin to steward a key area of the community.',
+    access: [
+      'Everything a Project Lead can do',
+      'Manage the Blueprint and community values',
+      'Review and accept Join applications',
+      'Manage collaboration agreements and their status',
+    ],
+  },
+  {
+    role: 'admin',
+    label: 'Admin',
+    color: '#ef4444',
+    how: 'Appointed by existing admins. Responsible for the overall health of the community.',
+    access: [
+      'Full edit access to every module',
+      'Activate, pause, or archive projects',
+      'Manage all member roles and permissions',
+      'Access all admin panels across the platform',
+    ],
+  },
+]
+
+function RoleRoadmap({ currentRole }: { currentRole: string }) {
+  const roleOrder = ['explorer', 'joining', 'member', 'project_lead', 'circle_lead', 'admin']
+  const currentIdx = roleOrder.indexOf(currentRole)
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 32px 80px' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: 40, maxWidth: 600 }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center',
+          fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: M5, background: `color-mix(in srgb, ${M5} 10%, transparent)`,
+          border: `1px solid color-mix(in srgb, ${M5} 25%, transparent)`,
+          padding: '3px 10px', borderRadius: 999, marginBottom: 18,
+        }}>
+          Module 05 · Join
+        </span>
+        <h1 style={{ fontSize: 34, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.025em', color: 'var(--ink)', marginBottom: 14 }}>
+          Community roles & access
+        </h1>
+        <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.65, margin: 0 }}>
+          Every role is earned, not assigned. Here's the full map of the community — where you are, where you can go, and what opens up along the way.
+        </p>
+      </div>
+
+      {/* Role cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {ROLE_MAP.map((r, i) => {
+          const isCurrent = r.role === currentRole
+          const isPast = roleOrder.indexOf(r.role) < currentIdx
+          const isFuture = roleOrder.indexOf(r.role) > currentIdx
+
+          return (
+            <div key={r.role} style={{
+              display: 'grid',
+              gridTemplateColumns: '52px 1fr',
+              gap: '0 20px',
+              background: isCurrent
+                ? `color-mix(in srgb, ${r.color} 5%, var(--surface))`
+                : 'var(--surface)',
+              border: isCurrent
+                ? `2px solid color-mix(in srgb, ${r.color} 40%, var(--rule))`
+                : '1px solid var(--rule)',
+              borderRadius: 14,
+              padding: '22px',
+              boxShadow: isCurrent ? `0 0 0 4px color-mix(in srgb, ${r.color} 8%, transparent)` : 'var(--shadow-sm)',
+              opacity: isFuture ? 0.72 : 1,
+              transition: 'opacity 150ms',
+            }}>
+
+              {/* Number + connector */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                  background: isPast
+                    ? r.color
+                    : isCurrent
+                    ? `color-mix(in srgb, ${r.color} 15%, var(--bg))`
+                    : 'var(--bg-3)',
+                  border: isPast ? 'none' : `2px solid color-mix(in srgb, ${r.color} ${isCurrent ? 60 : 20}%, var(--rule))`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700,
+                  color: isPast ? '#fff' : isCurrent ? r.color : 'var(--ink-4)',
+                }}>
+                  {isPast ? (
+                    <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+                      <path d="M1 5l4 4 8-8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ) : (String(i + 1).padStart(2, '0'))}
+                </div>
+                {i < ROLE_MAP.length - 1 && (
+                  <div style={{ width: 2, flex: 1, minHeight: 12, background: isPast ? r.color : 'var(--rule)', marginTop: 6, opacity: isPast ? 0.4 : 1 }} />
+                )}
+              </div>
+
+              {/* Content */}
+              <div style={{ paddingTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+                    {r.label}
+                  </h3>
+                  {isCurrent && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                      color: r.color,
+                      background: `color-mix(in srgb, ${r.color} 12%, transparent)`,
+                      border: `1px solid color-mix(in srgb, ${r.color} 35%, transparent)`,
+                      padding: '2px 9px', borderRadius: 999,
+                    }}>
+                      Your role
+                    </span>
+                  )}
+                </div>
+
+                <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '0 0 12px', lineHeight: 1.55, fontStyle: 'italic' }}>
+                  {r.how}
+                </p>
+
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {r.access.map((item, j) => (
+                    <li key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                      <span style={{
+                        width: 15, height: 15, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                        background: `color-mix(in srgb, ${r.color} ${isPast || isCurrent ? 12 : 6}%, transparent)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <svg width="7" height="5" viewBox="0 0 7 5" fill="none">
+                          <path d="M1 2.5l1.5 1.5 3.5-3.5" stroke={r.color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity={isFuture ? 0.5 : 1}/>
+                        </svg>
+                      </span>
+                      <span style={{ fontSize: 13, color: isFuture ? 'var(--ink-4)' : 'var(--ink-2)', lineHeight: 1.5 }}>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function JoinClient({
   userId,
+  userRole,
   existingApplication,
   userProfile,
   communityValues,
@@ -446,6 +647,12 @@ export default function JoinClient({
   const [signedIds, setSignedIds] = useState<Set<string>>(new Set(initialSignedValueIds))
   const [submitted, setSubmitted] = useState(false)
   const [reapplying, setReapplying] = useState(false)
+
+  // Full members and above have completed the join flow — show the role map instead
+  const FULL_MEMBER_ROLES = ['member', 'circle_lead', 'project_lead', 'admin']
+  if (FULL_MEMBER_ROLES.includes(userRole)) {
+    return <RoleRoadmap currentRole={userRole} />
+  }
 
   async function handleToggleValue(valueId: string, wasSigned: boolean) {
     if (!userId) return
@@ -471,27 +678,161 @@ export default function JoinClient({
 
   // ── Not logged in ───────────────────────────────────────────────────────────
   if (!userId) {
+    const JOURNEY = [
+      {
+        num: '01',
+        title: 'Sign up as an Explorer',
+        color: '#0ea5e9',
+        items: [
+          'Create a free account in under a minute',
+          'Browse open projects and community members',
+          'Read the community blueprint and values',
+          'Explore the platform with no commitment',
+        ],
+        cta: null,
+      },
+      {
+        num: '02',
+        title: 'Apply to join',
+        color: M5,
+        items: [
+          'Read and sign the community values',
+          'Get matched with a welcoming buddy',
+          'Submit a short application',
+          'The team reviews and responds within a few days',
+        ],
+        cta: null,
+      },
+      {
+        num: '03',
+        title: 'Become a full member',
+        color: '#8b5cf6',
+        items: [
+          'Make collaboration agreements on active projects',
+          'Track deliverables and sprints in Operations',
+          'Submit proposals and vote in Governance',
+          'Earn contribution points and build your reputation',
+        ],
+        cta: null,
+      },
+    ]
+
     return (
-      <div style={{ maxWidth: 880, margin: '0 auto', padding: '26px 32px 80px' }}>
-        <div style={{ marginBottom: 28 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: M5, background: `color-mix(in srgb, ${M5} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${M5} 25%, transparent)`, padding: '3px 10px', borderRadius: 999, marginBottom: 14 }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 32px 80px' }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 48, maxWidth: 600 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center',
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: M5, background: `color-mix(in srgb, ${M5} 10%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${M5} 25%, transparent)`,
+            padding: '3px 10px', borderRadius: 999, marginBottom: 18,
+          }}>
             Module 05 · Join
           </span>
-          <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: 12 }}>
-            Become a joining member
+          <h1 style={{ fontSize: 36, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.025em', color: 'var(--ink)', marginBottom: 14 }}>
+            Your path into the community
           </h1>
-          <p style={{ fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.65 }}>
-            Create an account first, then come back here to fill out your application.
+          <p style={{ fontSize: 16, color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>
+            This is a real community — not a platform you consume. Everyone who's here has gone through the same three steps below. It keeps the quality high and the trust strong.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Link href="/auth/signup" style={{ background: M5, color: '#fff', fontSize: 14, fontWeight: 600, padding: '10px 24px', borderRadius: 8, textDecoration: 'none' }}>
-            Create account to apply
-          </Link>
-          <Link href="/auth/login" style={{ background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 14, fontWeight: 500, padding: '10px 24px', borderRadius: 8, textDecoration: 'none', border: '1px solid var(--rule)' }}>
-            Sign in
-          </Link>
+
+        {/* Journey steps */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 48 }}>
+          {JOURNEY.map((step, i) => (
+            <div key={i} style={{
+              display: 'grid',
+              gridTemplateColumns: '56px 1fr',
+              gap: '0 20px',
+              background: 'var(--surface)',
+              border: '1px solid var(--rule)',
+              borderRadius: 14,
+              padding: '24px',
+              boxShadow: 'var(--shadow-sm)',
+              position: 'relative',
+            }}>
+              {/* Step number + connector line */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                  background: `color-mix(in srgb, ${step.color} 12%, var(--bg))`,
+                  border: `2px solid color-mix(in srgb, ${step.color} 35%, transparent)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--mono)', fontSize: 13, fontWeight: 700, color: step.color,
+                }}>
+                  {step.num}
+                </div>
+                {i < JOURNEY.length - 1 && (
+                  <div style={{ width: 2, flex: 1, minHeight: 16, background: 'var(--rule)', marginTop: 8 }} />
+                )}
+              </div>
+
+              {/* Content */}
+              <div style={{ paddingTop: 10 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', marginBottom: 12, lineHeight: 1.2 }}>
+                  {step.title}
+                </h3>
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {step.items.map((item, j) => (
+                    <li key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <span style={{
+                        width: 16, height: 16, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                        background: `color-mix(in srgb, ${step.color} 12%, transparent)`,
+                        border: `1.5px solid color-mix(in srgb, ${step.color} 40%, transparent)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                          <path d="M1 3l2 2 4-4" stroke={step.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
+                      <span style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.5 }}>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* CTA section */}
+        <div style={{
+          background: `color-mix(in srgb, ${M5} 5%, var(--surface))`,
+          border: `1px solid color-mix(in srgb, ${M5} 20%, var(--rule))`,
+          borderRadius: 16,
+          padding: '28px 32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 24,
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>
+              Start your journey as an Explorer
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--ink-2)', margin: 0, lineHeight: 1.5 }}>
+              Free to join. No obligation. When you're ready to apply, this page walks you through every step.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
+            <Link href="/auth/signup" style={{
+              background: M5, color: '#fff', fontSize: 14, fontWeight: 700,
+              padding: '11px 26px', borderRadius: 9, textDecoration: 'none', whiteSpace: 'nowrap',
+            }}>
+              Create free account →
+            </Link>
+            <Link href="/auth/login" style={{
+              background: 'var(--surface)', color: 'var(--ink-2)', fontSize: 14, fontWeight: 500,
+              padding: '11px 20px', borderRadius: 9, textDecoration: 'none',
+              border: '1px solid var(--rule)', whiteSpace: 'nowrap',
+            }}>
+              Sign in
+            </Link>
+          </div>
+        </div>
+
       </div>
     )
   }

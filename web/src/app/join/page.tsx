@@ -109,6 +109,7 @@ export default async function JoinPage() {
   return (
     <JoinClient
       userId={user?.id ?? null}
+      userRole={role}
       existingApplication={existingApplication}
       userProfile={userProfile}
       communityValues={communityValues}
