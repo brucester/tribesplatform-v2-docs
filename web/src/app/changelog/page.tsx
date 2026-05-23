@@ -2,6 +2,21 @@ import Link from 'next/link'
 
 const ENTRIES = [
   {
+    version: 'v3.31',
+    date: '2026-05-22',
+    title: 'Ops subtasks, public collaborations, join journey page, agreement dedup',
+    items: [
+      'Project creators (created_by or lead_user_id) can now add, update, and delete subtasks directly on their project detail page. Subtask status is an inline dropdown (Backlog → In progress → Review → Done) with optimistic updates.',
+      'Project creators can also post project updates — previously only admins could do this.',
+      'Active collaborations (accepted/active/completed agreements) are now visible to every logged-in user on the project detail page, showing each collaborator, what they\'re contributing, and what they expect in return.',
+      'Kanban cards on the Ops board are now clickable links that navigate to the project detail page.',
+      'Collaboration agreements now use upsert instead of insert — submitting a proposal on a project you\'ve already proposed on updates the existing row instead of throwing a duplicate key error.',
+      'If you already have an active proposal on a selected project, the form is replaced with a clear status panel showing the existing proposal\'s current state (pending, accepted, active, completed).',
+      'The /join page for guests now shows a three-step community journey (Explorer → Joining Member → Full Member) with bullets explaining what each stage unlocks and a CTA to sign up.',
+      'Full members and above (member, circle_lead, project_lead, admin) see a role roadmap on /join instead of the application form — all 6 roles shown with how to reach each one and what access it grants.',
+    ],
+  },
+  {
     version: 'v3.30',
     date: '2026-05-22',
     title: 'Code quality sprint — component extraction and cleanup',

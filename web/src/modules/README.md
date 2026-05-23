@@ -4,19 +4,21 @@ Each module is an independently workable feature of the MyCoNet platform. You ca
 
 ## Module list
 
-| Folder | Number | Route | Status |
-|--------|--------|-------|--------|
-| `m00-dashboard/` | M00 | `/dashboard` | Live |
-| `m01-network/` | M01 | `/network` | Live |
-| `m04-blueprint/` | M04 | `/blueprint` | Live |
-| `m05-join/` | M05 | `/join` | Live |
-| `m06-agreements/` | M06 | `/agreements` | Live |
-| `m07-ops/` | M07 | `/ops` | Live |
-| `m08-contributions/` | M08 | `/contributions` | Live |
-| `m09-governance/` | M09 | `/governance` | Live |
-| `home/` | — | `/home` | Live |
+| Folder | Number | Route | What it does | Status |
+|--------|--------|-------|-------------|--------|
+| `m00-dashboard/` | M00 | `/dashboard` | Personal HUD — role badge, activity stats, quick links | Live |
+| `m01-network/` | M01 | `/network` | Member directory with AI match scoring | Live |
+| `m04-blueprint/` | M04 | `/blueprint` | Community planning wizard with AI scan | Live |
+| `m05-join/` | M05 | `/join` | Onboarding flow, application, role roadmap | Live |
+| `m06-agreements/` | M06 | `/agreements` | Collaboration proposals between members and projects | Live |
+| `m07-ops/` | M07 | `/ops` | Project board with subtasks and sprint tracking | Live |
+| `m08-contributions/` | M08 | `/contributions` | Achievement badges and contribution history | Live |
+| `m09-governance/` | M09 | `/governance` | Proposals, voting, and decision layers | Live |
+| `home/` | — | `/home` | Public and member-facing community landing page | Live |
 
 M02 (Neighborhood Directory) and M03 (Resources) are hosted externally and not in this codebase.
+
+Each module has its own `README.md` — start there before touching any code in that folder.
 
 ## Module conventions
 
